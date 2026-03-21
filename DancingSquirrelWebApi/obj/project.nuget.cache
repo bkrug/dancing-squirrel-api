@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "oTFu9efDH0w=",
+  "success": true,
+  "projectFilePath": "/home/bkrug/Repos/dancing-squirrel-api/DancingSquirrelWebApi/DancingSquirrelWebApi.fsproj",
+  "expectedPackageFiles": [
+    "/home/bkrug/.nuget/packages/falco/5.2.0/falco.5.2.0.nupkg.sha512",
+    "/home/bkrug/.nuget/packages/falco.markup/1.4.0/falco.markup.1.4.0.nupkg.sha512",
+    "/home/bkrug/.nuget/packages/fsharp.core/10.0.103/fsharp.core.10.0.103.nupkg.sha512"
+  ],
+  "logs": []
+}
