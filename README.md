@@ -21,4 +21,7 @@ code .
 See also this command if you want to create the subdirectory in fewer steps:
 `dotnet new sln -o FSharpSample`
 
-Then I copied .vscode/launch.json and .vscode/settings.json from another project. These add support for debugging and default some F# editor features.
+Then I copied these files from another project:
+- .vscode/launch.json (adds support for debugging)
+- .vscode/settings.json (default some F# editor features)
+- {project}/Properties/launchSettings.json (set up the local runtime ports)
