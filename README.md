@@ -25,3 +25,26 @@ Then I copied these files from another project:
 - .vscode/launch.json (adds support for debugging)
 - .vscode/settings.json (default some F# editor features)
 - {project}/Properties/launchSettings.json (set up the local runtime ports)
+
+Then I installed SqlHydra: https://github.com/JordanMarr/SqlHydra?tab=readme-ov-file#quick-start
+
+```
+dotnet new tool-manifest
+dotnet tool install --local SqlHydra.Cli
+```
+
+```
+cd DancingSquirrelWebApi/
+dotnet sqlhydra sqlite
+```
+Supplied the command line tool with the connection string "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db"
+
+(from DancingSquirrelWebApi/ folder)
+```
+dotnet add package SqlHydra.Query
+dotnet add package Microsoft.Data.Sqlite
+```
+
+*Useful commands*
+
+`sqlite3 ./Database/DancingSquirrel.db '.schema' > ./Database/schema.sql`
