@@ -22,7 +22,7 @@ let wbuilder = WebApplication.CreateBuilder()
 wbuilder.Services.AddCors(fun options ->
     options.AddPolicy(
         allowedOriginsPolicy,
-        fun policy -> policy.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod() |> ignore
+        fun policy -> policy.WithOrigins("http://localhost:3626").AllowAnyHeader().AllowAnyMethod() |> ignore
     ) |> ignore
 ) |> ignore
 
