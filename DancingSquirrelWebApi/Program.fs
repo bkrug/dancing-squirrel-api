@@ -1,5 +1,6 @@
 open Falco
 open Falco.Routing
+open Falco.OpenApi
 open System
 open System.Collections.Generic
 open System.IO
@@ -13,6 +14,10 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
+open NSwag.AspNetCore
+open NSwag.Annotations
+open NSwag.Generation
+open NSwag.Collections
 
 //#region Move this to a different file
 type trainingRequest =
@@ -31,26 +36,47 @@ let helloWorldHandler : HttpHandler = fun ctx ->
     }
 //#endregion
 
+let endpoints =
+    [
+        post "/api/request/create" helloWorldHandler
+            |> OpenApi.name "Fortune"
+            |> OpenApi.summary "A mystic fortune teller"
+            |> OpenApi.description "Get a glimpse into your future, if you dare."
+    ]
+
 [<Literal>]
 let allowedOriginsPolicy = "DancingSquirrelOrigins"
 
-let wbuilder = WebApplication.CreateBuilder()
+let builder = WebApplication.CreateBuilder()
 
-wbuilder.Services.AddCors(fun options ->
+builder.Services.AddCors(fun options ->
     options.AddPolicy(
         allowedOriginsPolicy,
         fun policy -> policy.WithOrigins("http://localhost:3626").AllowAnyHeader().AllowAnyMethod() |> ignore
     ) |> ignore
 ) |> ignore
 
-let wapp = wbuilder.Build()
+builder.Services.AddEndpointsApiExplorer() |> ignore
+builder.Services
+    .AddFalcoOpenApi()
+    .AddOpenApiDocument(fun config ->
+        config.DocumentName <- "Dancing Squirrel Api"
+        config.Title <- "Dancing Squire Api v1"
+        config.Version <- "v1"
+    )
+    //.AddSwaggerGen()
+    |> ignore
 
-let endpoints =
-    [
-        post "/api/request/create" helloWorldHandler
-    ]
+let wApp = builder.Build()
 
-wapp.UseRouting() |> ignore
-wapp.UseCors(allowedOriginsPolicy) |> ignore
-wapp.UseFalco(endpoints)
+wApp.UseRouting() |> ignore
+wApp.UseOpenApi() |> ignore
+wApp.UseSwaggerUi(fun config ->
+    config.DocumentTitle <- "Dancing Squirrel Endpoints"
+    config.Path <- "/swagger"
+    config.DocumentPath <- "/swagger/{documentName}/swagger.json"
+    config.DocExpansion <- "list"
+) |> ignore
+wApp.UseCors(allowedOriginsPolicy) |> ignore
+wApp.UseFalco(endpoints)
     .Run(Response.withStatusCode 404 >> Response.ofPlainText "Not found")
