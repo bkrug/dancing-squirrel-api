@@ -14,20 +14,7 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 
-[<Literal>]
-let allowedOriginsPolicy = "DancingSquirrelOrigins"
-
-let wbuilder = WebApplication.CreateBuilder()
-
-wbuilder.Services.AddCors(fun options ->
-    options.AddPolicy(
-        allowedOriginsPolicy,
-        fun policy -> policy.WithOrigins("http://localhost:3626").AllowAnyHeader().AllowAnyMethod() |> ignore
-    ) |> ignore
-) |> ignore
-
-let wapp = wbuilder.Build()
-
+//#region Move this to a different file
 type trainingRequest =
     {
         CaretakerName: string
@@ -42,6 +29,21 @@ let helloWorldHandler : HttpHandler = fun ctx ->
         let message = sprintf "Hello %s" name
         return! Response.ofPlainText message ctx
     }
+//#endregion
+
+[<Literal>]
+let allowedOriginsPolicy = "DancingSquirrelOrigins"
+
+let wbuilder = WebApplication.CreateBuilder()
+
+wbuilder.Services.AddCors(fun options ->
+    options.AddPolicy(
+        allowedOriginsPolicy,
+        fun policy -> policy.WithOrigins("http://localhost:3626").AllowAnyHeader().AllowAnyMethod() |> ignore
+    ) |> ignore
+) |> ignore
+
+let wapp = wbuilder.Build()
 
 let endpoints =
     [
