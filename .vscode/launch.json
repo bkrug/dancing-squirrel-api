@@ -8,7 +8,10 @@
             "name": "F#: DancingSquirrelWebApi [http]",
             "type": "coreclr",
             "request": "launch",
-            "env": { "ASPNETCORE_ENVIRONMENT": "Development" },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://localhost:5626"
+            },
             "program": "${workspaceFolder}/DancingSquirrelWebApi/bin/Debug/net10.0/DancingSquirrelWebApi.dll"
         }
     ]

@@ -14,6 +14,7 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 
+[<Literal>]
 let allowedOriginsPolicy = "DancingSquirrelOrigins"
 
 let wbuilder = WebApplication.CreateBuilder()
