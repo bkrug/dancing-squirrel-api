@@ -14,6 +14,7 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Configuration.Json
 open NSwag.AspNetCore
 open NSwag.Annotations
 open NSwag.Generation
@@ -49,12 +50,14 @@ let allowedOriginsPolicy = "DancingSquirrelOrigins"
 
 let builder = WebApplication.CreateBuilder()
 
+let allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins").Split(",")
 builder.Services.AddCors(fun options ->
     options.AddPolicy(
         allowedOriginsPolicy,
-        fun policy -> policy.WithOrigins("http://localhost:3626").AllowAnyHeader().AllowAnyMethod() |> ignore
+        fun policy -> policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod() |> ignore
     ) |> ignore
 ) |> ignore
+
 
 builder.Services.AddEndpointsApiExplorer() |> ignore
 builder.Services
