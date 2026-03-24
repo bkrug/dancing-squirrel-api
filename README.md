@@ -51,3 +51,6 @@ dotnet add package Microsoft.Data.Sqlite
 
 See this source for data on path variables used in launch.json
 https://code.visualstudio.com/docs/reference/variables-reference
+
+
+To Kill a port use: `fuser -k -n tcp 5000`

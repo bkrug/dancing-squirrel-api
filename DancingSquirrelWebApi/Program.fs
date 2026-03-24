@@ -11,10 +11,11 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open TrainingRequest
+open GlobalExceptionHandler
 
 let endpoints =
     [
-        post "/api/request/create" helloWorldHandler
+        post "/api/request/create" createTrainingRequest
     ]
 
 [<Literal>]
@@ -53,5 +54,6 @@ wApp.UseSwaggerUi(fun config ->
     config.DocExpansion <- "list"
 ) |> ignore
 wApp.UseCors(allowedOriginsPolicy) |> ignore
+wApp.UseMiddleware<ExHandler>() |> ignore
 wApp.UseFalco(endpoints)
     .Run(Response.withStatusCode 404 >> Response.ofPlainText "Not found")
