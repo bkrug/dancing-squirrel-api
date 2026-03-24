@@ -12,6 +12,15 @@
 			},
 			"label": "Build: solution",
 			"detail": "Build the DancingSquirrel.slnx solution using dotnet build"
-		}
+		},
+		{
+			"label": "Generate DDL",
+			"type": "shell",
+			"command": "sqlite3 ./Database/DancingSquirrel.db '.schema' > ./Database/schema.sql"
+		},
+		{
+			"label": "Build",
+			"dependsOn": ["Build: solution", "Generate DDL"]
+		}		
 	]
 }
