@@ -12,7 +12,8 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "ASPNETCORE_URLS": "http://localhost:5626"
             },
-            "program": "${workspaceFolder}/DancingSquirrelWebApi/bin/Debug/net10.0/DancingSquirrelWebApi.dll"
+            "program": "${workspaceFolder}/DancingSquirrelWebApi/bin/Debug/net10.0/DancingSquirrelWebApi.dll",
+            "preLaunchTask": "Build: solution"
         }
     ]
 }

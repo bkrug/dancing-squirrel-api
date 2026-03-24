@@ -48,7 +48,9 @@ artifacts/
 **/Properties/launchSettings.json
 
 # VS Code
-.vscode/
+# I will include this folder in this personal project,
+# so that I have a record of what these files look like for any group projects.
+#.vscode/
 
 *_i.c
 *_p.c
