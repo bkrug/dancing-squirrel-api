@@ -1,3 +1,19 @@
+This is a WebApi for managing a hypothetical company that trains squirrels.
+See also the companion repo for the ReactJS application: https://github.com/bkrug/dancing-squirrel-ui
+
+*Initial Setup*
+
+This repo expects an SQLite database at path /Database/DancingSquirrel.db
+The database is not stored in the repo, so create the database using the DDL in schema.sql
+(https://www.codegenes.net/blog/how-to-create-a-db-file-in-sqlite3-using-a-schema-file/)
+
+```
+sqlite3 /Database/DancingSquirrel.db
+(This takes you into the sqlite3 program)
+read /Database/schema.sql
+^Z
+```
+
 *How to create a new solution containing a Falco project from command line*
 
 https://learn.microsoft.com/en-us/dotnet/fsharp/get-started/get-started-command-line
