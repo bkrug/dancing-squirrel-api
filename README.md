@@ -1,7 +1,7 @@
 This is a WebApi for managing a hypothetical company that trains squirrels.
 See also the companion repo for the ReactJS application: https://github.com/bkrug/dancing-squirrel-ui
 
-***Initial Setup***
+# Initial Setup
 
 This repo expects an SQLite database at path /Database/DancingSquirrel.db
 The database is not stored in the repo, so create the database using the DDL in schema.sql
@@ -14,7 +14,7 @@ read /Database/schema.sql
 ^Z
 ```
 
-***How to create a new solution containing a Falco project from command line***
+# How to create a new solution containing a Falco project from command line
 
 https://learn.microsoft.com/en-us/dotnet/fsharp/get-started/get-started-command-line
 
@@ -61,11 +61,11 @@ dotnet add package SqlHydra.Query
 dotnet add package Microsoft.Data.Sqlite
 ```
 
-***Useful commands***
+# Useful commands
 
 `sqlite3 ./Database/DancingSquirrel.db '.schema' > ./Database/schema.sql`
 
-***Troubleshooting***
+# Troubleshooting
 
 See this source for data on path variables used in launch.json
 https://code.visualstudio.com/docs/reference/variables-reference
