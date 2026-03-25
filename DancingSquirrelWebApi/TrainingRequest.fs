@@ -1,7 +1,9 @@
 module TrainingRequest
 
-open Falco
+open System
+open System.Text.RegularExpressions
 open DbLayer
+open Falco
 open SqlHydra.Query
 
 let connStr = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db;"
@@ -22,12 +24,80 @@ type trainingRequest =
         Phone: string
         SquirrelName: string
     }
+
+type trainingRequestValidation =
+    {
+        CaretakerType: string;
+        CaretakerName: string;
+        Email: string;
+        Phone: string;
+        SquirrelName: string;
+    }
+
 type trainingRequestResponse =
     {
+        OwnerId: int64
         SquirrelId: int64
     }
 
-let inserTrainingRequest trainingRequestModel =
+[<Literal>]
+let requiredMessage = "is required"
+
+let validateRequiredName nameValue =
+    match nameValue with
+        | "" -> Error requiredMessage
+        | _ -> Ok()
+
+let emailRegex = Regex(@"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$")
+let validateEmail (value : string) =
+    match value with
+    | var1 when emailRegex.IsMatch var1 -> Ok()
+    | "" -> Error requiredMessage
+    | _ -> Error "must be an email address"
+
+// Must have exactly 10 digits, or a 1 followed by exactly 10 digits.
+// Non-digits are accepted and ignored.
+let unitedStatePhoneRegex = Regex(@"^1?([^\d]*\d){10}[^\d]*$")
+let containsLetterRegex = Regex(@"[a-zA-Z]+")
+let validatePhone (value : string) =
+    match value with
+    | "" -> Ok()
+    | var1 when containsLetterRegex.IsMatch var1 -> Error "must not contain letters"
+    | var1 when unitedStatePhoneRegex.IsMatch var1 -> Ok()
+    | _ -> Error "must either have exactly 10 digits or a '1' followed by 10 digits"
+
+let removeNonDigits givenString =
+    Seq.toList givenString
+    |> Seq.filter (fun c -> Char.IsDigit c)
+    |> Seq.toArray
+    |> String
+
+let validateForm (form : trainingRequest) : Result<trainingRequest, trainingRequestValidation> =
+    let validationResults =
+        [
+            validateRequiredName form.CaretakerName;
+            validateEmail form.Email;
+            validatePhone form.Phone;
+            validateRequiredName form.SquirrelName;
+        ]
+    let failureCount = Seq.filter (fun (kvp : Result<unit, string>) -> kvp.IsError) validationResults |> Seq.length
+    match failureCount with
+        | 0 -> Ok {
+                IsPerson = form.IsPerson
+                CaretakerName = form.CaretakerName
+                Email = form.Email
+                Phone = removeNonDigits form.Phone
+                SquirrelName = form.SquirrelName
+            }
+        | _ -> Error {
+                CaretakerType = ""
+                CaretakerName = match validationResults[0] with | Error msg -> msg | _ -> ""
+                Email = match validationResults[1] with | Error msg -> msg | _ -> ""
+                Phone = match validationResults[2] with | Error msg -> msg | _ -> ""
+                SquirrelName = match validationResults[3] with | Error msg -> msg | _ -> ""
+            }
+
+let insertTrainingRequest trainingRequestModel =
     task {
         use! shared = db.OpenContextAsync()
         shared.BeginTransaction()
@@ -64,13 +134,17 @@ let inserTrainingRequest trainingRequestModel =
                 getId s.SquirrelId
             }
         shared.CommitTransaction()
-        return squirrelId
+        return
+            {
+                OwnerId = ownerId
+                SquirrelId = squirrelId
+            }
     }
 
 let createTrainingRequest : HttpHandler = fun ctx ->
     task {
         let! f = Request.getForm ctx
-        let dataToSave =
+        let dataToValidate =
             {
                 IsPerson = f.GetString("caretakertype", "") = "person"
                 CaretakerName = f.GetString ("caretakername", "")
@@ -78,6 +152,12 @@ let createTrainingRequest : HttpHandler = fun ctx ->
                 Phone = f.GetString ("phone", "")
                 SquirrelName = f.GetString ("squirrelname", "")
             }
-        let! squirrelId = inserTrainingRequest dataToSave
-        return! Response.ofJson { SquirrelId = squirrelId } ctx
+        let jsonResponse =
+            match validateForm dataToValidate with
+            | Ok dataToSave ->
+                let! insertionResult = insertTrainingRequest dataToSave
+                Response.withStatusCode 200 >> Response.ofJson insertionResult
+            | Error validationFailure ->
+                Response.withStatusCode 404 >> Response.ofJson validationFailure
+        return! jsonResponse ctx
     }
