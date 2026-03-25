@@ -51,7 +51,9 @@ let inserTrainingRequest trainingRequestModel =
                 entity {
                     SquirrelOwnerId = 0;
                     PersonId = if trainingRequestModel.IsPerson then Some personOrOrganizationId else None;
-                    OrganizationId = if trainingRequestModel.IsPerson then None else Some personOrOrganizationId
+                    OrganizationId = if trainingRequestModel.IsPerson then None else Some personOrOrganizationId;
+                    PhoneNumber = Some trainingRequestModel.Phone;
+                    Email = Some trainingRequestModel.Email;
                 }
                 getId so.SquirrelOwnerId
             }

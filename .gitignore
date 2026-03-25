@@ -272,3 +272,6 @@ paket-files/
 
 # CodeRush
 .cr/
+
+# Store DDL scripts to the repo, not the database itself
+Database/*.db

@@ -49,8 +49,9 @@ dotnet add package Microsoft.Data.Sqlite
 
 `sqlite3 ./Database/DancingSquirrel.db '.schema' > ./Database/schema.sql`
 
+*Troubleshooting*
+
 See this source for data on path variables used in launch.json
 https://code.visualstudio.com/docs/reference/variables-reference
-
 
 To Kill a port use: `fuser -k -n tcp 5626`

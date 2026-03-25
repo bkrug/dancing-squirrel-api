@@ -13,7 +13,7 @@ CREATE TABLE Organization (
 CREATE TABLE SquirrelOwner (
 	SquirrelOwnerId INTEGER NOT NULL,
 	PersonId INTEGER,
-	OrganizationId INTEGER,
+	OrganizationId INTEGER, PhoneNumber TEXT, Email TEXT,
 	CONSTRAINT PK_SquirrelOwner PRIMARY KEY (SquirrelOwnerId),
 	CONSTRAINT FK_SquirrelOwner_Person FOREIGN KEY (PersonId) REFERENCES Person(PersonId),
 	CONSTRAINT FK_SquirrelOwner_Organization FOREIGN KEY (OrganizationId) REFERENCES Organization(OrganizationId)

@@ -6,7 +6,7 @@ open SqlHydra.Query
 
 module Version =
     let cli = System.Version(3, 5, 0)
-    let ns = "DancingSquirrel.Database"
+    let ns = "DbLayer.Database"
     SqlHydra.Query.VersionCheck.assertIsCompatible cli ns
 
 module main =
@@ -36,7 +36,9 @@ module main =
     type SquirrelOwner =
         { SquirrelOwnerId: int64
           PersonId: Option<int64>
-          OrganizationId: Option<int64> }
+          OrganizationId: Option<int64>
+          PhoneNumber: Option<string>
+          Email: Option<string> }
 
     let SquirrelOwner = table<SquirrelOwner>
 
