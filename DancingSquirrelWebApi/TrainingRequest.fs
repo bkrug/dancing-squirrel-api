@@ -143,14 +143,14 @@ let insertTrainingRequest trainingRequestModel =
 
 let createTrainingRequest : HttpHandler = fun ctx ->
     task {
-        let! f = Request.getForm ctx
+        let! form = Request.getForm ctx
         let dataToValidate =
             {
-                IsPerson = f.GetString("caretakertype", "") = "person"
-                CaretakerName = f.GetString ("caretakername", "")
-                Email = f.GetString ("email", "")
-                Phone = f.GetString ("phone", "")
-                SquirrelName = f.GetString ("squirrelname", "")
+                IsPerson = form.GetString("caretakertype", "") = "person"
+                CaretakerName = form.GetString ("caretakername", "")
+                Email = form.GetString ("email", "")
+                Phone = form.GetString ("phone", "")
+                SquirrelName = form.GetString ("squirrelname", "")
             }
         let jsonResponse =
             match validateForm dataToValidate with
@@ -158,6 +158,6 @@ let createTrainingRequest : HttpHandler = fun ctx ->
                 let! insertionResult = insertTrainingRequest dataToSave
                 Response.withStatusCode 200 >> Response.ofJson insertionResult
             | Error validationFailure ->
-                Response.withStatusCode 404 >> Response.ofJson validationFailure
+                Response.withStatusCode 400 >> Response.ofJson validationFailure
         return! jsonResponse ctx
     }
