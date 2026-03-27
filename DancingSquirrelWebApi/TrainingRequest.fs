@@ -9,13 +9,6 @@ open SqlHydra.Query
 let connStr = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db;"
 let db = Database.QueryContextFactory.Create(connStr, printfn "SQL: %O")
 
-let getPeople id =
-    selectTask db {
-        for p in Database.main.Person do
-        where (p.PersonId = id)
-        select p
-    }
-
 type trainingRequest =
     {
         IsPerson: bool
