@@ -160,12 +160,12 @@ let createTrainingRequest : HttpHandler = fun ctx ->
                 Phone = form.GetString ("phone", "")
                 SquirrelName = form.GetString ("squirrelname", "")
             }
-        let! myResponse =
+        let! resultOfChain =
             Ok dataToValidate
             |> Result.bind validateForm
             |> TaskResult.bindToTask insertRequestToDatabase
         let jsonResponse =
-            match myResponse with
+            match resultOfChain with
             | Ok trainingRequestResponse ->
                 Response.withStatusCode 200 >> Response.ofJson trainingRequestResponse
             | Error trainingRequestResponse when trainingRequestResponse.ValidationFailures.IsSome ->
