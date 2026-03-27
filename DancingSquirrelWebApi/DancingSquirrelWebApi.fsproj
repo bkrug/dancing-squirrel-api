@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
-  <ItemGroup><Compile Include="GlobalExceptionHandler.fs" /><Compile Include="ConfigurationSources.fs" />
+  <ItemGroup><Compile Include="TaskResult.fs" /><Compile Include="ResultTest.fs" /><Compile Include="GlobalExceptionHandler.fs" /><Compile Include="ConfigurationSources.fs" />
     <Compile Include="DatabaseModels.fs">
       <Visible>False</Visible>
     </Compile><Compile Include="TrainingRequest.fs" />

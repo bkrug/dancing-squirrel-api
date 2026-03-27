@@ -6,10 +6,10 @@ open DbLayer
 open Falco
 open SqlHydra.Query
 
-let connStr = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db;"
+let connStr = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrelError.db;"
 let db = Database.QueryContextFactory.Create(connStr, printfn "SQL: %O")
 
-type trainingRequest =
+type TrainingRequestForm =
     {
         IsPerson: bool
         CaretakerName: string
@@ -18,7 +18,7 @@ type trainingRequest =
         SquirrelName: string
     }
 
-type trainingRequestValidation =
+type TrainingRequestValidation =
     {
         CaretakerType: string;
         CaretakerName: string;
@@ -27,10 +27,11 @@ type trainingRequestValidation =
         SquirrelName: string;
     }
 
-type trainingRequestResponse =
+type TrainingRequestResponse =
     {
-        OwnerId: int64
-        SquirrelId: int64
+        IsSuccess: bool;
+        IsInternalError: bool;
+        ValidationFailures: Option<TrainingRequestValidation>;
     }
 
 [<Literal>]
@@ -65,7 +66,7 @@ let removeNonDigits givenString =
     |> Seq.toArray
     |> String
 
-let validateForm (form : trainingRequest) : Result<trainingRequest, trainingRequestValidation> =
+let validateForm (form : TrainingRequestForm) =
     let validationResults =
         [
             validateRequiredName form.CaretakerName;
@@ -83,54 +84,68 @@ let validateForm (form : trainingRequest) : Result<trainingRequest, trainingRequ
                 SquirrelName = form.SquirrelName
             }
         | _ -> Error {
-                CaretakerType = ""
-                CaretakerName = match validationResults[0] with | Error msg -> msg | _ -> ""
-                Email = match validationResults[1] with | Error msg -> msg | _ -> ""
-                Phone = match validationResults[2] with | Error msg -> msg | _ -> ""
-                SquirrelName = match validationResults[3] with | Error msg -> msg | _ -> ""
+                IsSuccess = false
+                IsInternalError = false
+                ValidationFailures = Some {
+                    CaretakerType = ""
+                    CaretakerName = match validationResults[0] with | Error msg -> msg | _ -> ""
+                    Email = match validationResults[1] with | Error msg -> msg | _ -> ""
+                    Phone = match validationResults[2] with | Error msg -> msg | _ -> ""
+                    SquirrelName = match validationResults[3] with | Error msg -> msg | _ -> ""
+                }
             }
 
-let insertTrainingRequest trainingRequestModel =
+let insertRequestToDatabase (form : TrainingRequestForm) =
     task {
         use! shared = db.OpenContextAsync()
         shared.BeginTransaction()
-        let! personOrOrganizationId =
-            match trainingRequestModel.IsPerson with
-            | true ->
+        try
+            let! personOrOrganizationId =
+                match form.IsPerson with
+                | true ->
+                    insertTask shared {
+                        for p in Database.main.Person do
+                        entity { PersonId = 1; FirstName = "n/a"; LastName = form.CaretakerName }
+                        getId p.PersonId
+                    }
+                | false ->
+                    insertTask shared {
+                        for o in Database.main.Organization do
+                        entity { OrganizationId = 1; Name = form.CaretakerName }
+                        getId o.OrganizationId
+                    }
+            let! ownerId =
                 insertTask shared {
-                    for p in Database.main.Person do
-                    entity { PersonId = 1; FirstName = "n/a"; LastName = trainingRequestModel.CaretakerName }
-                    getId p.PersonId
+                    for so in Database.main.SquirrelOwner do
+                    entity {
+                        SquirrelOwnerId = 0;
+                        PersonId = if form.IsPerson then Some personOrOrganizationId else None;
+                        OrganizationId = if form.IsPerson then None else Some personOrOrganizationId;
+                        PhoneNumber = Some form.Phone;
+                        Email = Some form.Email;
+                    }
+                    getId so.SquirrelOwnerId
                 }
-            | false ->
+            let! squirrelId =
                 insertTask shared {
-                    for o in Database.main.Organization do
-                    entity { OrganizationId = 1; Name = trainingRequestModel.CaretakerName }
-                    getId o.OrganizationId
+                    for s in Database.main.Squirrel do
+                    entity { SquirrelId = 0; Name = form.SquirrelName; SquirrelOwnerId = ownerId }
+                    getId s.SquirrelId
                 }
-        let! ownerId =
-            insertTask shared {
-                for so in Database.main.SquirrelOwner do
-                entity {
-                    SquirrelOwnerId = 0;
-                    PersonId = if trainingRequestModel.IsPerson then Some personOrOrganizationId else None;
-                    OrganizationId = if trainingRequestModel.IsPerson then None else Some personOrOrganizationId;
-                    PhoneNumber = Some trainingRequestModel.Phone;
-                    Email = Some trainingRequestModel.Email;
-                }
-                getId so.SquirrelOwnerId
-            }
-        let! squirrelId =
-            insertTask shared {
-                for s in Database.main.Squirrel do
-                entity { SquirrelId = 0; Name = trainingRequestModel.SquirrelName; SquirrelOwnerId = ownerId }
-                getId s.SquirrelId
-            }
-        shared.CommitTransaction()
-        return
-            {
-                OwnerId = ownerId
-                SquirrelId = squirrelId
+            shared.CommitTransaction()
+            return Ok {
+                IsSuccess = true
+                IsInternalError = false
+                ValidationFailures = None
+            }            
+        with
+        | ex ->
+            shared.RollbackTransaction()
+            printfn "SQL: %O" ex
+            return Error {
+                IsSuccess = false
+                IsInternalError = true
+                ValidationFailures = None
             }
     }
 
@@ -145,12 +160,17 @@ let createTrainingRequest : HttpHandler = fun ctx ->
                 Phone = form.GetString ("phone", "")
                 SquirrelName = form.GetString ("squirrelname", "")
             }
+        let! myResponse =
+            Ok dataToValidate
+            |> Result.bind validateForm
+            |> TaskResult.bindToTask insertRequestToDatabase
         let jsonResponse =
-            match validateForm dataToValidate with
-            | Ok dataToSave ->
-                let! insertionResult = insertTrainingRequest dataToSave
-                Response.withStatusCode 200 >> Response.ofJson insertionResult
-            | Error validationFailure ->
-                Response.withStatusCode 400 >> Response.ofJson validationFailure
+            match myResponse with
+            | Ok trainingRequestResponse ->
+                Response.withStatusCode 200 >> Response.ofJson trainingRequestResponse
+            | Error trainingRequestResponse when trainingRequestResponse.ValidationFailures.IsSome ->
+                Response.withStatusCode 400 >> Response.ofJson trainingRequestResponse
+            | Error trainingRequestResponse ->
+                Response.withStatusCode 500 >> Response.ofJson trainingRequestResponse
         return! jsonResponse ctx
     }
