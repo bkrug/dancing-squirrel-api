@@ -1,6 +1,6 @@
 module TaskResult
 
-let bindFromTaskToTask fRA vRA = task { 
+let bind fRA vRA = task { 
     let! vR = vRA
     match vR with
     | Ok    v -> return! fRA v
