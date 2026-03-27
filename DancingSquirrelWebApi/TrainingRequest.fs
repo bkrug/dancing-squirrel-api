@@ -5,8 +5,9 @@ open System.Text.RegularExpressions
 open DbLayer
 open Falco
 open SqlHydra.Query
+open System.Threading.Tasks
 
-let connStr = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrelError.db;"
+let connStr = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db;"
 let db = Database.QueryContextFactory.Create(connStr, printfn "SQL: %O")
 
 type TrainingRequestForm =
@@ -33,6 +34,10 @@ type TrainingRequestResponse =
         IsInternalError: bool;
         ValidationFailures: Option<TrainingRequestValidation>;
     }
+
+type CaretakerType =
+    | Person = 1
+    | Company = 2
 
 [<Literal>]
 let requiredMessage = "is required"
@@ -152,9 +157,11 @@ let insertRequestToDatabase (form : TrainingRequestForm) =
 let createTrainingRequest : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
+        let typeFromForm = form.GetInt("caretakertype", 0)
+        let enumCastAsInt = int CaretakerType.Person
         let dataToValidate =
             {
-                IsPerson = form.GetString("caretakertype", "") = "person"
+                IsPerson = typeFromForm = enumCastAsInt
                 CaretakerName = form.GetString ("caretakername", "")
                 Email = form.GetString ("email", "")
                 Phone = form.GetString ("phone", "")
