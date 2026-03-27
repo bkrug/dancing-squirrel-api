@@ -167,7 +167,7 @@ let createTrainingRequest : HttpHandler = fun ctx ->
         let jsonResponse =
             match resultOfChain with
             | Ok trainingRequestResponse ->
-                Response.withStatusCode 200 >> Response.ofJson trainingRequestResponse
+                Response.withStatusCode 201 >> Response.ofJson trainingRequestResponse
             | Error trainingRequestResponse when trainingRequestResponse.ValidationFailures.IsSome ->
                 Response.withStatusCode 400 >> Response.ofJson trainingRequestResponse
             | Error trainingRequestResponse ->
