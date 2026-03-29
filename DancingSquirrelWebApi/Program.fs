@@ -12,7 +12,6 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open TrainingRequest
 open GlobalExceptionHandler
-open ResultTest
 
 let endpoints =
     [
