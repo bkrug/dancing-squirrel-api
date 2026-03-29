@@ -5,7 +5,6 @@ open System.Text.RegularExpressions
 open DbLayer
 open Falco
 open SqlHydra.Query
-open System.Threading.Tasks
 
 let connStr = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db;"
 let db = Database.QueryContextFactory.Create(connStr, printfn "SQL: %O")
