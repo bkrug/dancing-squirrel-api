@@ -46,7 +46,7 @@ let validateRequiredName nameValue =
         | "" -> Error requiredMessage
         | _ -> Ok()
 
-let emailRegex = Regex(@"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$")
+let emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
 let validateEmail (value : string) =
     match value with
     | var1 when emailRegex.IsMatch var1 -> Ok()
@@ -55,8 +55,8 @@ let validateEmail (value : string) =
 
 // Must have exactly 10 digits, or a 1 followed by exactly 10 digits.
 // Non-digits are accepted and ignored.
-let unitedStatePhoneRegex = Regex(@"^1?([^\d]*\d){10}[^\d]*$")
-let containsLetterRegex = Regex(@"[a-zA-Z]+")
+let unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
+let containsLetterRegex = Regex @"[a-zA-Z]+"
 let validatePhone (value : string) =
     match value with
     | "" -> Ok()
