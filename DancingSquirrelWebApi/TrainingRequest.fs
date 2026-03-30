@@ -2,12 +2,10 @@ module TrainingRequest
 
 open System
 open System.Text.RegularExpressions
+open DbEnv
 open DbLayer
 open Falco
 open SqlHydra.Query
-
-let connStr = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db;"
-let db = Database.QueryContextFactory.Create(connStr, printfn "SQL: %O")
 
 type TrainingRequestForm =
     {
@@ -99,8 +97,9 @@ let validateForm (form : TrainingRequestForm) =
                 }
             }
 
-let insertRequestToDatabase (form : TrainingRequestForm) =
+let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
     task {
+        let db = env.GetDb()
         use! shared = db.OpenContextAsync()
         shared.BeginTransaction()
         try
@@ -130,12 +129,11 @@ let insertRequestToDatabase (form : TrainingRequestForm) =
                     }
                     getId so.SquirrelOwnerId
                 }
-            let! squirrelId =
-                insertTask shared {
-                    for s in Database.main.Squirrel do
-                    entity { SquirrelId = 0; Name = form.SquirrelName; SquirrelOwnerId = ownerId }
-                    getId s.SquirrelId
-                }
+            insertTask shared {
+                for s in Database.main.Squirrel do
+                entity { SquirrelId = 0; Name = form.SquirrelName; SquirrelOwnerId = ownerId }
+                getId s.SquirrelId
+            } |> ignore
             shared.CommitTransaction()
             return Ok {
                 IsSuccess = true
@@ -153,7 +151,26 @@ let insertRequestToDatabase (form : TrainingRequestForm) =
             }
     }
 
-let createTrainingRequest : HttpHandler = fun ctx ->
+// let testFunc (ctx : Microsoft.AspNetCore.Http.HttpContext) : Threading.Tasks.Task =
+//     task {
+//         return 4
+//     }
+
+// let apply2 (f: int -> int -> int) x y = f x y
+
+// let mul x y = x * y
+
+// let result2 = apply2 mul 10 20
+
+// let someFunctionToDemonstratePoint (env : IGetDb) : HttpHandler = fun ctx ->
+//     task {
+//         let db = env.GetDb
+//         let! form = Request.getForm ctx
+//         let! r = Response.ofPlainText "Hello" ctx
+//         return r
+//     }
+
+let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
         let typeFromForm = form.GetInt("caretakertype", 0)
@@ -166,10 +183,11 @@ let createTrainingRequest : HttpHandler = fun ctx ->
                 Phone = form.GetString ("phone", "")
                 SquirrelName = form.GetString ("squirrelname", "")
             }
+        let insertRequest2 (form : TrainingRequestForm) = insertRequestToDatabase form env
         let! resultOfChain =
             Ok dataToValidate
             |> Result.bind validateForm
-            |> TaskResult.bindToTask insertRequestToDatabase
+            |> TaskResult.bindToTask insertRequest2
         let jsonResponse =
             match resultOfChain with
             | Ok trainingRequestResponse ->

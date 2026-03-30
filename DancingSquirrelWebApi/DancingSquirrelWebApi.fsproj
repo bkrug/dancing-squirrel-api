@@ -5,7 +5,7 @@
   <ItemGroup><Compile Include="TaskResult.fs" /><Compile Include="GlobalExceptionHandler.fs" /><Compile Include="ConfigurationSources.fs" />
     <Compile Include="DatabaseModels.fs">
       <Visible>False</Visible>
-    </Compile><Compile Include="TrainingRequest.fs" />
+    </Compile><Compile Include="DbEnv.fs" /><Compile Include="TrainingRequest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,9 @@
+open DbEnv
+open DbLayer
 open Falco
 open Falco.Routing
 open Falco.OpenApi
+open GlobalExceptionHandler
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
@@ -11,11 +14,12 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open TrainingRequest
-open GlobalExceptionHandler
+
+let curEnv = new DbGetter()
 
 let endpoints =
     [
-        post "/api/request/create" createTrainingRequest
+        post "/api/request/create" (createTrainingRequest curEnv)
     ]
 
 [<Literal>]
@@ -31,6 +35,8 @@ builder.Services.AddCors(fun options ->
     ) |> ignore
 ) |> ignore
 
+let connStr = builder.Configuration.GetConnectionString("DancingSquirrelDb");
+let db = Database.QueryContextFactory.Create(connStr, printfn "SQL: %O")
 
 builder.Services.AddEndpointsApiExplorer() |> ignore
 builder.Services
