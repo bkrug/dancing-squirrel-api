@@ -151,25 +151,6 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
             }
     }
 
-// let testFunc (ctx : Microsoft.AspNetCore.Http.HttpContext) : Threading.Tasks.Task =
-//     task {
-//         return 4
-//     }
-
-// let apply2 (f: int -> int -> int) x y = f x y
-
-// let mul x y = x * y
-
-// let result2 = apply2 mul 10 20
-
-// let someFunctionToDemonstratePoint (env : IGetDb) : HttpHandler = fun ctx ->
-//     task {
-//         let db = env.GetDb
-//         let! form = Request.getForm ctx
-//         let! r = Response.ofPlainText "Hello" ctx
-//         return r
-//     }
-
 let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
@@ -183,11 +164,11 @@ let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
                 Phone = form.GetString ("phone", "")
                 SquirrelName = form.GetString ("squirrelname", "")
             }
-        let insertRequest2 (form : TrainingRequestForm) = insertRequestToDatabase form env
+        let insertRequestToConfiguredDb (form : TrainingRequestForm) = insertRequestToDatabase form env
         let! resultOfChain =
             Ok dataToValidate
             |> Result.bind validateForm
-            |> TaskResult.bindToTask insertRequest2
+            |> TaskResult.bindToTask insertRequestToConfiguredDb
         let jsonResponse =
             match resultOfChain with
             | Ok trainingRequestResponse ->

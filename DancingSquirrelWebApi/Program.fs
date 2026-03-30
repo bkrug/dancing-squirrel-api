@@ -15,13 +15,6 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open TrainingRequest
 
-let curEnv = new DbGetter()
-
-let endpoints =
-    [
-        post "/api/request/create" (createTrainingRequest curEnv)
-    ]
-
 [<Literal>]
 let allowedOriginsPolicy = "DancingSquirrelOrigins"
 
@@ -35,9 +28,6 @@ builder.Services.AddCors(fun options ->
     ) |> ignore
 ) |> ignore
 
-let connStr = builder.Configuration.GetConnectionString("DancingSquirrelDb");
-let db = Database.QueryContextFactory.Create(connStr, printfn "SQL: %O")
-
 builder.Services.AddEndpointsApiExplorer() |> ignore
 builder.Services
     .AddFalcoOpenApi()
@@ -48,6 +38,14 @@ builder.Services
     )
     //.AddSwaggerGen()
     |> ignore
+
+let connStrOld = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db;"
+let connStr = builder.Configuration.GetConnectionString("DancingSquirrelDb")
+let curEnv = new DbGetter(connStr)
+let endpoints =
+    [
+        post "/api/request/create" (createTrainingRequest curEnv)
+    ]
 
 let wApp = builder.Build()
 
