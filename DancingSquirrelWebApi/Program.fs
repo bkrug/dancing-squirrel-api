@@ -1,5 +1,4 @@
 open DbEnv
-open DbLayer
 open Falco
 open Falco.Routing
 open Falco.OpenApi
@@ -39,7 +38,6 @@ builder.Services
     //.AddSwaggerGen()
     |> ignore
 
-let connStrOld = "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db;"
 let connStr = builder.Configuration.GetConnectionString("DancingSquirrelDb")
 let curEnv = new DbGetter(connStr)
 let endpoints =
