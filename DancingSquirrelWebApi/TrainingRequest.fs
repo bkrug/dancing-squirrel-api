@@ -1,6 +1,7 @@
 module TrainingRequest
 
 open System
+open System.Collections.Generic
 open System.Text.RegularExpressions
 open DbEnv
 open DbLayer
@@ -90,17 +91,20 @@ let removeNonDigits givenString =
     |> Seq.toArray
     |> String
 
+let getValidationMessage keyName (validationResults: IDictionary<string,Result<unit,string>>) =
+    match validationResults[keyName] with | Error msg -> msg | _ -> ""
+
 let validateForm (form : TrainingRequestForm) =
     let validationResults =
-        [
-            validateCompanyName form;
-            validateFirstName form;
-            validateLastName form;
-            validateEmail form.Email;
-            validatePhone form.Phone;
-            validateRequiredName form.SquirrelName;
+        dict [
+            nameof form.CaretakerCompanyName,   validateCompanyName form;
+            nameof form.CaretakerFirstName,     validateFirstName form;
+            nameof form.CaretakerLastName,      validateLastName form;
+            nameof form.Email,                  validateEmail form.Email;
+            nameof form.Phone,                  validatePhone form.Phone;
+            nameof form.SquirrelName,           validateRequiredName form.SquirrelName;
         ]
-    let failureCount = Seq.filter (fun (kvp : Result<unit, string>) -> kvp.IsError) validationResults |> Seq.length
+    let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
     match failureCount with
         | 0 -> Ok {
                 IsPerson = form.IsPerson
@@ -116,12 +120,12 @@ let validateForm (form : TrainingRequestForm) =
                 IsInternalError = false
                 ValidationFailures = Some {
                     CaretakerType = ""
-                    CaretakerCompanyName = match validationResults[0] with | Error msg -> msg | _ -> ""
-                    CaretakerFirstName = match validationResults[1] with | Error msg -> msg | _ -> ""
-                    CaretakerLastName = match validationResults[2] with | Error msg -> msg | _ -> ""
-                    Email = match validationResults[3] with | Error msg -> msg | _ -> ""
-                    Phone = match validationResults[4] with | Error msg -> msg | _ -> ""
-                    SquirrelName = match validationResults[5] with | Error msg -> msg | _ -> ""
+                    CaretakerCompanyName = getValidationMessage (nameof form.CaretakerCompanyName) validationResults
+                    CaretakerFirstName = getValidationMessage (nameof form.CaretakerFirstName) validationResults
+                    CaretakerLastName = getValidationMessage (nameof form.CaretakerLastName) validationResults
+                    Email = getValidationMessage (nameof form.Email) validationResults
+                    Phone = getValidationMessage (nameof form.Phone) validationResults
+                    SquirrelName = getValidationMessage (nameof form.SquirrelName) validationResults
                 }
             }
 
