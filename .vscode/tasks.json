@@ -16,7 +16,7 @@
 		{
 			"label": "Generate DDL",
 			"type": "shell",
-			"command": "sqlite3 ./Database/DancingSquirrel.db '.schema' > ./Database/schema.sql"
+			"command": "bash ./Database/schemaGeneration.sh"
 		},
 		{
 			"label": "Build",
