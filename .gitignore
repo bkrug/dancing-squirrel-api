@@ -276,3 +276,5 @@ paket-files/
 # Store DDL scripts to the repo, not the database itself
 # (see /Database/schema.sql)
 Database/*.db
+Database/*.db-shm
+Database/*.db-wal

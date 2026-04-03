@@ -29,6 +29,6 @@ let registerHandler (createScope : unit -> IServiceScope) : HttpHandler = fun ct
                 //  Passwords must have at least one digit ('0'-'9').
                 //  Passwords must have at least one uppercase ('A'-'Z').
                 let errors = result.Errors |> Seq.map (fun e -> e.Description)  |> List.ofSeq
-                Response.withStatusCode 500 >> Response.ofJson errors
+                Response.withStatusCode 400 >> Response.ofJson errors
         return! jsonResponse ctx            
     }
