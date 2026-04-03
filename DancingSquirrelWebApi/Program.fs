@@ -1,4 +1,4 @@
-open DbEnv
+open ExternalDependencies
 open Falco
 open Falco.Routing
 open Falco.OpenApi
@@ -14,6 +14,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
+open RegistrationEndpoints
 open System
 open SecureEnpoints
 open SecurityDbLayer
@@ -44,7 +45,7 @@ builder.Services
     |> ignore
 
 let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
-builder.Services.AddDbContext<SecurityDbLayer.SecurityDbContext>(fun options ->
+builder.Services.AddDbContext<SecurityDbContext>(fun options ->
     options.UseSqlite(securityConnectionString) |> ignore
     ) |> ignore
 builder.Services.AddDatabaseDeveloperPageExceptionFilter() |> ignore
@@ -64,7 +65,7 @@ builder.Services.Configure<IdentityOptions>(fun (options: IdentityOptions) ->
     options.Password.RequiredUniqueChars <- 1
 
     // Lockout settings.
-    options.Lockout.DefaultLockoutTimeSpan <- System.TimeSpan.FromMinutes(int64 5)
+    options.Lockout.DefaultLockoutTimeSpan <- TimeSpan.FromMinutes(int64 5)
     options.Lockout.MaxFailedAccessAttempts <- 5
     options.Lockout.AllowedForNewUsers <- true
 
@@ -76,22 +77,30 @@ builder.Services.Configure<IdentityOptions>(fun (options: IdentityOptions) ->
 builder.Services.ConfigureApplicationCookie(fun options ->
     // Cookie settings
     options.Cookie.HttpOnly <- true
-    options.ExpireTimeSpan <- System.TimeSpan.FromMinutes(int64 5)
+    options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 5)
 
     options.LoginPath <- "/Identity/Account/Login"
     options.AccessDeniedPath <- "/Identity/Account/AccessDenied"
     options.SlidingExpiration <- true
 ) |> ignore
 
-let connStr = builder.Configuration.GetConnectionString("DancingSquirrelDb")
+let wApp = builder.Build()
+
+let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
 let curEnv = new DbGetter(connStr)
+let createScope = wApp.Services.CreateScope
+let getUserManager = fun () ->
+    use scope = wApp.Services.CreateScope()
+    //Resolve ASP .NET Core Identity with DI help
+    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+    userManager
+
 let endpoints =
     [
         post "/api/request/create" (createTrainingRequest curEnv)
         get "/api/totalyauthenticated" secureResourceHandler
+        post "/api/register" (registerHandler createScope)
     ]
-
-let wApp = builder.Build()
 
 wApp.UseRouting() |> ignore
 wApp.UseOpenApi() |> ignore

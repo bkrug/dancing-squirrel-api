@@ -1,6 +1,7 @@
 module ExternalDependencies
 
 open DbLayer
+open Microsoft.AspNetCore.Identity
 
 type IGetDb =
     abstract member GetDb: unit -> Database.QueryContextFactory

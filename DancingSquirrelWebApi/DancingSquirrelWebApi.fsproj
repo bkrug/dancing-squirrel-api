@@ -2,14 +2,14 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
-  <ItemGroup><Compile Include="SecurityDbContext.fs" />
+  <ItemGroup><Compile Include="Debugging.fs" /><Compile Include="SecurityDbContext.fs" />
     <Compile Include="TaskResult.fs" />
     <Compile Include="GlobalExceptionHandler.fs" />
-    <Compile Include="ConfigurationSources.fs" />
+    
     <Compile Include="DatabaseModels.fs">
       <Visible>False</Visible>
     </Compile>
-    <Compile Include="DbEnv.fs" />
+    <Compile Include="ExternalDependencies.fs" /><Compile Include="RegistrationEndpoints.fs" />
     <Compile Include="SecureEndpoints.fs" />
     <Compile Include="TrainingRequest.fs" />
     <Compile Include="Program.fs" />
