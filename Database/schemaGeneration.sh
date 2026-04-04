@@ -1,2 +1,2 @@
-sqlite3 ./Database/DancingSquirrel.db '.schema' > ./Database/dancingSquirrelSchema.sql
-sqlite3 ./Database/Security.db '.schema' > ./Database/securitySchema.sql
+sqlite3 ./Database/DancingSquirrel.db '.schema' > ./Database/schemaDancingSquirrel.sql
+sqlite3 ./Database/Security.db '.schema' > ./Database/schemaSecurity.sql
