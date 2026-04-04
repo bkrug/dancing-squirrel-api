@@ -1,8 +1,8 @@
-open ExternalDependencies
+open Endpoints
 open Falco
-open Falco.Routing
 open Falco.OpenApi
 open GlobalExceptionHandler
+open AspNetIdentityCoreExtensions
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
@@ -14,11 +14,6 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
-open RegistrationEndpoints
-open System
-open SecureEnpoints
-open SecurityDbLayer
-open TrainingRequest
 
 [<Literal>]
 let allowedOriginsPolicy = "DancingSquirrelOrigins"
@@ -39,65 +34,9 @@ builder.Services
     .AddSwaggerGen() |> ignore
 
 let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
-builder.Services.AddDbContext<SecurityDbContext>(fun options ->
-    options.UseSqlite(securityConnectionString) |> ignore
-    ) |> ignore
-builder.Services.AddDatabaseDeveloperPageExceptionFilter() |> ignore
-
-builder.Services
-    .AddDefaultIdentity<IdentityUser>(fun options -> options.SignIn.RequireConfirmedAccount <- true)
-    .AddEntityFrameworkStores<SecurityDbContext>() |> ignore
-builder.Services.AddRazorPages() |> ignore
-
-builder.Services.Configure<IdentityOptions>(fun (options: IdentityOptions) ->
-    // Password settings.
-    options.Password.RequireDigit <- true
-    options.Password.RequireLowercase <- true
-    options.Password.RequireNonAlphanumeric <- true
-    options.Password.RequireUppercase <- true
-    options.Password.RequiredLength <- 6
-    options.Password.RequiredUniqueChars <- 1
-
-    // Lockout settings.
-    options.Lockout.DefaultLockoutTimeSpan <- TimeSpan.FromMinutes(int64 5)
-    options.Lockout.MaxFailedAccessAttempts <- 5
-    options.Lockout.AllowedForNewUsers <- true
-
-    // User settings.
-    options.User.AllowedUserNameCharacters <- "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+"
-    options.User.RequireUniqueEmail <- true
-) |> ignore
-
-builder.Services.ConfigureApplicationCookie(fun options ->
-    // Cookie settings
-    options.Cookie.HttpOnly <- true
-    options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 5)
-
-    options.LoginPath <- "/Identity/Account/Login"
-    options.AccessDeniedPath <- "/Identity/Account/AccessDenied"
-    options.SlidingExpiration <- true
-) |> ignore
+builder.Services.AddAspNetIdentityAuthentication(securityConnectionString) |> ignore
 
 let wApp = builder.Build()
-
-let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
-let curEnv = new DbGetter(connStr)
-let createScope = wApp.Services.CreateScope
-let createUserAsync = fun user password ->
-    task {
-        use scope = wApp.Services.CreateScope()
-        //Resolve ASP .NET Core Identity with DI help
-        use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
-        return! userManager.CreateAsync(user, password)
-    }
-
-let endpoints =
-    [
-        post "/api/request/create" (createTrainingRequest curEnv)
-        get "/api/totalyauthenticated" secureResourceHandler
-        post "/api/register" (registerHandler createUserAsync)
-            |> OpenApi.acceptsType typeof<RegisterModel>
-    ]
 
 wApp.UseRouting() |> ignore
 wApp.UseHttpsRedirection()
@@ -105,5 +44,5 @@ wApp.UseHttpsRedirection()
     .UseSwaggerUI() |> ignore
 wApp.UseCors(allowedOriginsPolicy) |> ignore
 wApp.UseMiddleware<ExHandler>() |> ignore
-wApp.UseFalco(endpoints)
+wApp.UseFalco(getEndpoints wApp)
     .Run(Response.withStatusCode 404 >> Response.ofPlainText "Not found")

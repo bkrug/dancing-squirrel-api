@@ -7,13 +7,15 @@
     <Compile Include="SecurityDbContext.fs" />
     <Compile Include="TaskResult.fs" />
     <Compile Include="GlobalExceptionHandler.fs" />
-    
     <Compile Include="DatabaseModels.fs">
       <Visible>False</Visible>
     </Compile>
-    <Compile Include="ExternalDependencies.fs" /><Compile Include="RegistrationEndpoints.fs" />
+    <Compile Include="ExternalDependencies.fs" />
+    <Compile Include="RegistrationEndpoints.fs" />
     <Compile Include="SecureEndpoints.fs" />
     <Compile Include="TrainingRequest.fs" />
+    <Compile Include="AspNetIdentityCoreExtensions.fs" />
+    <Compile Include="Endpoints.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
