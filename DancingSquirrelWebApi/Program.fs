@@ -1,8 +1,8 @@
+open AspNetIdentityCoreExtensions
 open Endpoints
 open Falco
 open Falco.OpenApi
 open GlobalExceptionHandler
-open AspNetIdentityCoreExtensions
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting

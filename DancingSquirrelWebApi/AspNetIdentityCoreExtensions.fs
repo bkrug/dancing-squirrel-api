@@ -23,7 +23,7 @@ type IServiceCollection with
 
         this.AddDefaultIdentity<IdentityUser>(fun options -> options.SignIn.RequireConfirmedAccount <- true)
             .AddEntityFrameworkStores<SecurityDbContext>() |> ignore
-        this.AddRazorPages() |> ignore
+        //this.AddRazorPages() |> ignore
 
         this.Configure<IdentityOptions>(fun (options: IdentityOptions) ->
             // Password settings.

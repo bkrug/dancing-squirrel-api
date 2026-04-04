@@ -19,8 +19,10 @@ open SecureEnpoints
 open TrainingRequestEndpoints
 
 let getEndpoints (wApp : WebApplication) =
+    //Prepare a set of dependencies that hide the messy outside world from our deterministic code
     let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
     let curEnv = new DbGetter(connStr)
+
     let createUserAsync = fun user password ->
         task {
             use scope = wApp.Services.CreateScope()
@@ -28,11 +30,29 @@ let getEndpoints (wApp : WebApplication) =
             use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
             return! userManager.CreateAsync(user, password)
         }
+
+    let loginUserAsync = fun (user: string) (password: string) (isPersistent: bool) (lockoutOnFailure: bool) ->
+        task {
+            use scope = wApp.Services.CreateScope()
+            let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
+            return! signInManager.PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure)
+        }
+    
+    let logoutUserAsync = fun () ->
+        task {
+            use scope = wApp.Services.CreateScope()
+            let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
+            return! signInManager.SignOutAsync()
+        }
+        
+    //This list of endpoints available in our application
     let endpoints =
         [
             post "/api/request/create" (createTrainingRequest curEnv)
             get "/api/totalyauthenticated" secureResourceHandler
-            post "/api/register" (registerHandler createUserAsync)
+            post "/api/security/register" (registerNewUserHandler createUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
+            post "/api/security/login" (loginUserHandler loginUserAsync)
+                |> OpenApi.acceptsType typeof<LoginModel>
         ]
     endpoints
