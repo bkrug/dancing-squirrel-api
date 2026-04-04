@@ -16,7 +16,7 @@ open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
 open RegistrationEndpoints
 open SecureEnpoints
-open TrainingRequest
+open TrainingRequestEndpoints
 
 let getEndpoints (wApp : WebApplication) =
     let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
