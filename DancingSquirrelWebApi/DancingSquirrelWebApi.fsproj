@@ -13,7 +13,7 @@
     <Compile Include="ExternalDependencies.fs" />
     <Compile Include="RegistrationEndpoints.fs" />
     <Compile Include="SecureEndpoints.fs" />
-    <Compile Include="TrainingRequest.fs" />
+    <Compile Include="TrainingRequestEndpoints.fs" />
     <Compile Include="AspNetIdentityCoreExtensions.fs" />
     <Compile Include="Endpoints.fs" />
     <Compile Include="Program.fs" />
