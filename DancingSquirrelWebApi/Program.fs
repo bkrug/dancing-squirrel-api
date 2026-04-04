@@ -36,13 +36,7 @@ builder.Services.AddCors(fun options ->
 builder.Services.AddEndpointsApiExplorer() |> ignore
 builder.Services
     .AddFalcoOpenApi()
-    .AddOpenApiDocument(fun config ->
-        config.DocumentName <- "Dancing Squirrel Api"
-        config.Title <- "Dancing Squire Api v1"
-        config.Version <- "v1"
-    )
-    //.AddSwaggerGen()
-    |> ignore
+    .AddSwaggerGen() |> ignore
 
 let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
 builder.Services.AddDbContext<SecurityDbContext>(fun options ->
@@ -89,27 +83,26 @@ let wApp = builder.Build()
 let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
 let curEnv = new DbGetter(connStr)
 let createScope = wApp.Services.CreateScope
-let getUserManager = fun () ->
-    use scope = wApp.Services.CreateScope()
-    //Resolve ASP .NET Core Identity with DI help
-    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
-    userManager
+let createUserAsync = fun user password ->
+    task {
+        use scope = wApp.Services.CreateScope()
+        //Resolve ASP .NET Core Identity with DI help
+        use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+        return! userManager.CreateAsync(user, password)
+    }
 
 let endpoints =
     [
         post "/api/request/create" (createTrainingRequest curEnv)
         get "/api/totalyauthenticated" secureResourceHandler
-        post "/api/register" (registerHandler createScope)
+        post "/api/register" (registerHandler createUserAsync)
+            |> OpenApi.acceptsType typeof<RegisterModel>
     ]
 
 wApp.UseRouting() |> ignore
-wApp.UseOpenApi() |> ignore
-wApp.UseSwaggerUi(fun config ->
-    config.DocumentTitle <- "Dancing Squirrel Endpoints"
-    config.Path <- "/swagger"
-    config.DocumentPath <- "/swagger/{documentName}/swagger.json"
-    config.DocExpansion <- "list"
-) |> ignore
+wApp.UseHttpsRedirection()
+    .UseSwagger()
+    .UseSwaggerUI() |> ignore
 wApp.UseCors(allowedOriginsPolicy) |> ignore
 wApp.UseMiddleware<ExHandler>() |> ignore
 wApp.UseFalco(endpoints)

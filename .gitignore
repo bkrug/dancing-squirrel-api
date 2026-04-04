@@ -273,8 +273,11 @@ paket-files/
 # CodeRush
 .cr/
 
-# Store DDL scripts to the repo, not the database itself
+# We store DDL scripts to the repo, but do not store the database itself
 # (see /Database/schema.sql)
 Database/*.db
 Database/*.db-shm
 Database/*.db-wal
+
+# Contains passwords
+TestUsers.txt

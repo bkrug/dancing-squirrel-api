@@ -2,7 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
-  <ItemGroup><Compile Include="Debugging.fs" /><Compile Include="SecurityDbContext.fs" />
+  <ItemGroup>
+    <Compile Include="Debugging.fs" />
+    <Compile Include="SecurityDbContext.fs" />
     <Compile Include="TaskResult.fs" />
     <Compile Include="GlobalExceptionHandler.fs" />
     
@@ -29,5 +31,6 @@
     </PackageReference>
     <PackageReference Include="NSwag.AspNetCore" Version="14.6.3" />
     <PackageReference Include="SqlHydra.Query" Version="3.5.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 </Project>

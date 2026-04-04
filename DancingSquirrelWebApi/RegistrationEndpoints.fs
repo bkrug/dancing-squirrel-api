@@ -2,33 +2,38 @@ module RegistrationEndpoints
 
 open Falco
 open System.Web
+open System.Text.Json
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Identity
-open Microsoft.Extensions.DependencyInjection
 
 type RegisterModel = 
     {
-        // it's okay this is capitalized. 
         Email : string
+        Username: string
+        //TODO: Better practice is to generate a one-time password upon creation. Not accept one from the user.
         Password : string
     }
 
-let registerHandler (createScope : unit -> IServiceScope) : HttpHandler = fun ctx -> 
+let registerHandler (createUserAsync : IdentityUser -> string -> Task<IdentityResult>) : HttpHandler = fun ctx -> 
     task {
-        use scope = createScope()
-        //Resolve ASP .NET Core Identity with DI help
-        use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
-        let user = IdentityUser(Email = "benjaminkrug@yahoo.com", UserName = "bjkrug")
-        let! result = userManager.CreateAsync(user, "passworD123!")
+        let! jsonString = Request.getBodyString ctx
+        let options: JsonSerializerOptions = JsonSerializerOptions()
+        options.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase
+        let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, options)
+
+        let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username)
+        let! userCreationResult = createUserAsync user registrationData.Password
 
         let jsonResponse =
-            match result.Succeeded with
+            match userCreationResult.Succeeded with
             | true -> Response.withStatusCode 201 >> Response.ofJson "success"
             | _ ->
                 // result.Errors contains stuff like:
                 //  Passwords must have at least one non alphanumeric character.
                 //  Passwords must have at least one digit ('0'-'9').
                 //  Passwords must have at least one uppercase ('A'-'Z').
-                let errors = result.Errors |> Seq.map (fun e -> e.Description)  |> List.ofSeq
+                let errors = userCreationResult.Errors |> Seq.map (fun e -> e.Description)  |> List.ofSeq
                 Response.withStatusCode 400 >> Response.ofJson errors
+
         return! jsonResponse ctx            
     }
