@@ -28,14 +28,24 @@ let getEndpoints (wApp : WebApplication) =
             use scope = wApp.Services.CreateScope()
             //Resolve ASP .NET Core Identity with DI help
             use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
-            return! userManager.CreateAsync(user, password)
+            let creationResult = userManager.CreateAsync(user, password)
+            return! creationResult
         }
 
-    let loginUserAsync = fun (user: string) (password: string) (isPersistent: bool) (lockoutOnFailure: bool) ->
+    let loginUserAsync = fun (username: string) (password: string) (isPersistent: bool) (lockoutOnFailure: bool) ->
         task {
             use scope = wApp.Services.CreateScope()
             let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
-            return! signInManager.PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure)
+            return! signInManager.PasswordSignInAsync(username, password, isPersistent, lockoutOnFailure)
+        }
+
+    let loginUserAsync2 = fun (username: string) (password: string) (isPersistent: bool) (lockoutOnFailure: bool) ->
+        task {
+            use scope = wApp.Services.CreateScope()
+            let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
+            let! user = signInManager.UserManager.FindByNameAsync(username)
+            let! checkResult = signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure)
+            return checkResult
         }
     
     let logoutUserAsync = fun () ->
@@ -52,7 +62,7 @@ let getEndpoints (wApp : WebApplication) =
             get "/api/totalyauthenticated" secureResourceHandler
             post "/api/security/register" (registerNewUserHandler createUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
-            post "/api/security/login" (loginUserHandler loginUserAsync)
+            post "/api/security/login4" (loginUserWithClaimsHandler4 loginUserAsync2)
                 |> OpenApi.acceptsType typeof<LoginModel>
         ]
     endpoints

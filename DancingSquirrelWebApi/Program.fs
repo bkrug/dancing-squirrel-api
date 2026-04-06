@@ -4,16 +4,18 @@ open Falco
 open Falco.OpenApi
 open GlobalExceptionHandler
 open Microsoft.AspNetCore
+open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Hosting
-open Microsoft.AspNetCore.HttpsPolicy
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Hosting
-open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Configuration.Json
+open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.HttpsPolicy
 open Microsoft.AspNetCore.Identity
+open Microsoft.Extensions.Configuration.Json
+open Microsoft.Extensions.Logging
 open Microsoft.EntityFrameworkCore
+open System
 
 [<Literal>]
 let allowedOriginsPolicy = "DancingSquirrelOrigins"
@@ -33,11 +35,22 @@ builder.Services
     .AddFalcoOpenApi()
     .AddSwaggerGen() |> ignore
 
-let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
-builder.Services.AddAspNetIdentityAuthentication(securityConnectionString) |> ignore
+// let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
+// builder.Services.AddAspNetIdentityAuthentication(securityConnectionString, allowedOrigins) |> ignore
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(fun options ->
+        options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 20)
+        options.SlidingExpiration <- true
+        options.AccessDeniedPath <- "/Forbidden/";
+    ) |> ignore
+builder.Services.AddAuthorization() |> ignore
+//builder.Services.ConfigureIdentity() |> ignore
 
 let wApp = builder.Build()
 
+wApp.UseAuthentication() |> ignore
+wApp.UseAuthorization() |> ignore
 wApp.UseRouting() |> ignore
 wApp.UseHttpsRedirection()
     .UseSwagger()

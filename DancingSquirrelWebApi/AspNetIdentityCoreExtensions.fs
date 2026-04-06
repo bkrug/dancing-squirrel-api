@@ -11,14 +11,23 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
+open Microsoft.AspNetCore.Authentication.JwtBearer
 open System
 open SecurityDbLayer
 
 type IServiceCollection with
-    member this.AddAspNetIdentityAuthentication(securityConnectionString: string) =
+    member this.AddAspNetIdentityAuthentication(securityConnectionString: string, allowedOrigins: string[]) =
         this.AddDbContext<SecurityDbContext>(fun options ->
             options.UseSqlite(securityConnectionString) |> ignore
             ) |> ignore
+
+        //this.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        this.AddAuthentication("Identity.Application")
+            .AddJwtBearer(fun jwtOptions ->
+                jwtOptions.Authority <- "https://example.com";
+                jwtOptions.Audience <- allowedOrigins[0];
+            ) |> ignore
+
         this.AddDatabaseDeveloperPageExceptionFilter() |> ignore
 
         this.AddDefaultIdentity<IdentityUser>(fun options -> options.SignIn.RequireConfirmedAccount <- true)

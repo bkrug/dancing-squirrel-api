@@ -21,6 +21,7 @@
   <ItemGroup>
     <PackageReference Include="Falco" Version="5.*" />
     <PackageReference Include="Falco.OpenApi" Version="1.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.5" />

@@ -1,10 +1,19 @@
 module RegistrationEndpoints
 
-open Falco
 open System.Web
 open System.Text.Json
 open System.Threading.Tasks
+open System.Security.Claims
+open Falco
+open Microsoft.AspNetCore.Authentication
+open Microsoft.AspNetCore.Authentication.JwtBearer
+open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Identity
+
+//When adding authentiction to an app, start with HttpOnly cookie authentication.
+//https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0
+//
+//Once you have successful use of HttpOnly cookies, worry about AspNetCore Identity later.
 
 type RegisterModel = 
     {
@@ -47,21 +56,65 @@ let registerNewUserHandler (createUserAsync : IdentityUser -> string -> Task<Ide
         return! jsonResponse ctx            
     }
 
-//TODO: This tests the password, but it doesn't return a token to the user
-let loginUserHandler (loginUserAsync : string -> string -> bool -> bool -> Task<SignInResult>) : HttpHandler = fun ctx ->
+let loginUserWithClaimsHandler4 (loginUserAsync : string -> string -> bool -> bool -> Task<SignInResult>): HttpHandler = fun ctx ->
     task {
         let! jsonString = Request.getBodyString ctx
         let loginData = JsonSerializer.Deserialize<LoginModel>(jsonString, defaultJsonOptions)
 
-        let! loginResult = loginUserAsync loginData.Username loginData.Password false false
+        // let! loginResult = loginUserAsync loginData.Username loginData.Password false false
 
-        let jsonResponse =
-            match loginResult with
-            | r when r.Succeeded = true -> Response.withStatusCode 200 >> Response.ofJson "TODO - success"
-            | r when r.IsLockedOut = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - locked out"
-            | r when r.IsNotAllowed = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - not allowed"
-            | r when r.RequiresTwoFactor = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - requires MFA"
-            | _ -> Response.withStatusCode 400 >> Response.ofJson "TODO"
+        // let jsonResponse =
+        //     match loginResult with
+        //     | r when r.Succeeded = true -> Response.withStatusCode 200 >> Response.ofJson "TODO - success"
+        //     | r when r.IsNotAllowed = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - incorrect password"
+        //     | r when r.IsLockedOut = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - locked out"
+        //     | r when r.RequiresTwoFactor = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - requires MFA"
+        //     | _ -> Response.withStatusCode 400 >> Response.ofJson "TODO"        
+
+        let claims =
+            seq {
+                new Claim(ClaimTypes.Name, "user.Email");
+                new Claim("FullName", "user.FullName");
+                new Claim(ClaimTypes.Role, "Administrator");
+            };
+
+        let claimsIdentity = new ClaimsIdentity(
+            claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+        //I can't figure out how to use auth Properties with Falco
+        let authProperties = new AuthenticationProperties (
+            AllowRefresh = true
+            // Refreshing the authentication session should be allowed.
+
+            //ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(10),
+            // The time at which the authentication ticket expires. A 
+            // value set here overrides the ExpireTimeSpan option of 
+            // CookieAuthenticationOptions set with AddCookie.
+
+            //IsPersistent = true,
+            // Whether the authentication session is persisted across 
+            // multiple requests. When used with cookies, controls
+            // whether the cookie's lifetime is absolute (matching the
+            // lifetime of the authentication ticket) or session-based.
+
+            //IssuedUtc = <DateTimeOffset>,
+            // The time at which the authentication ticket was issued.
+
+            //RedirectUri = <string>
+            // The full path or absolute URI to be used as an http 
+            // redirect response value.
+        )
+
+        // await HttpContext.SignInAsync(
+        //     CookieAuthenticationDefaults.AuthenticationScheme, 
+        //     new ClaimsPrincipal(claimsIdentity), 
+        //     authProperties);
+        let httpResponse =
+            if loginData.Password.Equals("bad", System.StringComparison.OrdinalIgnoreCase)
+            then
+                Response.withStatusCode 401 >> Response.ofJson "TODO - failure to authenticate"
+            else
+                Response.signIn CookieAuthenticationDefaults.AuthenticationScheme (new ClaimsPrincipal(claimsIdentity)) //authProperties
         
-        return! jsonResponse ctx
+        return! httpResponse ctx
     }
