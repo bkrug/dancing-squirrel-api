@@ -98,3 +98,14 @@ let loginUserWithClaimsHandler4 (loginUserAsync : string -> string -> bool -> bo
         
         return! httpResponse ctx
     }
+
+let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
+
+let loginCheck: HttpHandler = fun ctx ->
+    task {
+        let request = ctx.Request
+        let cookies = request.Cookies
+        let handleAuth : HttpHandler =
+            Response.ofPlainText "hello authenticated user"
+        return! Request.ifAuthenticated authScheme handleAuth ctx
+    }
