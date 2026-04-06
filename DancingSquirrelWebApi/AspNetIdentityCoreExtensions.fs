@@ -22,11 +22,11 @@ type IServiceCollection with
             ) |> ignore
 
         //this.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        this.AddAuthentication("Identity.Application")
-            .AddJwtBearer(fun jwtOptions ->
-                jwtOptions.Authority <- "https://example.com";
-                jwtOptions.Audience <- allowedOrigins[0];
-            ) |> ignore
+        // this.AddAuthentication("Identity.Application")
+        //     .AddJwtBearer(fun jwtOptions ->
+        //         jwtOptions.Authority <- "https://example.com";
+        //         jwtOptions.Audience <- allowedOrigins[0];
+        //     ) |> ignore
 
         this.AddDatabaseDeveloperPageExceptionFilter() |> ignore
 
@@ -53,12 +53,12 @@ type IServiceCollection with
             options.User.RequireUniqueEmail <- true
         ) |> ignore
 
-        this.ConfigureApplicationCookie(fun options ->
-            // Cookie settings
-            options.Cookie.HttpOnly <- true
-            options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 5)
+        // this.ConfigureApplicationCookie(fun options ->
+        //     // Cookie settings
+        //     options.Cookie.HttpOnly <- true
+        //     options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 5)
 
-            options.LoginPath <- "/Identity/Account/Login"
-            options.AccessDeniedPath <- "/Identity/Account/AccessDenied"
-            options.SlidingExpiration <- true
-        ) |> ignore        
+        //     options.LoginPath <- "/Identity/Account/Login"
+        //     options.AccessDeniedPath <- "/Identity/Account/AccessDenied"
+        //     options.SlidingExpiration <- true
+        // ) |> ignore        

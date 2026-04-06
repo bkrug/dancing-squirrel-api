@@ -56,65 +56,61 @@ let registerNewUserHandler (createUserAsync : IdentityUser -> string -> Task<Ide
         return! jsonResponse ctx            
     }
 
-let loginUserWithClaimsHandler4 (loginUserAsync : string -> string -> bool -> bool -> Task<SignInResult>): HttpHandler = fun ctx ->
+let getClaimsPrincipal =
+    let claims =
+        seq {
+            new Claim(ClaimTypes.Name, "user.Email");
+            new Claim("FullName", "user.FullName");
+            new Claim(ClaimTypes.Role, "Administrator");
+        };
+
+    let claimsIdentity = new ClaimsIdentity(
+        claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+    //I can't figure out how to use auth Properties with Falco
+    let authProperties = new AuthenticationProperties (
+        AllowRefresh = true
+
+        //ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(10),
+        // The time at which the authentication ticket expires. A 
+        // value set here overrides the ExpireTimeSpan option of 
+        // CookieAuthenticationOptions set with AddCookie.
+
+        //IsPersistent = true,
+        // Whether the authentication session is persisted across 
+        // multiple requests. When used with cookies, controls
+        // whether the cookie's lifetime is absolute (matching the
+        // lifetime of the authentication ticket) or session-based.
+
+        //IssuedUtc = <DateTimeOffset>,
+        // The time at which the authentication ticket was issued.
+
+        //RedirectUri = <string>
+        // The full path or absolute URI to be used as an http 
+        // redirect response value.
+    )
+
+    new ClaimsPrincipal(claimsIdentity)
+
+let loginUserWithClaimsHandler4 (loginUserAsync : string -> string -> bool -> bool -> Task<bool>): HttpHandler = fun ctx ->
     task {
         let! jsonString = Request.getBodyString ctx
         let loginData = JsonSerializer.Deserialize<LoginModel>(jsonString, defaultJsonOptions)
 
-        // let! loginResult = loginUserAsync loginData.Username loginData.Password false false
+        let! loginResult = loginUserAsync loginData.Username loginData.Password false false
 
-        // let jsonResponse =
-        //     match loginResult with
-        //     | r when r.Succeeded = true -> Response.withStatusCode 200 >> Response.ofJson "TODO - success"
-        //     | r when r.IsNotAllowed = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - incorrect password"
-        //     | r when r.IsLockedOut = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - locked out"
-        //     | r when r.RequiresTwoFactor = true -> Response.withStatusCode 400 >> Response.ofJson "TODO - requires MFA"
-        //     | _ -> Response.withStatusCode 400 >> Response.ofJson "TODO"        
-
-        let claims =
-            seq {
-                new Claim(ClaimTypes.Name, "user.Email");
-                new Claim("FullName", "user.FullName");
-                new Claim(ClaimTypes.Role, "Administrator");
-            };
-
-        let claimsIdentity = new ClaimsIdentity(
-            claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-        //I can't figure out how to use auth Properties with Falco
-        let authProperties = new AuthenticationProperties (
-            AllowRefresh = true
-            // Refreshing the authentication session should be allowed.
-
-            //ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(10),
-            // The time at which the authentication ticket expires. A 
-            // value set here overrides the ExpireTimeSpan option of 
-            // CookieAuthenticationOptions set with AddCookie.
-
-            //IsPersistent = true,
-            // Whether the authentication session is persisted across 
-            // multiple requests. When used with cookies, controls
-            // whether the cookie's lifetime is absolute (matching the
-            // lifetime of the authentication ticket) or session-based.
-
-            //IssuedUtc = <DateTimeOffset>,
-            // The time at which the authentication ticket was issued.
-
-            //RedirectUri = <string>
-            // The full path or absolute URI to be used as an http 
-            // redirect response value.
-        )
-
-        // await HttpContext.SignInAsync(
-        //     CookieAuthenticationDefaults.AuthenticationScheme, 
-        //     new ClaimsPrincipal(claimsIdentity), 
-        //     authProperties);
         let httpResponse =
-            if loginData.Password.Equals("bad", System.StringComparison.OrdinalIgnoreCase)
+            if loginResult
             then
-                Response.withStatusCode 401 >> Response.ofJson "TODO - failure to authenticate"
+                let claimsPrincipal = getClaimsPrincipal
+                Response.signIn CookieAuthenticationDefaults.AuthenticationScheme claimsPrincipal //authProperties
+                //C#
+                // await HttpContext.SignInAsync(
+                //     CookieAuthenticationDefaults.AuthenticationScheme, 
+                //     new ClaimsPrincipal(claimsIdentity), 
+                //     authProperties);
             else
-                Response.signIn CookieAuthenticationDefaults.AuthenticationScheme (new ClaimsPrincipal(claimsIdentity)) //authProperties
+                Response.withStatusCode 401 >> Response.ofJson "TODO - failure to authenticate"
         
         return! httpResponse ctx
     }

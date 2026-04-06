@@ -35,8 +35,6 @@ builder.Services
     .AddFalcoOpenApi()
     .AddSwaggerGen() |> ignore
 
-// let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
-// builder.Services.AddAspNetIdentityAuthentication(securityConnectionString, allowedOrigins) |> ignore
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(fun options ->
@@ -46,6 +44,9 @@ builder.Services
     ) |> ignore
 builder.Services.AddAuthorization() |> ignore
 //builder.Services.ConfigureIdentity() |> ignore
+
+let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
+builder.Services.AddAspNetIdentityAuthentication(securityConnectionString, allowedOrigins) |> ignore
 
 let wApp = builder.Build()
 

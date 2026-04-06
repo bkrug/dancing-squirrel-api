@@ -44,8 +44,9 @@ let getEndpoints (wApp : WebApplication) =
             use scope = wApp.Services.CreateScope()
             let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
             let! user = signInManager.UserManager.FindByNameAsync(username)
-            let! checkResult = signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure)
-            return checkResult
+            let! goodPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
+            //let! checkResult = signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure)
+            return goodPassword
         }
     
     let logoutUserAsync = fun () ->
