@@ -74,3 +74,20 @@ See this source for data on path variables used in launch.json
 https://code.visualstudio.com/docs/reference/variables-reference
 
 To Kill a port use: `fuser -k -n tcp 5626`
+
+# Authentication
+
+Setting up authentication often only happens at the beginning of a project with relatively minor changes thereafter.
+It was hard for me to get used to it again for this project.
+
+When refreshing your memory, I think you first want to create an endpoint or two that just care about Http Only Cookies.
+Create a login endpoint that can create such a cookie
+(https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0),
+and edit the front-end code to include that cookie in future requests.
+This will involve calling `.AllowCredentials()` in your Program.cs/fs file
+(https://learn.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-10.0#credentials-in-cross-origin-requests).
+
+Afterwards you can worry about adding users and roles.
+Use this information to create a C# project with an AspNetCore Identity database:
+https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity?view=aspnetcore-10.0&tabs=visual-studio
+
