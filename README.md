@@ -1,10 +1,10 @@
-This is a WebApi for managing a hypothetical company that trains squirrels.
+This is a WebApi for managing an imaginary company that trains squirrels to work in the entertainment industry.
 See also the companion repo for the ReactJS application: https://github.com/bkrug/dancing-squirrel-ui
 
 # Initial Setup
 
-This repo expects an SQLite database at path /Database/DancingSquirrel.db
-The database is not stored in the repo, so create the database using the DDL in schema.sql
+This repo expects SQLite databases at path /Database/*.db
+The databases are not stored in the repo, so create the database using the DDL in schema.sql
 (https://www.codegenes.net/blog/how-to-create-a-db-file-in-sqlite3-using-a-schema-file/)
 
 ```
