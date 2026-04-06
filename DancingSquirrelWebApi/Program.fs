@@ -26,7 +26,8 @@ let allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins").Sp
 builder.Services.AddCors(fun options ->
     options.AddPolicy(
         allowedOriginsPolicy,
-        fun policy -> policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod() |> ignore
+        fun policy -> 
+            policy.WithOrigins(allowedOrigins).AllowCredentials().AllowAnyHeader().AllowAnyMethod() |> ignore
     ) |> ignore
 ) |> ignore
 

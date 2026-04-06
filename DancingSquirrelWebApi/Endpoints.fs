@@ -63,7 +63,7 @@ let getEndpoints (wApp : WebApplication) =
             get "/api/totalyauthenticated" secureResourceHandler
             post "/api/security/register" (registerNewUserHandler createUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
-            post "/api/security/login4" (loginUserWithClaimsHandler4 loginUserAsync2)
+            post "/api/security/login" (loginUserWithClaimsHandler4 loginUserAsync2)
                 |> OpenApi.acceptsType typeof<LoginModel>
         ]
     endpoints
