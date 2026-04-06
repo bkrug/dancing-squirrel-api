@@ -63,7 +63,10 @@ dotnet add package Microsoft.Data.Sqlite
 
 # Useful commands
 
-`sqlite3 ./Database/DancingSquirrel.db '.schema' > ./Database/schema.sql`
+`bash ./Database/schemaGeneration.sh`
+Use this command to after adding or removing objects from one of the databases.
+It updates some DDL SQL scripts, so that we don't need to store the databases as part of the git repo, but can easily create blank versions of the databases.
+Each time the debugger is started up, VS Code auto-runs the above script.
 
 # Troubleshooting
 
