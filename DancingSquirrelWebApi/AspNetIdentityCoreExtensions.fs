@@ -17,9 +17,19 @@ open SecurityDbLayer
 
 type IServiceCollection with
     member this.AddAspNetIdentityAuthentication(securityConnectionString: string, allowedOrigins: string[]) =
+
         this.AddDbContext<SecurityDbContext>(fun options ->
             options.UseSqlite(securityConnectionString) |> ignore
             ) |> ignore
+
+        this.AddIdentityCore<IdentityUser>()
+            .AddSignInManager()
+            .AddUserManager<UserManager<IdentityUser>>()
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<SecurityDbContext>() |> ignore
+
+        this.AddAuthorizationBuilder()
+            .AddPolicy("RequireAdminRole", fun policy -> policy.RequireRole("Admin") |> ignore ) |> ignore
 
         //this.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         // this.AddAuthentication("Identity.Application")

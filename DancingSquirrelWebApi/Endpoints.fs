@@ -45,7 +45,7 @@ let getEndpoints (wApp : WebApplication) =
             let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
             let! user = signInManager.UserManager.FindByNameAsync(username)
             let! isGoodPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
-            //let! checkResult = signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure)
+            let! checkResult = signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure)
             return (isGoodPassword, user)
         }
     
@@ -66,5 +66,6 @@ let getEndpoints (wApp : WebApplication) =
             post "/api/security/login" (loginUserWithClaimsHandler4 loginUserAsync2)
                 |> OpenApi.acceptsType typeof<LoginModel>
             post "/api/security/loginCheck" loginCheck
+            post "/api/security/adminCheck" adminCheck
         ]
     endpoints

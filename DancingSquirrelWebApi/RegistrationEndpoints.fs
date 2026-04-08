@@ -109,3 +109,11 @@ let loginCheck: HttpHandler = fun ctx ->
             Response.ofPlainText "hello authenticated user"
         return! Request.ifAuthenticated authScheme handleAuth ctx
     }
+
+let adminCheck : HttpHandler =
+    let handleAuthInRole : HttpHandler =
+        Response.ofPlainText "hello admin"
+
+    let rolesAllowed = [ "Administrator" ]
+
+    Request.ifAuthenticatedInRole authScheme rolesAllowed handleAuthInRole
