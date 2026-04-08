@@ -4,6 +4,7 @@ open System.Web
 open System.Text.Json
 open System.Threading.Tasks
 open System.Security.Claims
+open System.Collections.Generic
 open Falco
 open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.JwtBearer
@@ -56,13 +57,16 @@ let registerNewUserHandler (createUserAsync : IdentityUser -> string -> Task<Ide
         return! jsonResponse ctx            
     }
 
-let getClaimsPrincipal (identityUser: IdentityUser) =
+let getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>) =
+    let roleClaims = 
+        roles
+        |> Seq.map (fun role -> new Claim(ClaimTypes.Role, role))
     let claims =
         seq {
             new Claim(ClaimTypes.Name, identityUser.UserName);
             new Claim(ClaimTypes.Email, identityUser.Email);
-            new Claim(ClaimTypes.Role, "Administrator");
-        };
+        }
+        |> Seq.append roleClaims
 
     let claimsIdentity = new ClaimsIdentity(
         claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -76,17 +80,17 @@ let getClaimsPrincipal (identityUser: IdentityUser) =
 
     new ClaimsPrincipal(claimsIdentity)
 
-let loginUserWithClaimsHandler4 (loginUserAsync : string -> string -> bool -> bool -> Task<bool * IdentityUser>): HttpHandler = fun ctx ->
+let loginUserWithClaimsHandler (loginUserAsync : string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>): HttpHandler = fun ctx ->
     task {
         let! jsonString = Request.getBodyString ctx
         let loginData = JsonSerializer.Deserialize<LoginModel>(jsonString, defaultJsonOptions)
 
-        let! isCorrectPassword, user = loginUserAsync loginData.Username loginData.Password false false
+        let! isCorrectPassword, user, roles = loginUserAsync loginData.Username loginData.Password false false
 
         let httpResponse =
             match isCorrectPassword with
                 | true ->
-                    let claimsPrincipal = getClaimsPrincipal user
+                    let claimsPrincipal = getClaimsPrincipal(user, roles)
                     Response.signIn CookieAuthenticationDefaults.AuthenticationScheme claimsPrincipal
                     //C# version -- I can't figure out how to use auth Properties with Falco:
                     // await HttpContext.SignInAsync(
@@ -114,6 +118,6 @@ let adminCheck : HttpHandler =
     let handleAuthInRole : HttpHandler =
         Response.ofPlainText "hello admin"
 
-    let rolesAllowed = [ "Administrator" ]
+    let rolesAllowed = [ "Admin" ]
 
     Request.ifAuthenticatedInRole authScheme rolesAllowed handleAuthInRole

@@ -36,17 +36,11 @@ let getEndpoints (wApp : WebApplication) =
         task {
             use scope = wApp.Services.CreateScope()
             let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
-            return! signInManager.PasswordSignInAsync(username, password, isPersistent, lockoutOnFailure)
-        }
-
-    let loginUserAsync2 = fun (username: string) (password: string) (isPersistent: bool) (lockoutOnFailure: bool) ->
-        task {
-            use scope = wApp.Services.CreateScope()
-            let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
+            let userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
             let! user = signInManager.UserManager.FindByNameAsync(username)
-            let! isGoodPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
-            let! checkResult = signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure)
-            return isGoodPassword, user
+            let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
+            let! roles = userManager.GetRolesAsync(user)
+            return isCorrectPassword, user, roles
         }
     
     let logoutUserAsync = fun () ->
@@ -63,7 +57,7 @@ let getEndpoints (wApp : WebApplication) =
             get "/api/totalyauthenticated" secureResourceHandler
             post "/api/security/register" (registerNewUserHandler createUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
-            post "/api/security/login" (loginUserWithClaimsHandler4 loginUserAsync2)
+            post "/api/security/login" (loginUserWithClaimsHandler loginUserAsync)
                 |> OpenApi.acceptsType typeof<LoginModel>
             post "/api/security/loginCheck" loginCheck
             post "/api/security/adminCheck" adminCheck
