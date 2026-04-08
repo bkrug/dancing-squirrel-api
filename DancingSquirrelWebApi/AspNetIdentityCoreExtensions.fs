@@ -71,4 +71,43 @@ type IServiceCollection with
         //     options.LoginPath <- "/Identity/Account/Login"
         //     options.AccessDeniedPath <- "/Identity/Account/AccessDenied"
         //     options.SlidingExpiration <- true
-        // ) |> ignore        
+        // ) |> ignore
+
+
+let ensureIdentitySeedData (serviceProvider: IServiceProvider) =
+    use scope = serviceProvider.CreateScope()
+    let roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>()
+    let userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>()
+    let ensureRoleExists roleName =
+        task {
+            let! doesExist = roleManager.RoleExistsAsync roleName
+            if doesExist = false
+            then
+                let newRole = new IdentityRole(roleName)
+                let! createResult = roleManager.CreateAsync newRole
+                if createResult.Errors |> Seq.length > 0
+                then
+                    printfn "Role Creation Error: %O" createResult.Errors
+                else
+                    printfn "Created role: %s" roleName
+        }
+    let ensureUserIsAdmin username =
+        task {
+            let! appUser = userManager.FindByNameAsync username
+            if isNull appUser = false
+            then 
+                let! roleResult = userManager.AddToRoleAsync(appUser, "Admin")
+                if roleResult.Errors |> Seq.length > 0
+                then
+                    printfn "Error adding user to role: %O" roleResult.Errors
+                else
+                    printfn "Added %s user to Admin role" username
+        }
+    let roleNames = seq {
+        "Admin"
+        "Onboarder"
+    }
+    for roleName in roleNames do
+        ensureRoleExists roleName |> ignore
+    ensureUserIsAdmin "bkrug" |> ignore
+    ensureUserIsAdmin "bkrug2" |> ignore

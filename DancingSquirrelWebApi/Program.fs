@@ -51,6 +51,8 @@ builder.Services.AddAspNetIdentityAuthentication(securityConnectionString, allow
 
 let wApp = builder.Build()
 
+ensureIdentitySeedData wApp.Services |> ignore
+
 wApp.UseAuthentication() |> ignore
 wApp.UseAuthorization() |> ignore
 wApp.UseRouting() |> ignore

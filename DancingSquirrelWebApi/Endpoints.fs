@@ -46,7 +46,7 @@ let getEndpoints (wApp : WebApplication) =
             let! user = signInManager.UserManager.FindByNameAsync(username)
             let! isGoodPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
             let! checkResult = signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure)
-            return (isGoodPassword, user)
+            return isGoodPassword, user
         }
     
     let logoutUserAsync = fun () ->
