@@ -1,6 +1,5 @@
 module Endpoints
 
-open ExternalDependencies
 open Falco.Routing
 open Falco.OpenApi
 open Microsoft.AspNetCore
@@ -20,7 +19,7 @@ open TrainingRequestEndpoints
 let getEndpoints (wApp : WebApplication) =
     //Prepare a set of dependencies that hide the messy outside world from our deterministic code
     let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
-    let curEnv = new DbGetter(connStr)
+    let curEnv = new ExternalDependencies.DbGetter(connStr)
 
     let createUserAsync = fun user password ->
         task {

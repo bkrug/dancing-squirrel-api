@@ -8,16 +8,9 @@ open DbLayer
 open Falco
 open SqlHydra.Query
 
-type TrainingRequestForm =
-    {
-        IsPerson: bool
-        CaretakerFirstName: string;
-        CaretakerLastName: string;
-        CaretakerCompanyName: string
-        Email: string
-        Phone: string
-        SquirrelName: string
-    }
+type CaretakerType =
+    | Person = 1
+    | Company = 2
 
 type TrainingRequestValidation =
     {
@@ -30,6 +23,17 @@ type TrainingRequestValidation =
         SquirrelName: string;
     }
 
+type TrainingRequestForm =
+    {
+        CaretakerType: CaretakerType;
+        CaretakerFirstName: string;
+        CaretakerLastName: string;
+        CaretakerCompanyName: string
+        Email: string
+        Phone: string
+        SquirrelName: string
+    }
+
 type TrainingRequestResponse =
     {
         IsSuccess: bool;
@@ -37,28 +41,24 @@ type TrainingRequestResponse =
         ValidationFailures: Option<TrainingRequestValidation>;
     }
 
-type CaretakerType =
-    | Person = 1
-    | Company = 2
-
 [<Literal>]
 let requiredMessage = "is required"
 
 let validateCompanyName form =
     match form with
-        | { IsPerson = true } -> Ok()
+        | { CaretakerType = CaretakerType.Person } -> Ok()
         | { CaretakerCompanyName = "" } -> Error requiredMessage
         | _ -> Ok()
 
 let validateFirstName form =
     match form with
-        | { IsPerson = false } -> Ok()
+        | { CaretakerType = CaretakerType.Company } -> Ok()
         | { CaretakerFirstName = "" } -> Error requiredMessage
         | _ -> Ok()
 
 let validateLastName form =
     match form with
-        | { IsPerson = false } -> Ok()
+        | { CaretakerType = CaretakerType.Company } -> Ok()
         | { CaretakerLastName = "" } -> Error requiredMessage
         | _ -> Ok()        
 
@@ -94,7 +94,7 @@ let removeNonDigits givenString =
 let getValidationMessage keyName (validationResults: IDictionary<string,Result<unit,string>>) =
     match validationResults[keyName] with | Error msg -> msg | _ -> ""
 
-let validateForm (form : TrainingRequestForm) =
+let validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, TrainingRequestResponse> =
     let validationResults =
         dict [
             nameof form.CaretakerCompanyName,   validateCompanyName form;
@@ -107,7 +107,7 @@ let validateForm (form : TrainingRequestForm) =
     let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
     match failureCount with
         | 0 -> Ok {
-                IsPerson = form.IsPerson
+                CaretakerType = form.CaretakerType
                 CaretakerCompanyName = form.CaretakerCompanyName
                 CaretakerFirstName = form.CaretakerFirstName
                 CaretakerLastName = form.CaretakerLastName
@@ -136,14 +136,14 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
         shared.BeginTransaction()
         try
             let! personOrOrganizationId =
-                match form.IsPerson with
-                | true ->
+                match form.CaretakerType with
+                | CaretakerType.Person ->
                     insertTask shared {
                         for p in Database.main.Person do
                         entity { PersonId = 1; FirstName = form.CaretakerFirstName; LastName = form.CaretakerLastName }
                         getId p.PersonId
                     }
-                | false ->
+                | _ ->
                     insertTask shared {
                         for o in Database.main.Organization do
                         entity { OrganizationId = 1; Name = form.CaretakerCompanyName }
@@ -154,8 +154,8 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
                     for so in Database.main.SquirrelOwner do
                     entity {
                         SquirrelOwnerId = 0;
-                        PersonId = if form.IsPerson then Some personOrOrganizationId else None;
-                        OrganizationId = if form.IsPerson then None else Some personOrOrganizationId;
+                        PersonId = if form.CaretakerType = CaretakerType.Person then Some personOrOrganizationId else None;
+                        OrganizationId = if form.CaretakerType = CaretakerType.Company then None else Some personOrOrganizationId;
                         PhoneNumber = Some form.Phone;
                         Email = Some form.Email;
                     }
@@ -186,11 +186,10 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
 let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
-        let typeFromForm = form.GetInt("caretakertype", 0)
-        let enumCastAsInt = int CaretakerType.Person
-        let dataToValidate =
+        let caretakerTypeInt = form.GetInt("caretakertype", 0)
+        let dataToValidate : TrainingRequestForm =
             {
-                IsPerson = typeFromForm = enumCastAsInt
+                CaretakerType = enum<CaretakerType> caretakerTypeInt
                 CaretakerCompanyName = form.GetString ("caretakerCompanyName", "")
                 CaretakerFirstName = form.GetString ("caretakerFirstName", "")
                 CaretakerLastName = form.GetString ("caretakerLastName", "")
@@ -213,3 +212,8 @@ let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
                 Response.withStatusCode 500 >> Response.ofJson trainingRequestResponse
         return! jsonResponse ctx
     }
+
+// let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
+//     task {
+
+//     }
