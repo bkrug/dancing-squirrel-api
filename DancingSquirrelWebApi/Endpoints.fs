@@ -60,7 +60,7 @@ let getEndpoints (wApp : WebApplication) =
             post "/api/security/login" (loginUserWithClaimsHandler loginUserAsync)
                 |> OpenApi.acceptsType typeof<LoginModel>
             post "/api/security/logout" (logoutUser logoutUserAsync)
-            post "/api/security/loginCheck" loginCheck
-            post "/api/security/adminCheck" adminCheck
+            get "/api/authentication" loginCheck
+            get "/api/authorization/admin" adminCheck
         ]
     endpoints
