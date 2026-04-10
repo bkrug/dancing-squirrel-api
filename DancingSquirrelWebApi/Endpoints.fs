@@ -15,7 +15,6 @@ open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
 open RegistrationEndpoints
-open SecureEnpoints
 open TrainingRequestEndpoints
 
 let getEndpoints (wApp : WebApplication) =
@@ -54,7 +53,6 @@ let getEndpoints (wApp : WebApplication) =
     let endpoints =
         [
             post "/api/request/create" (createTrainingRequest curEnv)
-            get "/api/totalyauthenticated" secureResourceHandler
             post "/api/security/register" (registerNewUserHandler createUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
             post "/api/authentication" (loginUserWithClaimsHandler loginUserAsync)
