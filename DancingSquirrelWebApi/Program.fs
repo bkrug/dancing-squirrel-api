@@ -41,13 +41,12 @@ builder.Services
     .AddCookie(fun options ->
         options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 20)
         options.SlidingExpiration <- true
-        options.AccessDeniedPath <- "/Forbidden/";
     ) |> ignore
 builder.Services.AddAuthorization() |> ignore
 //builder.Services.ConfigureIdentity() |> ignore
 
 let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
-builder.Services.AddAspNetIdentityAuthentication(securityConnectionString, allowedOrigins) |> ignore
+builder.Services.AddAspNetIdentityAuthentication(securityConnectionString) |> ignore
 
 let wApp = builder.Build()
 

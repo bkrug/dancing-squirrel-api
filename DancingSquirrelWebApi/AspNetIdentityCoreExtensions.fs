@@ -16,7 +16,7 @@ open System
 open SecurityDbLayer
 
 type IServiceCollection with
-    member this.AddAspNetIdentityAuthentication(securityConnectionString: string, allowedOrigins: string[]) =
+    member this.AddAspNetIdentityAuthentication(securityConnectionString: string) =
 
         this.AddDbContext<SecurityDbContext>(fun options ->
             options.UseSqlite(securityConnectionString) |> ignore
@@ -42,7 +42,6 @@ type IServiceCollection with
 
         this.AddDefaultIdentity<IdentityUser>(fun options -> options.SignIn.RequireConfirmedAccount <- true)
             .AddEntityFrameworkStores<SecurityDbContext>() |> ignore
-        //this.AddRazorPages() |> ignore
 
         this.Configure<IdentityOptions>(fun (options: IdentityOptions) ->
             // Password settings.
@@ -63,15 +62,15 @@ type IServiceCollection with
             options.User.RequireUniqueEmail <- true
         ) |> ignore
 
-        // this.ConfigureApplicationCookie(fun options ->
-        //     // Cookie settings
-        //     options.Cookie.HttpOnly <- true
-        //     options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 5)
+        this.ConfigureApplicationCookie(fun options ->
+            // Cookie settings
+            options.Cookie.HttpOnly <- true
+            options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 5)
 
-        //     options.LoginPath <- "/Identity/Account/Login"
-        //     options.AccessDeniedPath <- "/Identity/Account/AccessDenied"
-        //     options.SlidingExpiration <- true
-        // ) |> ignore
+            options.LoginPath <- "/api/authentication"
+            options.AccessDeniedPath <- String.Empty
+            options.SlidingExpiration <- true
+        ) |> ignore
 
 
 let ensureIdentitySeedData (serviceProvider: IServiceProvider) =
