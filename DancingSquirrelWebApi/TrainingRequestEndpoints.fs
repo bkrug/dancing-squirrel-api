@@ -213,7 +213,58 @@ let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
         return! jsonResponse ctx
     }
 
-// let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
-//     task {
+let getTrainingRequestsFromDb (env : IGetDb) =
+    task {
+        let db = env.GetDb()
+        try
+            let! requests =
+                selectTask db {
+                    for s in Database.main.Squirrel do
+                    join so in Database.main.SquirrelOwner on (s.SquirrelOwnerId = so.SquirrelOwnerId)
+                    leftJoin o in Database.main.Organization on (so.OrganizationId.Value = o.Value.OrganizationId)
+                    leftJoin p in Database.main.Person on (so.PersonId.Value = p.Value.PersonId)
+                    select (
+                        s.Name,
+                        so.PhoneNumber,
+                        so.Email,
+                        so.PersonId,
+                        p |> Option.map _.FirstName,
+                        p |> Option.map _.LastName,
+                        o |> Option.map _.Name
+                    ) into selected
+                    mapList (
+                        let squirrelName, phoneNumber, email, personId, firstNameMaybe, lastNameMaybe, companyNameMaybe = selected
+                        let trainingRequestForm : TrainingRequestForm = {
+                            CaretakerType = match personId.IsSome with | true -> CaretakerType.Person | false -> CaretakerType.Company
+                            CaretakerCompanyName = companyNameMaybe |> Option.defaultValue ""
+                            CaretakerFirstName = firstNameMaybe |> Option.defaultValue ""
+                            CaretakerLastName = lastNameMaybe |> Option.defaultValue ""
+                            Email = email |> Option.defaultValue ""
+                            Phone = phoneNumber |> Option.defaultValue ""
+                            SquirrelName = squirrelName
+                        }
+                        trainingRequestForm
+                    )
+                }
+            return Ok requests
+        with
+        | ex ->
+            printfn "SQL: %O" ex
+            return Error {
+                IsSuccess = false
+                IsInternalError = true
+                ValidationFailures = None
+            }
+    }    
 
-//     }
+let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
+    task {
+        let! existingTrainingRequests = getTrainingRequestsFromDb env
+        let jsonResponse =
+            match existingTrainingRequests with
+            | Ok foundList ->
+                Response.withStatusCode 200 >> Response.ofJson foundList
+            | Error errorResponse ->
+                Response.withStatusCode 500 >> Response.ofJson errorResponse
+        return! jsonResponse ctx
+    }

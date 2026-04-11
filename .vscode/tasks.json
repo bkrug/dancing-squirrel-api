@@ -20,7 +20,7 @@
 		},
 		{
 			"label": "Build",
-			"dependsOn": ["Build: solution", "Generate DDL"]
+			"dependsOn": ["Generate DDL", "Build: solution"]
 		}		
 	]
 }

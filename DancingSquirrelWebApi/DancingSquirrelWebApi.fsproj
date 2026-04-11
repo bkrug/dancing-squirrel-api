@@ -4,9 +4,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Debugging.fs" />
-    <Compile Include="SecurityDbContext.fs" />
+    
     <Compile Include="TaskResult.fs" />
-    <Compile Include="GlobalExceptionHandler.fs" />
+    <Compile Include="GlobalExceptionHandler.fs" /><Compile Include="SecurityDbContext.fs" />
     <Compile Include="DatabaseModels.fs">
       <Visible>False</Visible>
     </Compile>
