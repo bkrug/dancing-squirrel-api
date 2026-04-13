@@ -1,12 +1,12 @@
 module TrainingRequestEndpoints
 
+open DbLayer
+open ExternalDependencies
+open Falco
+open SqlHydra.Query
 open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
-open ExternalDependencies
-open DbLayer
-open Falco
-open SqlHydra.Query
 
 type CaretakerType =
     | Person = 1
@@ -39,6 +39,14 @@ type TrainingRequestResponse =
         IsSuccess: bool;
         IsInternalError: bool;
         ValidationFailures: Option<TrainingRequestValidation>;
+    }
+
+type PagedData<'TValue> =
+    {
+        Page: int64;
+        MorePages: bool;
+        TotalRecords: Option<int64>;
+        Data: seq<'TValue>;
     }
 
 [<Literal>]
@@ -232,7 +240,7 @@ let getTrainingRequestsFromDb (env : IGetDb) =
                         p |> Option.map _.LastName,
                         o |> Option.map _.Name
                     ) into selected
-                    mapList (
+                    mapSeq (
                         let squirrelName, phoneNumber, email, personId, firstNameMaybe, lastNameMaybe, companyNameMaybe = selected
                         let trainingRequestForm : TrainingRequestForm = {
                             CaretakerType = match personId.IsSome with | true -> CaretakerType.Person | false -> CaretakerType.Company
@@ -263,7 +271,13 @@ let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
         let jsonResponse =
             match existingTrainingRequests with
             | Ok foundList ->
-                Response.withStatusCode 200 >> Response.ofJson foundList
+                let payload : PagedData<TrainingRequestForm> = {
+                    Page = 1;
+                    TotalRecords = None;
+                    MorePages = false;
+                    Data = foundList;
+                }
+                Response.withStatusCode 200 >> Response.ofJson payload
             | Error errorResponse ->
                 Response.withStatusCode 500 >> Response.ofJson errorResponse
         return! jsonResponse ctx
