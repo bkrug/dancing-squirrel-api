@@ -226,6 +226,7 @@ let getTrainingRequestsFromDb (env : IGetDb) =
                         p |> Option.map _.LastName,
                         o |> Option.map _.Name
                     ) into selected
+                    take 11
                     mapSeq (
                         let squirrelName, phoneNumber, email, personId, firstNameMaybe, lastNameMaybe, companyNameMaybe = selected
                         let trainingRequestForm : TrainingRequestForm = {
@@ -251,6 +252,9 @@ let getTrainingRequestsFromDb (env : IGetDb) =
             }
     }    
 
+[<Literal>]
+let pageLength = 10
+
 let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
     task {
         let! existingTrainingRequests = getTrainingRequestsFromDb env
@@ -260,8 +264,8 @@ let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
                 let payload : PagedData<TrainingRequestForm> = {
                     Page = 1;
                     TotalRecords = None;
-                    MorePages = false;
-                    Data = foundList;
+                    MorePages = (Seq.length foundList > pageLength);
+                    Data = (foundList |> Seq.take pageLength);
                 }
                 Response.withStatusCode 200 >> Response.ofJson payload
             | Error errorResponse ->
