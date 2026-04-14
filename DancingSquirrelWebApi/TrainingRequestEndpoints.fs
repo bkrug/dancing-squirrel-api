@@ -4,10 +4,13 @@ open DbLayer
 open ExternalDependencies
 open Falco
 open GenericModels
+open Microsoft.AspNetCore.Authentication.Cookies
 open SqlHydra.Query
 open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
+
+let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
 type CaretakerType =
     | Person = 1
@@ -276,26 +279,30 @@ let getTrainingRequestCount (env : IGetDb) =
 
 let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
     task {
-        let page = Math.Max(1, (Request.getQuery ctx).GetInt("page"))
-        let pageLength = Math.Max(10, (Request.getQuery ctx).GetInt("length"))
-        let skipCount = (page - 1) * pageLength
-        let! existingTrainingRequests = getTrainingRequestsFromDb env skipCount pageLength
-        let! recordCountResult = getTrainingRequestCount env
-        let recordCount =
-            match recordCountResult with
-                | Ok foundCount -> foundCount
-                | Error _ -> pageLength + 1
-        let jsonResponse =
-            match existingTrainingRequests with
-            | Ok foundList ->
-                let payload : PagedData<TrainingRequestForm> = {
-                    Page = page;
-                    TotalRecords = Some recordCount;
-                    MorePages = recordCount > page * pageLength;
-                    Data = (foundList |> Seq.truncate pageLength);
-                }
-                Response.withStatusCode 200 >> Response.ofJson payload
-            | Error errorResponse ->
-                Response.withStatusCode 500 >> Response.ofJson errorResponse
-        return! jsonResponse ctx
+        let requestBody : HttpHandler = fun ctx ->
+            task {
+                let page = Math.Max(1, (Request.getQuery ctx).GetInt("page"))
+                let pageLength = Math.Max(10, (Request.getQuery ctx).GetInt("length"))
+                let skipCount = (page - 1) * pageLength
+                let! existingTrainingRequests = getTrainingRequestsFromDb env skipCount pageLength
+                let! recordCountResult = getTrainingRequestCount env
+                let recordCount =
+                    match recordCountResult with
+                        | Ok foundCount -> foundCount
+                        | Error _ -> pageLength + 1
+                let jsonResponse =
+                    match existingTrainingRequests with
+                    | Ok foundList ->
+                        let payload : PagedData<TrainingRequestForm> = {
+                            Page = page;
+                            TotalRecords = Some recordCount;
+                            MorePages = recordCount > page * pageLength;
+                            Data = (foundList |> Seq.truncate pageLength);
+                        }
+                        Response.withStatusCode 200 >> Response.ofJson payload
+                    | Error errorResponse ->
+                        Response.withStatusCode 500 >> Response.ofJson errorResponse
+                return! jsonResponse ctx
+            }
+        return! Request.ifAuthenticated authScheme requestBody ctx
     }
