@@ -53,6 +53,10 @@ let getEndpoints (wApp : WebApplication) =
         [
             post "/api/request/create" (createTrainingRequest curEnv)
             get "/api/request" (getTrainingRequests curEnv)
+                |> OpenApi.query [
+                    { Name = "page"; Type = typeof<int64>; Required = false }
+                    { Name = "length"; Type = typeof<int64>; Required = false }
+                    ]
             post "/api/user" (registerNewUserHandler createUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
             post "/api/authentication" (loginUserWithClaimsHandler loginUserAsync)

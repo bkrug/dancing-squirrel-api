@@ -207,7 +207,7 @@ let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
         return! jsonResponse ctx
     }
 
-let getTrainingRequestsFromDb (env : IGetDb) =
+let getTrainingRequestsFromDb (env : IGetDb) (skipNumber : int) (length : int) =
     task {
         let db = env.GetDb()
         try
@@ -226,7 +226,8 @@ let getTrainingRequestsFromDb (env : IGetDb) =
                         p |> Option.map _.LastName,
                         o |> Option.map _.Name
                     ) into selected
-                    take 11
+                    skip skipNumber
+                    take length
                     mapSeq (
                         let squirrelName, phoneNumber, email, personId, firstNameMaybe, lastNameMaybe, companyNameMaybe = selected
                         let trainingRequestForm : TrainingRequestForm = {
@@ -252,20 +253,52 @@ let getTrainingRequestsFromDb (env : IGetDb) =
             }
     }    
 
-[<Literal>]
-let pageLength = 10
+let getTrainingRequestCount (env : IGetDb) =
+    task {
+        let db = env.GetDb()
+        try
+            let! requests =
+                selectTask db {
+                    for s in Database.main.Squirrel do
+                    join so in Database.main.SquirrelOwner on (s.SquirrelOwnerId = so.SquirrelOwnerId)
+                    count
+                }
+            return Ok requests
+        with
+        | ex ->
+            printfn "SQL: %O" ex
+            return Error {
+                IsSuccess = false
+                IsInternalError = true
+                ValidationFailures = None
+            }
+    }    
 
 let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
     task {
-        let! existingTrainingRequests = getTrainingRequestsFromDb env
+        let page =
+            match (Request.getQuery ctx).GetInt("page") with
+                | givenNumber when givenNumber <= 1 -> 1
+                | givenNumber -> givenNumber
+        let pageLength =
+            match (Request.getQuery ctx).GetInt("length") with
+                | givenNumber when givenNumber <= 10 -> 10
+                | givenNumber -> givenNumber
+        let skipCount = (page - 1) * pageLength
+        let! existingTrainingRequests = getTrainingRequestsFromDb env skipCount (pageLength + 1)
+        let! recordCountResult = getTrainingRequestCount env
+        let recordCount =
+            match recordCountResult with
+                | Ok foundCount -> foundCount
+                | Error _ -> pageLength + 1
         let jsonResponse =
             match existingTrainingRequests with
             | Ok foundList ->
                 let payload : PagedData<TrainingRequestForm> = {
-                    Page = 1;
-                    TotalRecords = None;
+                    Page = page;
+                    TotalRecords = Some recordCount;
                     MorePages = (Seq.length foundList > pageLength);
-                    Data = (foundList |> Seq.take pageLength);
+                    Data = (foundList |> Seq.truncate pageLength);
                 }
                 Response.withStatusCode 200 >> Response.ofJson payload
             | Error errorResponse ->
