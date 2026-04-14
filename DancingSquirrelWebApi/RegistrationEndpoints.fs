@@ -112,7 +112,7 @@ let logoutUser (logoutUserAsync : unit -> Task<unit>) =
                 let! task = logoutUserAsync()
                 return! Response.signOut authScheme ctx
             }
-        ) : HttpHandler
+        )
 
 let loginCheck =
     Auth.processAuthenticatedRequest

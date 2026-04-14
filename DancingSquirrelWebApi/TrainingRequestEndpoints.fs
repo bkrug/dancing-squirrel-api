@@ -301,4 +301,4 @@ let getTrainingRequests (env : IGetDb) =
                         Response.withStatusCode 500 >> Response.ofJson errorResponse
                 return! jsonResponse ctx
             }
-        ) : HttpHandler
+        )
