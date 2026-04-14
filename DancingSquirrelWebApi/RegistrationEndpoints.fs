@@ -105,20 +105,20 @@ let loginUserWithClaimsHandler (loginUserAsync : string -> string -> bool -> boo
 
 let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
-let logoutUser (logoutUserAsync : unit -> Task<unit>) : HttpHandler = fun ctx ->
-    task {
-        let logoutAuthenticatedUser : HttpHandler =
-            let! task = logoutUserAsync()
-            Response.signOut authScheme
-        return! Request.ifAuthenticated authScheme logoutAuthenticatedUser ctx
-    }
+let logoutUser (logoutUserAsync : unit -> Task<unit>) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let! task = logoutUserAsync()
+                return! Response.signOut authScheme ctx
+            }
+        ) : HttpHandler
 
-let loginCheck: HttpHandler = fun ctx ->
-    task {
-        let handleAuth : HttpHandler =
+let loginCheck =
+    Auth.processAuthenticatedRequest
+        (
             Response.ofPlainText "hello authenticated user"
-        return! Request.ifAuthenticated authScheme handleAuth ctx
-    }
+        ) : HttpHandler
 
 let adminCheck : HttpHandler =
     let handleAuthInRole : HttpHandler =

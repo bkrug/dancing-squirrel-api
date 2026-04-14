@@ -4,13 +4,10 @@ open DbLayer
 open ExternalDependencies
 open Falco
 open GenericModels
-open Microsoft.AspNetCore.Authentication.Cookies
 open SqlHydra.Query
 open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
-
-let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
 type CaretakerType =
     | Person = 1
@@ -275,11 +272,11 @@ let getTrainingRequestCount (env : IGetDb) =
                 IsInternalError = true
                 ValidationFailures = None
             }
-    }    
+    }
 
-let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
-    task {
-        let requestBody : HttpHandler = fun ctx ->
+let getTrainingRequests (env : IGetDb) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
             task {
                 let page = Math.Max(1, (Request.getQuery ctx).GetInt("page"))
                 let pageLength = Math.Max(10, (Request.getQuery ctx).GetInt("length"))
@@ -304,5 +301,4 @@ let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
                         Response.withStatusCode 500 >> Response.ofJson errorResponse
                 return! jsonResponse ctx
             }
-        return! Request.ifAuthenticated authScheme requestBody ctx
-    }
+        ) : HttpHandler
