@@ -4,15 +4,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Debugging.fs" />
-    
     <Compile Include="TaskResult.fs" />
-    <Compile Include="GlobalExceptionHandler.fs" /><Compile Include="SecurityDbContext.fs" />
+    <Compile Include="GlobalExceptionHandler.fs" />
+    <Compile Include="SecurityDbContext.fs" />
     <Compile Include="DatabaseModels.fs">
       <Visible>False</Visible>
     </Compile>
     <Compile Include="ExternalDependencies.fs" />
+    <Compile Include="GenericModels.fs" />
     <Compile Include="RegistrationEndpoints.fs" />
-    
     <Compile Include="TrainingRequestEndpoints.fs" />
     <Compile Include="AspNetIdentityCoreExtensions.fs" />
     <Compile Include="Endpoints.fs" />

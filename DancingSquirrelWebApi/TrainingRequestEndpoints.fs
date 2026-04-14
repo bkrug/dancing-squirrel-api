@@ -3,6 +3,7 @@ module TrainingRequestEndpoints
 open DbLayer
 open ExternalDependencies
 open Falco
+open GenericModels
 open SqlHydra.Query
 open System
 open System.Collections.Generic
@@ -32,21 +33,6 @@ type TrainingRequestForm =
         Email: string
         Phone: string
         SquirrelName: string
-    }
-
-type TrainingRequestResponse =
-    {
-        IsSuccess: bool;
-        IsInternalError: bool;
-        ValidationFailures: Option<TrainingRequestValidation>;
-    }
-
-type PagedData<'TValue> =
-    {
-        Page: int64;
-        MorePages: bool;
-        TotalRecords: Option<int64>;
-        Data: seq<'TValue>;
     }
 
 [<Literal>]
@@ -102,7 +88,7 @@ let removeNonDigits givenString =
 let getValidationMessage keyName (validationResults: IDictionary<string,Result<unit,string>>) =
     match validationResults[keyName] with | Error msg -> msg | _ -> ""
 
-let validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, TrainingRequestResponse> =
+let validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, GenericModelResponse<TrainingRequestValidation>> =
     let validationResults =
         dict [
             nameof form.CaretakerCompanyName,   validateCompanyName form;
