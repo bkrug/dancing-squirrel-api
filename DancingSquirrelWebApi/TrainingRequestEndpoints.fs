@@ -276,16 +276,10 @@ let getTrainingRequestCount (env : IGetDb) =
 
 let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
     task {
-        let page =
-            match (Request.getQuery ctx).GetInt("page") with
-                | givenNumber when givenNumber <= 1 -> 1
-                | givenNumber -> givenNumber
-        let pageLength =
-            match (Request.getQuery ctx).GetInt("length") with
-                | givenNumber when givenNumber <= 10 -> 10
-                | givenNumber -> givenNumber
+        let page = Math.Max(1, (Request.getQuery ctx).GetInt("page"))
+        let pageLength = Math.Max(10, (Request.getQuery ctx).GetInt("length"))
         let skipCount = (page - 1) * pageLength
-        let! existingTrainingRequests = getTrainingRequestsFromDb env skipCount (pageLength + 1)
+        let! existingTrainingRequests = getTrainingRequestsFromDb env skipCount pageLength
         let! recordCountResult = getTrainingRequestCount env
         let recordCount =
             match recordCountResult with
@@ -297,7 +291,7 @@ let getTrainingRequests (env : IGetDb) : HttpHandler = fun ctx ->
                 let payload : PagedData<TrainingRequestForm> = {
                     Page = page;
                     TotalRecords = Some recordCount;
-                    MorePages = (Seq.length foundList > pageLength);
+                    MorePages = recordCount > page * pageLength;
                     Data = (foundList |> Seq.truncate pageLength);
                 }
                 Response.withStatusCode 200 >> Response.ofJson payload
