@@ -22,17 +22,19 @@ type TrainingRequestValidation =
         Email: string;
         Phone: string;
         SquirrelName: string;
+        DescriptionOfNeeds: string;
     }
 
 type TrainingRequestForm =
     {
         CaretakerType: CaretakerType;
-        CaretakerFirstName: string;
-        CaretakerLastName: string;
-        CaretakerCompanyName: string
-        Email: string
-        Phone: string
-        SquirrelName: string
+        CaretakerFirstName: Option<string>;
+        CaretakerLastName: Option<string>;
+        CaretakerCompanyName: Option<string>;
+        Email: string;
+        Phone: string;
+        SquirrelName: string;
+        DescriptionOfNeeds: string;
     }
 
 [<Literal>]
@@ -41,19 +43,22 @@ let requiredMessage = "is required"
 let validateCompanyName form =
     match form with
         | { CaretakerType = CaretakerType.Person } -> Ok()
-        | { CaretakerCompanyName = "" } -> Error requiredMessage
+        | { CaretakerCompanyName = None } -> Error requiredMessage
+        | { CaretakerCompanyName = Some("") } -> Error requiredMessage
         | _ -> Ok()
 
 let validateFirstName form =
     match form with
         | { CaretakerType = CaretakerType.Company } -> Ok()
-        | { CaretakerFirstName = "" } -> Error requiredMessage
+        | { CaretakerFirstName = None } -> Error requiredMessage
+        | { CaretakerFirstName = Some("") } -> Error requiredMessage
         | _ -> Ok()
 
 let validateLastName form =
     match form with
         | { CaretakerType = CaretakerType.Company } -> Ok()
-        | { CaretakerLastName = "" } -> Error requiredMessage
+        | { CaretakerLastName = None } -> Error requiredMessage
+        | { CaretakerLastName = Some("") } -> Error requiredMessage
         | _ -> Ok()        
 
 let validateRequiredName nameValue =
@@ -108,6 +113,7 @@ let validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, Gene
                 Email = form.Email
                 Phone = removeNonDigits form.Phone
                 SquirrelName = form.SquirrelName
+                DescriptionOfNeeds = form.DescriptionOfNeeds
             }
         | _ -> Error {
                 IsSuccess = false
@@ -120,10 +126,48 @@ let validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, Gene
                     Email = getValidationMessage (nameof form.Email) validationResults
                     Phone = getValidationMessage (nameof form.Phone) validationResults
                     SquirrelName = getValidationMessage (nameof form.SquirrelName) validationResults
+                    DescriptionOfNeeds = ""
                 }
             }
 
 let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
+    task {
+        let db = env.GetDb()
+        use! shared = db.OpenContextAsync()
+        try
+            insertTask shared {
+                for s in Database.main.TrainingRequest do
+                entity {
+                    TrainingRequestId = 1;
+                    SquirrelName = form.SquirrelName;
+                    OrganizationName = form.CaretakerCompanyName;
+                    OwnerFirstName = form.CaretakerFirstName;
+                    OwnerLastName = form.CaretakerLastName;
+                    Email = form.Email;
+                    Phone = Some form.Phone;
+                    DescriptionOfNeeds = Some form.DescriptionOfNeeds;
+                    SquirrelId = None;
+                    OnboardUsername = None;
+                    OnboardingDateTime = None;
+                }
+                getId s.TrainingRequestId
+            } |> ignore
+            return Ok {
+                IsSuccess = true
+                IsInternalError = false
+                ValidationFailures = None
+            }            
+        with
+        | ex ->
+            printfn "SQL: %O" ex
+            return Error {
+                IsSuccess = false
+                IsInternalError = true
+                ValidationFailures = None
+            }
+    }            
+
+let insertRequestToDatabaseOld (form : TrainingRequestForm) (env : IGetDb) =
     task {
         let db = env.GetDb()
         use! shared = db.OpenContextAsync()
@@ -134,13 +178,13 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
                 | CaretakerType.Person ->
                     insertTask shared {
                         for p in Database.main.Person do
-                        entity { PersonId = 1; FirstName = form.CaretakerFirstName; LastName = form.CaretakerLastName }
+                        entity { PersonId = 1; FirstName = form.CaretakerFirstName.Value; LastName = form.CaretakerLastName.Value }
                         getId p.PersonId
                     }
                 | _ ->
                     insertTask shared {
                         for o in Database.main.Organization do
-                        entity { OrganizationId = 1; Name = form.CaretakerCompanyName }
+                        entity { OrganizationId = 1; Name = form.CaretakerCompanyName.Value }
                         getId o.OrganizationId
                     }
             let! ownerId =
@@ -181,15 +225,17 @@ let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
         let caretakerTypeInt = form.GetInt("caretakertype", 0)
+        let caretakerTypeEnum = enum<CaretakerType> caretakerTypeInt
         let dataToValidate : TrainingRequestForm =
             {
-                CaretakerType = enum<CaretakerType> caretakerTypeInt
-                CaretakerCompanyName = form.GetString ("caretakerCompanyName", "")
-                CaretakerFirstName = form.GetString ("caretakerFirstName", "")
-                CaretakerLastName = form.GetString ("caretakerLastName", "")
+                CaretakerType = caretakerTypeEnum
+                CaretakerCompanyName = match caretakerTypeEnum with | CaretakerType.Company -> Some(form.GetString ("caretakerCompanyName", "")) | _ -> None
+                CaretakerFirstName = match caretakerTypeEnum with | CaretakerType.Person -> Some(form.GetString ("caretakerFirstName", "")) | _ -> None
+                CaretakerLastName = match caretakerTypeEnum with | CaretakerType.Person -> Some(form.GetString ("caretakerLastName", "")) | _ -> None
                 Email = form.GetString ("email", "")
                 Phone = form.GetString ("phone", "")
                 SquirrelName = form.GetString ("squirrelname", "")
+                DescriptionOfNeeds = form.GetString ("descriptionOfNeeds", "")
             }
         let insertRequestToConfiguredDb (form : TrainingRequestForm) = insertRequestToDatabase form env
         let! resultOfChain =
@@ -213,31 +259,33 @@ let getTrainingRequestsFromDb (env : IGetDb) (skipNumber : int) (length : int) =
         try
             let! requests =
                 selectTask db {
-                    for s in Database.main.Squirrel do
-                    join so in Database.main.SquirrelOwner on (s.SquirrelOwnerId = so.SquirrelOwnerId)
-                    leftJoin o in Database.main.Organization on (so.OrganizationId.Value = o.Value.OrganizationId)
-                    leftJoin p in Database.main.Person on (so.PersonId.Value = p.Value.PersonId)
+                    for s in Database.main.TrainingRequest do
+                    where (s.SquirrelId = None)
                     select (
-                        s.Name,
-                        so.PhoneNumber,
-                        so.Email,
-                        so.PersonId,
-                        p |> Option.map _.FirstName,
-                        p |> Option.map _.LastName,
-                        o |> Option.map _.Name
+                        s.SquirrelName,
+                        s.Phone,
+                        s.Email,
+                        s.OwnerLastName,
+                        s.OwnerFirstName,
+                        s.OrganizationName,
+                        s.DescriptionOfNeeds
                     ) into selected
                     skip skipNumber
                     take length
                     mapSeq (
-                        let squirrelName, phoneNumber, email, personId, firstNameMaybe, lastNameMaybe, companyNameMaybe = selected
+                        let squirrelName, phoneNumber, email, firstNameMaybe, lastNameMaybe, companyNameMaybe, descriptionOfNeedsMaybe = selected
                         let trainingRequestForm : TrainingRequestForm = {
-                            CaretakerType = match personId.IsSome with | true -> CaretakerType.Person | false -> CaretakerType.Company
-                            CaretakerCompanyName = companyNameMaybe |> Option.defaultValue ""
-                            CaretakerFirstName = firstNameMaybe |> Option.defaultValue ""
-                            CaretakerLastName = lastNameMaybe |> Option.defaultValue ""
-                            Email = email |> Option.defaultValue ""
+                            CaretakerType =
+                                match companyNameMaybe.IsNone || companyNameMaybe.Value.Length = 0 with
+                                | true -> CaretakerType.Person
+                                | false -> CaretakerType.Company
+                            CaretakerCompanyName = companyNameMaybe
+                            CaretakerFirstName = firstNameMaybe
+                            CaretakerLastName = lastNameMaybe
+                            Email = email
                             Phone = phoneNumber |> Option.defaultValue ""
                             SquirrelName = squirrelName
+                            DescriptionOfNeeds = descriptionOfNeedsMaybe |> Option.defaultValue ""
                         }
                         trainingRequestForm
                     )
@@ -259,8 +307,8 @@ let getTrainingRequestCount (env : IGetDb) =
         try
             let! requests =
                 selectTask db {
-                    for s in Database.main.Squirrel do
-                    join so in Database.main.SquirrelOwner on (s.SquirrelOwnerId = so.SquirrelOwnerId)
+                    for s in Database.main.TrainingRequest do
+                    where (s.SquirrelId = None)
                     count
                 }
             return Ok requests

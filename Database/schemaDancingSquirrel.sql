@@ -26,3 +26,18 @@ CREATE TABLE Squirrel (
 	CONSTRAINT PK_Squirrel PRIMARY KEY (SquirrelId),
 	CONSTRAINT FK_Squirrel_SquirrelOwner FOREIGN KEY (SquirrelOwnerId) REFERENCES SquirrelOwner(SquirrelOwnerId)
 );
+CREATE TABLE TrainingRequest (
+	TrainingRequestId INTEGER NOT NULL,
+	SquirrelName TEXT NOT NULL,
+	OrganizationName TEXT,
+	OwnerLastName TEXT,
+	OwnerFirstName TEXT,
+	Email TEXT NOT NULL,
+	Phone TEXT,
+	SquirrelId INTEGER,
+	OnboardUsername TEXT,
+	OnboardingDateTime TEXT, DescriptionOfNeeds TEXT,
+	CONSTRAINT PK_TrainingRequest PRIMARY KEY (TrainingRequestId),
+	CONSTRAINT FK_TrainingRequest_Squirrel FOREIGN KEY (SquirrelId) REFERENCES Squirrel(SquirrelId)
+);
+CREATE INDEX TrainingRequest_SquirrelId_IDX ON TrainingRequest (SquirrelId);

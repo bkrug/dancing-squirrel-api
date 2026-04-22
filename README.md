@@ -53,7 +53,7 @@ dotnet tool install --local SqlHydra.Cli
 cd DancingSquirrelWebApi/
 dotnet sqlhydra sqlite
 ```
-Supplied the command line tool with the connection string "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db"
+Now, supply the command line tool with the connection string "Data Source=/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db"
 
 (from DancingSquirrelWebApi/ folder)
 ```

@@ -42,6 +42,22 @@ module main =
 
     let SquirrelOwner = table<SquirrelOwner>
 
+    [<CLIMutable>]
+    type TrainingRequest =
+        { TrainingRequestId: int64
+          SquirrelName: string
+          OrganizationName: Option<string>
+          OwnerLastName: Option<string>
+          OwnerFirstName: Option<string>
+          Email: string
+          Phone: Option<string>
+          SquirrelId: Option<int64>
+          OnboardUsername: Option<string>
+          OnboardingDateTime: Option<string>
+          DescriptionOfNeeds: Option<string> }
+
+    let TrainingRequest = table<TrainingRequest>
+
 
 [<System.Obsolete("The HydraBuilders module is no longer needed and will be removed in v4.0.")>]
 module HydraBuilders =
