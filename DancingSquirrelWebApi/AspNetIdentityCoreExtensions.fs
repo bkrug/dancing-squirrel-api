@@ -65,7 +65,7 @@ type IServiceCollection with
         this.ConfigureApplicationCookie(fun options ->
             // Cookie settings
             options.Cookie.HttpOnly <- true
-            options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 5)
+            options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 60)
 
             options.LoginPath <- "/api/authentication"
             options.AccessDeniedPath <- String.Empty
