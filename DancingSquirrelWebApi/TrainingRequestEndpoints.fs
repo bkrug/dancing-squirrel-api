@@ -167,7 +167,7 @@ let getSingleTrainingRequest (env: IGetDb) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
-                let trainingRequestId = Math.Max(0, (Request.getQuery ctx).GetInt("trainingRequestId"))
+                let trainingRequestId = Math.Max(0, (Request.getRoute ctx).GetInt("trainingRequestId"))
                 let! existingTrainingRequest = getSingleTrainingRequestFromDb env trainingRequestId
                 let jsonResponse =
                     match existingTrainingRequest with
