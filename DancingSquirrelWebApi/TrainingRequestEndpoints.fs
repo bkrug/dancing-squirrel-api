@@ -145,8 +145,7 @@ let getTrainingRequests (env : IGetDb) =
                             | Error _ -> (page - 1) * pageLength + (foundList |> Seq.length)
                         let payload = {
                             Page = page;
-                            TotalRecords = Some recordCount;
-                            MorePages = recordCount > page * pageLength;
+                            TotalRecords = recordCount;
                             Data = (foundList |> Seq.truncate pageLength);
                         }
                         Response.withStatusCode 200 >> Response.ofJson payload

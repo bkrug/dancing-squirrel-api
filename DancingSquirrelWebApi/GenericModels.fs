@@ -5,8 +5,7 @@ open Falco
 type PagedData<'TValue> =
     {
         Page: int64;
-        MorePages: bool;
-        TotalRecords: Option<int64>;
+        TotalRecords: int64;
         Data: seq<'TValue>;
     }
 
@@ -35,6 +34,7 @@ let internalErrorResponse =
         ValidationFailures = None
     }
 
+//This is considered an internal error, because this error is only expected in situations where we forgot to put a unique key on some lookup field.
 let foundMultipleRecordsResponse =
     {
         IsSuccess = false
@@ -45,6 +45,7 @@ let foundMultipleRecordsResponse =
         }
     }
 
+//This is not considered an internal error. The caller probably just supplied an invalid key.
 let notFoundResponse =
     {
         IsSuccess = false
