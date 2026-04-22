@@ -14,7 +14,7 @@ open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
 open RegistrationEndpoints
-open TrainingRequestEndpoints
+open TrainingRequest.Endpoints
 
 let getEndpoints (wApp : WebApplication) =
     //Prepare a set of dependencies that hide the messy outside world from our deterministic code
