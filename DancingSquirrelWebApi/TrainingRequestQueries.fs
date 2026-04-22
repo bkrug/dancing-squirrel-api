@@ -120,34 +120,8 @@ let getTrainingRequestsFromDb (env : IGetDb) (skipNumber : int) (length : int) =
                 selectTask db {
                     for s in Database.main.TrainingRequest do
                     where (s.SquirrelId = None)
-                    select (
-                        s.SquirrelName,
-                        s.Phone,
-                        s.Email,
-                        s.OwnerLastName,
-                        s.OwnerFirstName,
-                        s.OrganizationName,
-                        s.DescriptionOfNeeds
-                    ) into selected
                     skip skipNumber
                     take length
-                    mapSeq (
-                        let squirrelName, phoneNumber, email, firstNameMaybe, lastNameMaybe, companyNameMaybe, descriptionOfNeedsMaybe = selected
-                        let trainingRequestForm : TrainingRequestForm = {
-                            CaretakerType =
-                                match companyNameMaybe.IsNone || companyNameMaybe.Value.Length = 0 with
-                                | true -> CaretakerType.Person
-                                | false -> CaretakerType.Company
-                            CaretakerCompanyName = companyNameMaybe
-                            CaretakerFirstName = firstNameMaybe
-                            CaretakerLastName = lastNameMaybe
-                            Email = email
-                            Phone = phoneNumber |> Option.defaultValue ""
-                            SquirrelName = squirrelName
-                            DescriptionOfNeeds = descriptionOfNeedsMaybe |> Option.defaultValue ""
-                        }
-                        trainingRequestForm
-                    )
                 }
             return Ok requests
         with

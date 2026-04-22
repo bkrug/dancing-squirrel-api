@@ -119,19 +119,12 @@ let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
                 DescriptionOfNeeds = form.GetString ("descriptionOfNeeds", "")
             }
         let insertRequestToConfiguredDb (form : TrainingRequestForm) = insertRequestToDatabase form env
-        let! resultOfChain =
+        let! submissionResult =
             Ok dataToValidate
             |> Result.bind validateForm
             |> TaskResult.bindToTask insertRequestToConfiguredDb
-        let jsonResponse =
-            match resultOfChain with
-            | Ok trainingRequestResponse ->
-                Response.withStatusCode 201 >> Response.ofJson trainingRequestResponse
-            | Error trainingRequestResponse when trainingRequestResponse.ValidationFailures.IsSome ->
-                Response.withStatusCode 400 >> Response.ofJson trainingRequestResponse
-            | Error trainingRequestResponse ->
-                Response.withStatusCode 500 >> Response.ofJson trainingRequestResponse
-        return! jsonResponse ctx
+        let httpFormResponse = getHttpFormResponse submissionResult
+        return! httpFormResponse ctx
     }
 
 let getTrainingRequests (env : IGetDb) =
@@ -148,9 +141,9 @@ let getTrainingRequests (env : IGetDb) =
                     | Ok foundList ->
                         let recordCount =
                             match recordCountResult with
-                                | Ok foundCount -> foundCount
-                                | Error _ -> (page - 1) * pageLength + (foundList |> Seq.length)
-                        let payload : PagedData<TrainingRequestForm> = {
+                            | Ok foundCount -> foundCount
+                            | Error _ -> (page - 1) * pageLength + (foundList |> Seq.length)
+                        let payload = {
                             Page = page;
                             TotalRecords = Some recordCount;
                             MorePages = recordCount > page * pageLength;
@@ -169,14 +162,7 @@ let getSingleTrainingRequest (env: IGetDb) =
             task {
                 let trainingRequestId = Math.Max(0, (Request.getRoute ctx).GetInt("trainingRequestId"))
                 let! existingTrainingRequest = getSingleTrainingRequestFromDb env trainingRequestId
-                let jsonResponse =
-                    match existingTrainingRequest with
-                    | Ok foundRecord ->
-                        Response.withStatusCode 200 >> Response.ofJson foundRecord
-                    | Error errorResponse when not errorResponse.IsInternalError ->
-                        Response.withStatusCode 400 >> Response.ofJson errorResponse
-                    | Error errorResponse ->
-                        Response.withStatusCode 500 >> Response.ofJson errorResponse
-                return! jsonResponse ctx
+                let httpRecordResponse = getHttpRecordResponse existingTrainingRequest
+                return! httpRecordResponse ctx
             }
         )
