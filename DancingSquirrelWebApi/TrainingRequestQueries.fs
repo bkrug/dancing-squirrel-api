@@ -36,11 +36,7 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
         with
         | ex ->
             printfn "SQL: %O" ex
-            return Error {
-                IsSuccess = false
-                IsInternalError = true
-                ValidationFailures = None
-            }
+            return Error internalErrorResponse
     }            
 
 let insertRequestToDatabaseOld (form : TrainingRequestForm) (env : IGetDb) =
@@ -90,11 +86,7 @@ let insertRequestToDatabaseOld (form : TrainingRequestForm) (env : IGetDb) =
         | ex ->
             shared.RollbackTransaction()
             printfn "SQL: %O" ex
-            return Error {
-                IsSuccess = false
-                IsInternalError = true
-                ValidationFailures = None
-            }
+            return Error internalErrorResponse
     }
 
 let getSingleTrainingRequestFromDb (env : IGetDb) (recordId : int64) =
@@ -110,14 +102,14 @@ let getSingleTrainingRequestFromDb (env : IGetDb) (recordId : int64) =
             let recordCount = request |> Seq.length
             let response = 
                 match recordCount with
-                | 1 -> Ok request
-                | 0 -> Error RecordRetrievalErrors.NotFound
-                | _ -> Error RecordRetrievalErrors.ExpectedSingleFoundMultiple
+                | 0 -> Error notFoundResponse
+                | 1 -> Ok (request |> Seq.head)
+                | _ -> Error foundMultipleRecordsResponse
             return response
         with
         | ex ->
             printfn "SQL: %O" ex
-            return Error RecordRetrievalErrors.DbAccessError
+            return Error internalErrorResponse
     }
 
 let getTrainingRequestsFromDb (env : IGetDb) (skipNumber : int) (length : int) =
@@ -161,7 +153,7 @@ let getTrainingRequestsFromDb (env : IGetDb) (skipNumber : int) (length : int) =
         with
         | ex ->
             printfn "SQL: %O" ex
-            return Error RecordRetrievalErrors.DbAccessError
+            return Error internalErrorResponse
     }
 
 let getTrainingRequestCount (env : IGetDb) =
@@ -178,5 +170,5 @@ let getTrainingRequestCount (env : IGetDb) =
         with
         | ex ->
             printfn "SQL: %O" ex
-            return Error RecordRetrievalErrors.DbAccessError
+            return Error internalErrorResponse
     }

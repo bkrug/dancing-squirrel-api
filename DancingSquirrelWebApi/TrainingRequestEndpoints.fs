@@ -162,3 +162,21 @@ let getTrainingRequests (env : IGetDb) =
                 return! jsonResponse ctx
             }
         )
+
+let getSingleTrainingRequest (env: IGetDb) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let trainingRequestId = Math.Max(0, (Request.getQuery ctx).GetInt("trainingRequestId"))
+                let! existingTrainingRequest = getSingleTrainingRequestFromDb env trainingRequestId
+                let jsonResponse =
+                    match existingTrainingRequest with
+                    | Ok foundRecord ->
+                        Response.withStatusCode 200 >> Response.ofJson foundRecord
+                    | Error errorResponse when not errorResponse.IsInternalError ->
+                        Response.withStatusCode 400 >> Response.ofJson errorResponse
+                    | Error errorResponse ->
+                        Response.withStatusCode 500 >> Response.ofJson errorResponse
+                return! jsonResponse ctx
+            }
+        )
