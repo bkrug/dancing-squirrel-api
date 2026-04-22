@@ -17,9 +17,6 @@ type GenericModelResponse<'TValue> =
         ValidationFailures: Option<'TValue>;
     }
 
-// I'm not sure about this "RecordRetrievalErrors" enum yet.
-// It prevents us from piping methods together the way we do with "insertRequestToDatabase", which returns a "GenericModelResponse".
-// In the long run, I might just write several variables the resemble "internalErrorResponse".
 type RecordRetrievalErrors =
     | DbAccessError = 1
     | NotFound = 2
