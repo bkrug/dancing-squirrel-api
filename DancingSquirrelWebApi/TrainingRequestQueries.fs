@@ -97,6 +97,29 @@ let insertRequestToDatabaseOld (form : TrainingRequestForm) (env : IGetDb) =
             }
     }
 
+let getSingleTrainingRequestFromDb (env : IGetDb) (recordId : int64) =
+    task {
+        let db = env.GetDb()
+        try
+            let! request =
+                selectTask db {
+                    for s in Database.main.TrainingRequest do
+                    where (s.TrainingRequestId = recordId)
+                    take 2
+                }
+            let recordCount = request |> Seq.length
+            let response = 
+                match recordCount with
+                | 1 -> Ok request
+                | 0 -> Error RecordRetrievalErrors.NotFound
+                | _ -> Error RecordRetrievalErrors.ExpectedSingleFoundMultiple
+            return response
+        with
+        | ex ->
+            printfn "SQL: %O" ex
+            return Error RecordRetrievalErrors.DbAccessError
+    }
+
 let getTrainingRequestsFromDb (env : IGetDb) (skipNumber : int) (length : int) =
     task {
         let db = env.GetDb()
@@ -138,12 +161,8 @@ let getTrainingRequestsFromDb (env : IGetDb) (skipNumber : int) (length : int) =
         with
         | ex ->
             printfn "SQL: %O" ex
-            return Error {
-                IsSuccess = false
-                IsInternalError = true
-                ValidationFailures = None
-            }
-    }    
+            return Error RecordRetrievalErrors.DbAccessError
+    }
 
 let getTrainingRequestCount (env : IGetDb) =
     task {
@@ -159,9 +178,5 @@ let getTrainingRequestCount (env : IGetDb) =
         with
         | ex ->
             printfn "SQL: %O" ex
-            return Error {
-                IsSuccess = false
-                IsInternalError = true
-                ValidationFailures = None
-            }
+            return Error RecordRetrievalErrors.DbAccessError
     }
