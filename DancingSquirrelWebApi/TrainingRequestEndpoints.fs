@@ -136,22 +136,8 @@ let getTrainingRequests (env : IGetDb) =
                 let skipCount = (page - 1) * pageLength
                 let! existingTrainingRequests = getTrainingRequestsFromDb env skipCount pageLength
                 let! recordCountResult = getTrainingRequestCount env
-                let jsonResponse =
-                    match existingTrainingRequests with
-                    | Ok foundList ->
-                        let recordCount =
-                            match recordCountResult with
-                            | Ok foundCount -> foundCount
-                            | Error _ -> (page - 1) * pageLength + (foundList |> Seq.length)
-                        let payload = {
-                            Page = page;
-                            TotalRecords = recordCount;
-                            Data = (foundList |> Seq.truncate pageLength);
-                        }
-                        Response.withStatusCode 200 >> Response.ofJson payload
-                    | Error _ ->
-                        Response.withStatusCode 500 >> Response.ofJson internalErrorResponse
-                return! jsonResponse ctx
+                let httpPagedResponse = getHttpPagedDataResponse existingTrainingRequests recordCountResult page pageLength
+                return! httpPagedResponse ctx
             }
         )
 

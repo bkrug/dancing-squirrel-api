@@ -65,6 +65,22 @@ let getHttpFormResponse formSubmissionResult =
     | Error failureResponse ->
         Response.withStatusCode 500 >> Response.ofJson failureResponse
 
+let getHttpPagedDataResponse recordSequenceResult recordCountResult page pageLength =
+    match recordSequenceResult with
+    | Ok foundSequence ->
+        let recordCount =
+            match recordCountResult with
+            | Ok foundCount -> foundCount
+            | Error _ -> (page - 1) * pageLength + (foundSequence |> Seq.length)
+        let payload = {
+            Page = page;
+            TotalRecords = recordCount;
+            Data = (foundSequence |> Seq.truncate pageLength);
+        }
+        Response.withStatusCode 200 >> Response.ofJson payload
+    | Error _ ->
+        Response.withStatusCode 500 >> Response.ofJson internalErrorResponse
+
 let getHttpRecordResponse recordLookupResult =
     match recordLookupResult with
     | Ok foundRecord ->
