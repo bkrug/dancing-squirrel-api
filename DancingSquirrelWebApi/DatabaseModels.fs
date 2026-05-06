@@ -46,6 +46,7 @@ module main =
     type TrainingRequest =
         { TrainingRequestId: int64
           SquirrelName: string
+          CaretakerType: int64
           OrganizationName: Option<string>
           OwnerLastName: Option<string>
           OwnerFirstName: Option<string>

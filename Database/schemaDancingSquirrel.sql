@@ -28,6 +28,7 @@ CREATE TABLE Squirrel (
 );
 CREATE TABLE TrainingRequest (
 	TrainingRequestId INTEGER NOT NULL,
+	CaretakerType INTEGER NOT NULL,
 	SquirrelName TEXT NOT NULL,
 	OrganizationName TEXT,
 	OwnerLastName TEXT,

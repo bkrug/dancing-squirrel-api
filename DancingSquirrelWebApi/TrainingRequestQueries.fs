@@ -16,6 +16,7 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
                 entity {
                     TrainingRequestId = 1;
                     SquirrelName = form.SquirrelName;
+                    CaretakerType = int64 form.CaretakerType;
                     OrganizationName = form.CaretakerCompanyName;
                     OwnerFirstName = form.CaretakerFirstName;
                     OwnerLastName = form.CaretakerLastName;
