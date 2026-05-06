@@ -40,24 +40,32 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
             return Error internalErrorResponse
     }            
 
-let insertRequestToDatabaseOld (form : TrainingRequestForm) (env : IGetDb) =
+let onboardClientInDb (env : IGetDb) (onboardingUsername: string) (trainingRequest : DbLayer.Database.main.TrainingRequest) =
     task {
         let db = env.GetDb()
         use! shared = db.OpenContextAsync()
-        shared.BeginTransaction()
         try
+            shared.BeginTransaction()
+            let caretakerType = enum<CaretakerType>(int32 trainingRequest.CaretakerType)
             let! personOrOrganizationId =
-                match form.CaretakerType with
+                match caretakerType with
                 | CaretakerType.Person ->
                     insertTask shared {
                         for p in Database.main.Person do
-                        entity { PersonId = 1; FirstName = form.CaretakerFirstName.Value; LastName = form.CaretakerLastName.Value }
+                        entity {
+                            PersonId = 0;
+                            FirstName = match trainingRequest.OwnerFirstName with | None -> "" | Some s -> s;
+                            LastName = match trainingRequest.OwnerLastName with | None -> "" | Some s -> s;
+                        }
                         getId p.PersonId
                     }
                 | _ ->
                     insertTask shared {
                         for o in Database.main.Organization do
-                        entity { OrganizationId = 1; Name = form.CaretakerCompanyName.Value }
+                        entity {
+                            OrganizationId = 0;
+                            Name = match trainingRequest.OrganizationName with | None -> "" | Some s -> s;
+                        }
                         getId o.OrganizationId
                     }
             let! ownerId =
@@ -65,24 +73,52 @@ let insertRequestToDatabaseOld (form : TrainingRequestForm) (env : IGetDb) =
                     for so in Database.main.SquirrelOwner do
                     entity {
                         SquirrelOwnerId = 0;
-                        PersonId = if form.CaretakerType = CaretakerType.Person then Some personOrOrganizationId else None;
-                        OrganizationId = if form.CaretakerType = CaretakerType.Company then None else Some personOrOrganizationId;
-                        PhoneNumber = Some form.Phone;
-                        Email = Some form.Email;
+                        PersonId = if caretakerType = CaretakerType.Person then Some personOrOrganizationId else None;
+                        OrganizationId = if caretakerType = CaretakerType.Company then Some personOrOrganizationId else None;
+                        PhoneNumber = trainingRequest.Phone;
+                        Email = Some trainingRequest.Email;
                     }
                     getId so.SquirrelOwnerId
                 }
-            insertTask shared {
+            let! squirrelId = insertTask shared {
                 for s in Database.main.Squirrel do
-                entity { SquirrelId = 0; Name = form.SquirrelName; SquirrelOwnerId = ownerId }
+                entity {
+                    SquirrelId = 0;
+                    Name = trainingRequest.SquirrelName;
+                    SquirrelOwnerId = ownerId;
+                }
                 getId s.SquirrelId
-            } |> ignore
-            shared.CommitTransaction()
-            return Ok {
-                IsSuccess = true
-                IsInternalError = false
-                ValidationFailures = None
-            }            
+            }
+            let dateString = System.DateTime.UtcNow.ToString "yyyy-MM-dd hh:mm:ss"
+            let! updateSuccess = updateTask shared {
+                for tr in Database.main.TrainingRequest do
+                set tr.SquirrelId (Some squirrelId)
+                set tr.OnboardUsername (Some onboardingUsername)
+                set tr.OnboardingDateTime (Some dateString)
+                where (tr.TrainingRequestId = trainingRequest.TrainingRequestId)
+            }
+            match updateSuccess with
+                | 1 ->
+                    shared.CommitTransaction()
+                    let updatedRecord : DbLayer.Database.main.TrainingRequest = {
+                        TrainingRequestId = trainingRequest.TrainingRequestId;
+                        SquirrelName = trainingRequest.SquirrelName;
+                        CaretakerType = trainingRequest.CaretakerType;
+                        OrganizationName = trainingRequest.OrganizationName;
+                        OwnerLastName = trainingRequest.OwnerLastName;
+                        OwnerFirstName = trainingRequest.OwnerFirstName;
+                        Email = trainingRequest.Email;
+                        Phone = trainingRequest.Phone;
+                        SquirrelId = (Some squirrelId);
+                        OnboardUsername = (Some onboardingUsername);
+                        OnboardingDateTime = (Some dateString);
+                        DescriptionOfNeeds = trainingRequest.DescriptionOfNeeds;
+                    }
+                    return Ok updatedRecord
+                | _ ->
+                    shared.RollbackTransaction()
+                    printfn "Update statement failed when onboarding the client"
+                    return Error internalErrorResponse
         with
         | ex ->
             shared.RollbackTransaction()

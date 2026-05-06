@@ -151,3 +151,16 @@ let getSingleTrainingRequest (env: IGetDb) =
                 return! httpRecordResponse ctx
             }
         )
+
+let onboardClient (env : IGetDb) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let trainingRequestId = (Request.getRoute ctx).GetInt "trainingRequestId"
+                let! onboardingResult =
+                    getSingleTrainingRequestFromDb env trainingRequestId
+                    |> TaskResult.bind (onboardClientInDb env ctx.User.Identity.Name)
+                let httpFormResponse = getHttpFormResponse onboardingResult
+                return! httpFormResponse ctx
+            }
+        )

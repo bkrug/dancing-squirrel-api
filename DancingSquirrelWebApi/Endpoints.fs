@@ -68,6 +68,7 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.route [
                     { Name = "trainingRequestId"; Type = typeof<int64>; Required = true }
                 ]
+            post "/api/squirrel/trainingRequest/{trainingRequestId:int}" (onboardClient curEnv)
             post "/api/user" (registerNewUserHandler createUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
             post "/api/authentication" (loginUserWithClaimsHandler loginUserAsync)

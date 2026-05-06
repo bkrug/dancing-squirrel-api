@@ -80,6 +80,8 @@ let getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>) =
 
     new ClaimsPrincipal(claimsIdentity)
 
+let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
+
 let loginUserWithClaimsHandler (loginUserAsync : string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>): HttpHandler = fun ctx ->
     task {
         let! jsonString = Request.getBodyString ctx
@@ -91,7 +93,7 @@ let loginUserWithClaimsHandler (loginUserAsync : string -> string -> bool -> boo
             match isCorrectPassword with
                 | true ->
                     let claimsPrincipal = getClaimsPrincipal(user, roles)
-                    Response.signIn CookieAuthenticationDefaults.AuthenticationScheme claimsPrincipal
+                    Response.signIn authScheme claimsPrincipal
                     //C# version -- I can't figure out how to use auth Properties with Falco:
                     // await HttpContext.SignInAsync(
                     //     CookieAuthenticationDefaults.AuthenticationScheme, 
@@ -102,8 +104,6 @@ let loginUserWithClaimsHandler (loginUserAsync : string -> string -> bool -> boo
         
         return! httpResponse ctx
     }
-
-let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
 let logoutUser (logoutUserAsync : unit -> Task<unit>) =
     Auth.processAuthenticatedRequest
