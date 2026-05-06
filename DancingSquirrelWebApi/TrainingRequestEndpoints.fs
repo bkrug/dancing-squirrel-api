@@ -154,6 +154,22 @@ let getSingleTrainingRequest (env: IGetDb) =
             }
         )
 
+let validatedOnboardingRequest (trainingRequest : DbLayer.Database.main.TrainingRequest) =
+    let res =
+        match trainingRequest.SquirrelId with
+        | None -> Ok trainingRequest
+        | _ -> 
+            let lookupFailureMsg : RecordLookupValidation = {
+                LookupFailureMessage = "Caretaker and Squirrel have already been onboarded"
+                DbErrorType = RecordRetrievalErrors.DbAccessError
+            }
+            Error {
+                IsSuccess = false
+                IsInternalError = false
+                ValidationFailures = Some lookupFailureMsg
+            }
+    System.Threading.Tasks.Task.FromResult res
+
 let onboardClient (env : IGetDb) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
@@ -164,6 +180,7 @@ let onboardClient (env : IGetDb) =
                 let trainingRequestId = (Request.getRoute ctx).GetInt "trainingRequestId"
                 let! onboardingResult =
                     getSingleTrainingRequestFromDb env trainingRequestId
+                    |> TaskResult.bind validatedOnboardingRequest
                     |> TaskResult.bind (onboardClientInDb env username)
                 let httpFormResponse = getHttpFormResponse onboardingResult
                 return! httpFormResponse ctx
