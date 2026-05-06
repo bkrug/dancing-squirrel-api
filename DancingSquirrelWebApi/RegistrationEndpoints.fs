@@ -69,14 +69,7 @@ let getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>) =
         |> Seq.append roleClaims
 
     let claimsIdentity = new ClaimsIdentity(
-        claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-    let authProperties = new AuthenticationProperties (
-        AllowRefresh = true,
-        ExpiresUtc = System.DateTimeOffset.UtcNow.AddMinutes(10),
-        IsPersistent = true,
-        IssuedUtc = System.DateTime.UtcNow
-    )
+        claims, CookieAuthenticationDefaults.AuthenticationScheme)
 
     new ClaimsPrincipal(claimsIdentity)
 
@@ -93,12 +86,13 @@ let loginUserWithClaimsHandler (loginUserAsync : string -> string -> bool -> boo
             match isCorrectPassword with
                 | true ->
                     let claimsPrincipal = getClaimsPrincipal(user, roles)
-                    Response.signIn authScheme claimsPrincipal
-                    //C# version -- I can't figure out how to use auth Properties with Falco:
-                    // await HttpContext.SignInAsync(
-                    //     CookieAuthenticationDefaults.AuthenticationScheme, 
-                    //     new ClaimsPrincipal(claimsIdentity), 
-                    //     authProperties);
+                    let authProperties = new AuthenticationProperties (
+                        AllowRefresh = true,
+                        ExpiresUtc = System.DateTimeOffset.UtcNow.AddDays(7),
+                        IsPersistent = true,
+                        IssuedUtc = System.DateTime.UtcNow
+                    )
+                    Response.signInOptions authScheme claimsPrincipal authProperties
                 | false ->
                     Response.withStatusCode 401 >> Response.ofJson "TODO - failure to authenticate"
         

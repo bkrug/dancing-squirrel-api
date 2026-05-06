@@ -54,6 +54,7 @@ ensureIdentitySeedData wApp.Services |> ignore
 
 wApp.UseAuthentication() |> ignore
 wApp.UseAuthorization() |> ignore
+wApp.UseCookiePolicy(new CookiePolicyOptions( MinimumSameSitePolicy = SameSiteMode.Strict; ) ) |> ignore
 wApp.UseRouting() |> ignore
 wApp.UseHttpsRedirection()
     .UseSwagger()

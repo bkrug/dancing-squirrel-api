@@ -7,5 +7,5 @@ let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
 let processAuthenticatedRequest (requestLogic : HttpHandler) : HttpHandler = fun ctx ->
     task {
-        return! Request.ifAuthenticated authScheme requestLogic ctx
+        do! Request.ifAuthenticated authScheme requestLogic ctx
     }
