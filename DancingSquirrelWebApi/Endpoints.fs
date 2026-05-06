@@ -13,6 +13,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
+open System.Collections.Generic
 open RegistrationEndpoints
 open TrainingRequest.Endpoints
 
@@ -36,9 +37,15 @@ let getEndpoints (wApp : WebApplication) =
             let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
             let userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
             let! user = signInManager.UserManager.FindByNameAsync(username)
-            let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
-            let! roles = userManager.GetRolesAsync(user)
-            return isCorrectPassword, user, roles
+            if user = null
+            then
+                let user: IdentityUser = null
+                let roles: IList<string> = List<string> [ "abc" ]
+                return false, user, roles
+            else
+                let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
+                let! roles = userManager.GetRolesAsync(user)
+                return isCorrectPassword, user, roles
         }
     
     let logoutUserAsync = fun () ->
