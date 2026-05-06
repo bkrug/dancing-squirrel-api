@@ -1,13 +1,11 @@
 module RegistrationEndpoints
 
-open System.Web
 open System.Text.Json
 open System.Threading.Tasks
 open System.Security.Claims
 open System.Collections.Generic
 open Falco
 open Microsoft.AspNetCore.Authentication
-open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Identity
 
@@ -88,7 +86,7 @@ let loginUserWithClaimsHandler (loginUserAsync : string -> string -> bool -> boo
                     let claimsPrincipal = getClaimsPrincipal(user, roles)
                     let authProperties = new AuthenticationProperties (
                         AllowRefresh = true,
-                        ExpiresUtc = System.DateTimeOffset.UtcNow.AddDays(7),
+                        ExpiresUtc = System.DateTimeOffset.UtcNow.AddHours(2),
                         IsPersistent = true,
                         IssuedUtc = System.DateTime.UtcNow
                     )

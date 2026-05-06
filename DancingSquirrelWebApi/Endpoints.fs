@@ -40,7 +40,7 @@ let getEndpoints (wApp : WebApplication) =
             if user = null
             then
                 let user: IdentityUser = null
-                let roles: IList<string> = List<string> [ "abc" ]
+                let roles: IList<string> = List<string> [ ]
                 return false, user, roles
             else
                 let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)

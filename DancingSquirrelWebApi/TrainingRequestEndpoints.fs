@@ -8,6 +8,8 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 open TrainingRequest.Models
 open TrainingRequest.Queries
+open Microsoft.AspNetCore.Authentication
+open Microsoft.AspNetCore.Authentication.Cookies
 
 [<Literal>]
 let requiredMessage = "is required"
@@ -156,10 +158,13 @@ let onboardClient (env : IGetDb) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
+                //SUSPECT: Authenticating a second time just so I can get the username
+                let! authenticateResult = ctx.AuthenticateAsync CookieAuthenticationDefaults.AuthenticationScheme
+                let username = authenticateResult.Principal.Identity.Name
                 let trainingRequestId = (Request.getRoute ctx).GetInt "trainingRequestId"
                 let! onboardingResult =
                     getSingleTrainingRequestFromDb env trainingRequestId
-                    |> TaskResult.bind (onboardClientInDb env ctx.User.Identity.Name)
+                    |> TaskResult.bind (onboardClientInDb env username)
                 let httpFormResponse = getHttpFormResponse onboardingResult
                 return! httpFormResponse ctx
             }
