@@ -164,9 +164,7 @@ let validatedOnboardingRequest (trainingRequest : DbLayer.Database.main.Training
             Error {
                 IsSuccess = false
                 IsInternalError = false
-                ValidationFailures = Some (dict [
-                    "ErrorMessage", "Caretaker and Squirrel have already been onboarded";
-                ])
+                ValidationFailures = Some "Caretaker and Squirrel have already been onboarded"
             }
     Task.FromResult res
 
