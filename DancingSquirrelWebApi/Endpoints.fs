@@ -58,13 +58,13 @@ let getEndpoints (wApp : WebApplication) =
     //This list of endpoints available in our application
     let endpoints =
         [
-            post "/api/requests" (createTrainingRequest curEnv)
-            get "/api/requests" (getTrainingRequests curEnv)
+            post "/api/trainingRequest" (createTrainingRequest curEnv)
+            get "/api/trainingRequest" (getTrainingRequests curEnv)
                 |> OpenApi.query [
                     { Name = "page"; Type = typeof<int64>; Required = false }
                     { Name = "length"; Type = typeof<int64>; Required = false }
                 ]
-            get "/api/requests/{trainingRequestId:int}" (getSingleTrainingRequest curEnv)
+            get "/api/trainingRequest/{trainingRequestId:int}" (getSingleTrainingRequest curEnv)
                 |> OpenApi.route [
                     { Name = "trainingRequestId"; Type = typeof<int64>; Required = true }
                 ]
