@@ -45,8 +45,8 @@ module main =
     [<CLIMutable>]
     type TrainingRequest =
         { TrainingRequestId: int64
-          SquirrelName: string
           CaretakerType: int64
+          SquirrelName: string
           OrganizationName: Option<string>
           OwnerLastName: Option<string>
           OwnerFirstName: Option<string>
@@ -54,8 +54,8 @@ module main =
           Phone: Option<string>
           SquirrelId: Option<int64>
           OnboardUsername: Option<string>
-          OnboardingDateTime: Option<string>
-          DescriptionOfNeeds: Option<string> }
+          DescriptionOfNeeds: Option<string>
+          OnboardingDateTimeUnix: Option<int64> }
 
     let TrainingRequest = table<TrainingRequest>
 

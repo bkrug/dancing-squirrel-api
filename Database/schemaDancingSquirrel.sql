@@ -37,8 +37,8 @@ CREATE TABLE TrainingRequest (
 	Phone TEXT,
 	SquirrelId INTEGER,
 	OnboardUsername TEXT,
-	OnboardingDateTime TEXT, DescriptionOfNeeds TEXT,
+	DescriptionOfNeeds TEXT,
+	OnboardingDateTimeUnix INTEGER,
 	CONSTRAINT PK_TrainingRequest PRIMARY KEY (TrainingRequestId),
 	CONSTRAINT FK_TrainingRequest_Squirrel FOREIGN KEY (SquirrelId) REFERENCES Squirrel(SquirrelId)
 );
-CREATE INDEX TrainingRequest_SquirrelId_IDX ON TrainingRequest (SquirrelId);

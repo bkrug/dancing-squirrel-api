@@ -25,7 +25,7 @@ let insertRequestToDatabase (form : TrainingRequestForm) (env : IGetDb) =
                     DescriptionOfNeeds = Some form.DescriptionOfNeeds;
                     SquirrelId = None;
                     OnboardUsername = None;
-                    OnboardingDateTime = None;
+                    OnboardingDateTimeUnix = None;
                 }
                 getId s.TrainingRequestId
             } |> ignore
@@ -89,12 +89,12 @@ let onboardClientInDb (env : IGetDb) (onboardingUsername: string) (trainingReque
                 }
                 getId s.SquirrelId
             }
-            let dateString = System.DateTime.UtcNow.ToString "yyyy-MM-dd hh:mm:ss"
+            let nowUnix = System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeSeconds()
             let! updateSuccess = updateTask shared {
                 for tr in Database.main.TrainingRequest do
                 set tr.SquirrelId (Some squirrelId)
                 set tr.OnboardUsername (Some onboardingUsername)
-                set tr.OnboardingDateTime (Some dateString)
+                set tr.OnboardingDateTimeUnix (Some nowUnix)
                 where (tr.TrainingRequestId = trainingRequest.TrainingRequestId)
             }
             match updateSuccess with
@@ -111,7 +111,7 @@ let onboardClientInDb (env : IGetDb) (onboardingUsername: string) (trainingReque
                         Phone = trainingRequest.Phone;
                         SquirrelId = (Some squirrelId);
                         OnboardUsername = (Some onboardingUsername);
-                        OnboardingDateTime = (Some dateString);
+                        OnboardingDateTimeUnix = (Some nowUnix);
                         DescriptionOfNeeds = trainingRequest.DescriptionOfNeeds;
                     }
                     return Ok updatedRecord
