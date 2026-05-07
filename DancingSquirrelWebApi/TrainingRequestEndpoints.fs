@@ -6,6 +6,7 @@ open GenericModels
 open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
+open System.Threading.Tasks
 open TrainingRequest.Models
 open TrainingRequest.Queries
 open Microsoft.AspNetCore.Authentication
@@ -13,6 +14,12 @@ open Microsoft.AspNetCore.Authentication.Cookies
 
 [<Literal>]
 let requiredMessage = "is required"
+
+let emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
+// Must have exactly 10 digits, or a 1 followed by exactly 10 digits.
+// Non-digits are accepted and ignored.
+let unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
+let containsLetterRegex = Regex @"[a-zA-Z]+"
 
 let validateCompanyName form =
     match form with
@@ -40,17 +47,12 @@ let validateRequiredName nameValue =
         | "" -> Error requiredMessage
         | _ -> Ok()
 
-let emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
 let validateEmail (value : string) =
     match value with
     | var1 when emailRegex.IsMatch var1 -> Ok()
     | "" -> Error requiredMessage
     | _ -> Error "must be an email address"
 
-// Must have exactly 10 digits, or a 1 followed by exactly 10 digits.
-// Non-digits are accepted and ignored.
-let unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
-let containsLetterRegex = Regex @"[a-zA-Z]+"
 let validatePhone (value : string) =
     match value with
     | "" -> Ok()
@@ -159,16 +161,14 @@ let validatedOnboardingRequest (trainingRequest : DbLayer.Database.main.Training
         match trainingRequest.SquirrelId with
         | None -> Ok trainingRequest
         | _ -> 
-            let lookupFailureMsg : RecordLookupValidation = {
-                LookupFailureMessage = "Caretaker and Squirrel have already been onboarded"
-                DbErrorType = RecordRetrievalErrors.DbAccessError
-            }
             Error {
                 IsSuccess = false
                 IsInternalError = false
-                ValidationFailures = Some lookupFailureMsg
+                ValidationFailures = Some (dict [
+                    "ErrorMessage", "Caretaker and Squirrel have already been onboarded";
+                ])
             }
-    System.Threading.Tasks.Task.FromResult res
+    Task.FromResult res
 
 let onboardClient (env : IGetDb) =
     Auth.processAuthenticatedRequest

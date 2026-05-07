@@ -21,12 +21,6 @@ type RecordRetrievalErrors =
     | NotFound = 2
     | ExpectedSingleFoundMultiple = 3
 
-type RecordLookupValidation =
-    {
-        LookupFailureMessage: string
-        DbErrorType: RecordRetrievalErrors
-    }
-
 let internalErrorResponse =
     {
         IsSuccess = false
@@ -34,15 +28,20 @@ let internalErrorResponse =
         ValidationFailures = None
     }
 
+[<Literal>]
+let lookupFailureMessageLabel = "LookupFailureMessage"
+[<Literal>]
+let dbErrorTypeLabel = "DbErrorType"
+
 //This is considered an internal error, because this error is only expected in situations where we forgot to put a unique key on some lookup field.
 let foundMultipleRecordsResponse =
     {
         IsSuccess = false
         IsInternalError = true
-        ValidationFailures = Some {
-            LookupFailureMessage = "Expected single record, but found multiple"
-            DbErrorType = RecordRetrievalErrors.ExpectedSingleFoundMultiple
-        }
+        ValidationFailures = Some (dict [
+            lookupFailureMessageLabel, "Expected single record, but found multiple";
+            dbErrorTypeLabel, RecordRetrievalErrors.ExpectedSingleFoundMultiple.ToString "d";
+        ])
     }
 
 //This is not considered an internal error. The caller probably just supplied an invalid key.
@@ -50,10 +49,10 @@ let notFoundResponse =
     {
         IsSuccess = false
         IsInternalError = false
-        ValidationFailures = Some {
-            LookupFailureMessage = "Not found"
-            DbErrorType = RecordRetrievalErrors.NotFound
-        }
+        ValidationFailures = Some (dict [
+            lookupFailureMessageLabel, "Not found";
+            dbErrorTypeLabel, RecordRetrievalErrors.NotFound.ToString "d";
+        ])
     }
 
 let getHttpFormResponse formSubmissionResult =
