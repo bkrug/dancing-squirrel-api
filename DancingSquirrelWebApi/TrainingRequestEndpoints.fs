@@ -1,6 +1,6 @@
 module TrainingRequest.Endpoints
 
-open ExternalDependencies
+open DbLayer.Database
 open Falco
 open GenericModels
 open System
@@ -8,7 +8,6 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 open System.Threading.Tasks
 open TrainingRequest.Models
-open TrainingRequest.Queries
 open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 
@@ -106,7 +105,7 @@ let validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, Gene
                 }
             }
 
-let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
+let createTrainingRequest (insertRec:TrainingRequestFormInserter<'a>) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
         let caretakerTypeInt = form.GetInt("caretakertype", 0)
@@ -122,41 +121,40 @@ let createTrainingRequest (env : IGetDb) : HttpHandler = fun ctx ->
                 SquirrelName = form.GetString ("squirrelname", "")
                 DescriptionOfNeeds = form.GetString ("descriptionOfNeeds", "")
             }
-        let insertRequestToConfiguredDb (form : TrainingRequestForm) = insertRequestToDatabase form env
         let! submissionResult =
             Ok dataToValidate
             |> Result.bind validateForm
-            |> TaskResult.bindToTask insertRequestToConfiguredDb
+            |> TaskResult.bindToTask insertRec
         let httpFormResponse = getHttpFormResponse submissionResult
         return! httpFormResponse ctx
     }
 
-let getTrainingRequests (env : IGetDb) =
+let getTrainingRequests (selectRec: MultiTrainingRequestSelector<'a>) (countRec: TrainingRequestCounter<'a>) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
                 let page = Math.Max(1, (Request.getQuery ctx).GetInt("page"))
                 let pageLength = Math.Max(10, (Request.getQuery ctx).GetInt("length"))
                 let skipCount = (page - 1) * pageLength
-                let! existingTrainingRequests = getTrainingRequestsFromDb env skipCount pageLength
-                let! recordCountResult = getTrainingRequestCount env
+                let! existingTrainingRequests = selectRec skipCount pageLength
+                let! recordCountResult = countRec
                 let httpPagedResponse = getHttpPagedDataResponse existingTrainingRequests recordCountResult page pageLength
                 return! httpPagedResponse ctx
             }
         )
 
-let getSingleTrainingRequest (env: IGetDb) =
+let getSingleTrainingRequest (recordSelect: SingleTrainingRequestSelector) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
                 let trainingRequestId = Math.Max(0, (Request.getRoute ctx).GetInt("trainingRequestId"))
-                let! existingTrainingRequest = getSingleTrainingRequestFromDb env trainingRequestId
+                let! existingTrainingRequest = recordSelect trainingRequestId
                 let httpRecordResponse = getHttpRecordResponse existingTrainingRequest
                 return! httpRecordResponse ctx
             }
         )
 
-let validatedOnboardingRequest (trainingRequest : DbLayer.Database.main.TrainingRequest) =
+let validatedOnboardingRequest (trainingRequest : main.TrainingRequest) =
     let res =
         match trainingRequest.SquirrelId with
         | None -> Ok trainingRequest
@@ -168,7 +166,7 @@ let validatedOnboardingRequest (trainingRequest : DbLayer.Database.main.Training
             }
     Task.FromResult res
 
-let onboardClient (env : IGetDb) =
+let onboardClient (insertOnboardedClient:OnboardedClientInserter<string>) (recordSelect: int64 -> Task<Result<main.TrainingRequest, GenericModelResponse<string>>>) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
@@ -177,9 +175,9 @@ let onboardClient (env : IGetDb) =
                 let username = authenticateResult.Principal.Identity.Name
                 let trainingRequestId = (Request.getRoute ctx).GetInt "trainingRequestId"
                 let! onboardingResult =
-                    getSingleTrainingRequestFromDb env trainingRequestId
+                    recordSelect trainingRequestId
                     |> TaskResult.bind validatedOnboardingRequest
-                    |> TaskResult.bind (onboardClientInDb env username)
+                    |> TaskResult.bind (insertOnboardedClient username)
                 let httpFormResponse = getHttpFormResponse onboardingResult
                 return! httpFormResponse ctx
             }

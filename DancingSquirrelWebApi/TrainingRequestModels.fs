@@ -1,5 +1,9 @@
 module TrainingRequest.Models
 
+open System.Threading.Tasks
+open GenericModels
+open DbLayer.Database
+
 type CaretakerType =
     | Person = 1
     | Company = 2
@@ -27,3 +31,9 @@ type TrainingRequestForm =
         SquirrelName: string;
         DescriptionOfNeeds: string;
     }
+
+type TrainingRequestFormInserter<'a> = TrainingRequestForm -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<TrainingRequestValidation>>>
+type OnboardedClientInserter<'a> = string -> main.TrainingRequest -> Task<Result<main.TrainingRequest, GenericModelResponse<'a>>>
+type SingleTrainingRequestSelector = int64 -> Task<Result<main.TrainingRequest, GenericModelResponse<string>>>
+type MultiTrainingRequestSelector<'a> = int -> int -> Task<Result<seq<main.TrainingRequest>, GenericModelResponse<'a>>>
+type TrainingRequestCounter<'a> = Task<Result<int, GenericModelResponse<'a>>>
