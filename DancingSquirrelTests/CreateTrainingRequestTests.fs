@@ -122,3 +122,47 @@ let ``Training Request is valid, but there was some DB Error. Expect a failure r
       submissionResult.IsError |> should equal true
       actualRecievedForm |> should not' (be null)
    }
+
+[<Fact>]
+let ``Training Request for Company but there is no Company Name. Expect a validation failure.`` () =
+   task {
+      let formValues = [
+            "caretakertype", RNumber (int32 CaretakerType.Company)
+            "caretakerCompanyName", RNull
+            "caretakerFirstName", RNull
+            "caretakerLastName", RNull
+            "email", RString "acme@example.com"
+            "phone", RString "1-414-555-2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ]
+      let formData = new FormData(RObject formValues, None)
+
+      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+         Task.FromResult( Ok {
+            IsSuccess = true
+            IsInternalError = false
+            ValidationFailures = None
+         })
+
+      //Act
+      let! submissionResult = createTrainingRequestFromForm formData insertRec
+
+      //Assert
+      let expectedForm = {
+            CaretakerType = CaretakerType.Company
+            CaretakerCompanyName = Some "Acme"
+            CaretakerFirstName = None
+            CaretakerLastName = None
+            Email = "acme@example.com"
+            Phone = "14145552983"
+            SquirrelName = "Nutty"
+            DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
+         }
+
+      match submissionResult with
+         | Ok _ -> failwith "Expected a validation failure"
+         | Error errResp ->
+            errResp.ValidationFailures.IsSome.ShouldBeTrue()
+            errResp.ValidationFailures.Value.CaretakerCompanyName.ShouldBeEquivalentTo("is required")
+   }
