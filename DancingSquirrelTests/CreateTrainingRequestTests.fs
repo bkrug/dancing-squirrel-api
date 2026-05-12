@@ -4,6 +4,7 @@ open System.Threading.Tasks
 open Falco
 open FsUnit.Xunit
 open GenericModels
+open Microsoft.FSharp.Reflection
 open Shouldly
 open TrainingRequest.Endpoints
 open TrainingRequest.Models
@@ -123,10 +124,10 @@ let ``Training Request is valid, but there was some DB Error. Expect a failure r
       actualRecievedForm |> should not' (be null)
    }
 
-[<Fact>]
-let ``Training Request for Company but there is no Company Name. Expect a validation failure.`` () =
-   task {
-      let formValues = [
+let validationFailureData =
+   [
+      [|
+         [
             "caretakertype", RNumber (int32 CaretakerType.Company)
             "caretakerCompanyName", RNull
             "caretakerFirstName", RNull
@@ -135,7 +136,19 @@ let ``Training Request for Company but there is no Company Name. Expect a valida
             "phone", RString "1-414-555-2983"
             "squirrelname", RString "Nutty"
             "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
-         ]
+         ] :> obj
+         "CaretakerCompanyName"
+         "is required"
+      |]
+   ]
+
+[<Theory>]
+[<MemberData(nameof(validationFailureData))>]
+let ``Training Request for Company but there is no Company Name. Expect a validation failure.`` 
+   (formValues:list<string*RequestValue>)
+   (validationField:string)
+   (validationMsg:string) =
+   task {
       let formData = new FormData(RObject formValues, None)
 
       let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
@@ -164,5 +177,8 @@ let ``Training Request for Company but there is no Company Name. Expect a valida
          | Ok _ -> failwith "Expected a validation failure"
          | Error errResp ->
             errResp.ValidationFailures.IsSome.ShouldBeTrue()
-            errResp.ValidationFailures.Value.CaretakerCompanyName.ShouldBeEquivalentTo("is required")
+            errResp.ValidationFailures.Value.GetType()
+               .GetProperty(validationField)
+               .GetValue(errResp.ValidationFailures.Value)
+               .ShouldBeEquivalentTo(validationMsg)
    }

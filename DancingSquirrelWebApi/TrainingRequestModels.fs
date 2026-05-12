@@ -13,7 +13,7 @@ type TrainingRequestValidation =
         CaretakerType: string;
         CaretakerFirstName: string;
         CaretakerLastName: string;
-        CaretakerCompanyName: string
+        CaretakerCompanyName: string;
         Email: string;
         Phone: string;
         SquirrelName: string;
