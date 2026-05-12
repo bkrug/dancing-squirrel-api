@@ -1,13 +1,13 @@
 module CreateTrainingRequestTests
 
+open System.Threading.Tasks
 open Falco
-open Xunit
 open FsUnit.Xunit
 open GenericModels
-open System.Threading.Tasks
-open TrainingRequest.Models
-open TrainingRequest.Endpoints
 open Shouldly
+open TrainingRequest.Endpoints
+open TrainingRequest.Models
+open Xunit
 
 [<Fact>]
 let ``Training Request is valid. Expect record to be recorded to database, Expect a success response.`` () =
@@ -49,10 +49,7 @@ let ``Training Request is valid. Expect record to be recorded to database, Expec
          }
 
       submissionResult.IsOk |> should equal true
-      match actualRecievedForm with
-         | Some actual ->
-            actual.ShouldBeEquivalentTo expectedForm
-         | None -> failwith "Error"
+      actualRecievedForm.ShouldBeEquivalentTo(Some expectedForm)
    }
 
 [<Fact>]
