@@ -1,0 +1,84 @@
+module CreateTrainingRequestTests
+
+open Falco
+open Xunit
+open FsUnit.Xunit
+open GenericModels
+open System.Threading.Tasks
+open TrainingRequest.Models
+open TrainingRequest.Endpoints
+open Shouldly
+
+[<Fact>]
+let ``Training Request is valid. Expect record to be recorded to database, Expect a success response.`` () =
+   task {
+      let formValues = [
+            "caretakertype", RNumber (int32 CaretakerType.Company)
+            "caretakerCompanyName", RString "Acme"
+            "caretakerFirstName", RNull
+            "caretakerLastName", RNull
+            "email", RString "acme@example.com"
+            "phone", RString "1-414-555-2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ]
+      let formData = new FormData(RObject formValues, None)
+
+      let mutable actualRecievedForm : Option<TrainingRequestForm> = None
+      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+         actualRecievedForm <- Some form
+         Task.FromResult( Ok {
+            IsSuccess = true
+            IsInternalError = false
+            ValidationFailures = None
+         })
+
+      //Act
+      let! submissionResult = createTrainingRequestFromForm formData insertRec
+
+      //Assert
+      let expectedForm = {
+            CaretakerType = CaretakerType.Company
+            CaretakerCompanyName = Some "Acme"
+            CaretakerFirstName = None
+            CaretakerLastName = None
+            Email = "acme@example.com"
+            Phone = "14145552983"
+            SquirrelName = "Nutty"
+            DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
+         }
+
+      submissionResult.IsOk |> should equal true
+      match actualRecievedForm with
+         | Some actual ->
+            actual.ShouldBeEquivalentTo expectedForm
+         | None -> failwith "Error"
+   }
+
+[<Fact>]
+let ``Training Request is valid, but there was some DB Error. Expect a failure response.`` () =
+   task {
+      let formValues = [
+            "caretakertype", RNumber (int32 CaretakerType.Company)
+            "caretakerCompanyName", RString "Acme"
+            "caretakerFirstName", RNull
+            "caretakerLastName", RNull
+            "email", RString "acme@example.com"
+            "phone", RString "1-414-555-2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ]
+      let formData = new FormData(RObject formValues, None)
+
+      let mutable actualRecievedForm : Option<TrainingRequestForm> = None
+      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+         actualRecievedForm <- Some form
+         Task.FromResult(Error internalErrorResponse)
+
+      //Act
+      let! submissionResult = createTrainingRequestFromForm formData insertRec
+
+      //Assert
+      submissionResult.IsError |> should equal true
+      actualRecievedForm |> should not' (be null)
+   }

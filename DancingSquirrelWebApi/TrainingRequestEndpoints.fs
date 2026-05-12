@@ -20,6 +20,10 @@ let emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
 let unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
 let containsLetterRegex = Regex @"[a-zA-Z]+"
 
+//***
+// Validation Methods
+//***
+
 let validateCompanyName form =
     match form with
         | { CaretakerType = CaretakerType.Person } -> Ok()
@@ -105,26 +109,34 @@ let validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, Gene
                 }
             }
 
+//***
+// Endpoint methods
+//***
+
+let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestFormInserter<'a>) =
+    let caretakerTypeInt = form.GetInt("caretakertype", 0)
+    let caretakerTypeEnum = enum<CaretakerType> caretakerTypeInt
+    let dataToValidate : TrainingRequestForm =
+        {
+            CaretakerType = caretakerTypeEnum
+            CaretakerCompanyName = match caretakerTypeEnum with | CaretakerType.Company -> Some(form.GetString ("caretakerCompanyName", "")) | _ -> None
+            CaretakerFirstName = match caretakerTypeEnum with | CaretakerType.Person -> Some(form.GetString ("caretakerFirstName", "")) | _ -> None
+            CaretakerLastName = match caretakerTypeEnum with | CaretakerType.Person -> Some(form.GetString ("caretakerLastName", "")) | _ -> None
+            Email = form.GetString ("email", "")
+            Phone = form.GetString ("phone", "")
+            SquirrelName = form.GetString ("squirrelname", "")
+            DescriptionOfNeeds = form.GetString ("descriptionOfNeeds", "")
+        }
+    let! submissionResult =
+        Ok dataToValidate
+        |> Result.bind validateForm
+        |> TaskResult.bindToTask insertRec
+    submissionResult
+
 let createTrainingRequest (insertRec:TrainingRequestFormInserter<'a>) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
-        let caretakerTypeInt = form.GetInt("caretakertype", 0)
-        let caretakerTypeEnum = enum<CaretakerType> caretakerTypeInt
-        let dataToValidate : TrainingRequestForm =
-            {
-                CaretakerType = caretakerTypeEnum
-                CaretakerCompanyName = match caretakerTypeEnum with | CaretakerType.Company -> Some(form.GetString ("caretakerCompanyName", "")) | _ -> None
-                CaretakerFirstName = match caretakerTypeEnum with | CaretakerType.Person -> Some(form.GetString ("caretakerFirstName", "")) | _ -> None
-                CaretakerLastName = match caretakerTypeEnum with | CaretakerType.Person -> Some(form.GetString ("caretakerLastName", "")) | _ -> None
-                Email = form.GetString ("email", "")
-                Phone = form.GetString ("phone", "")
-                SquirrelName = form.GetString ("squirrelname", "")
-                DescriptionOfNeeds = form.GetString ("descriptionOfNeeds", "")
-            }
-        let! submissionResult =
-            Ok dataToValidate
-            |> Result.bind validateForm
-            |> TaskResult.bindToTask insertRec
+        let! submissionResult = createTrainingRequestFromForm form insertRec
         let httpFormResponse = getHttpFormResponse submissionResult
         return! httpFormResponse ctx
     }
