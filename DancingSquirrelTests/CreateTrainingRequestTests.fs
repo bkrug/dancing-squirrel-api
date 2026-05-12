@@ -10,7 +10,7 @@ open TrainingRequest.Models
 open Xunit
 
 [<Fact>]
-let ``Training Request is valid. Expect record to be recorded to database, Expect a success response.`` () =
+let ``Training Request for Company is valid. Expect a success response.`` () =
    task {
       let formValues = [
             "caretakertype", RNumber (int32 CaretakerType.Company)
@@ -42,6 +42,49 @@ let ``Training Request is valid. Expect record to be recorded to database, Expec
             CaretakerCompanyName = Some "Acme"
             CaretakerFirstName = None
             CaretakerLastName = None
+            Email = "acme@example.com"
+            Phone = "14145552983"
+            SquirrelName = "Nutty"
+            DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
+         }
+
+      submissionResult.IsOk |> should equal true
+      actualRecievedForm.ShouldBeEquivalentTo(Some expectedForm)
+   }
+
+[<Fact>]
+let ``Training Request for Person is valid. Expect a success response.`` () =
+   task {
+      let formValues = [
+            "caretakertype", RNumber (int32 CaretakerType.Person)
+            "caretakerCompanyName", RNull
+            "caretakerFirstName", RString "Betty"
+            "caretakerLastName", RString "Blue"
+            "email", RString "acme@example.com"
+            "phone", RString "1-414-555-2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ]
+      let formData = new FormData(RObject formValues, None)
+
+      let mutable actualRecievedForm : Option<TrainingRequestForm> = None
+      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+         actualRecievedForm <- Some form
+         Task.FromResult( Ok {
+            IsSuccess = true
+            IsInternalError = false
+            ValidationFailures = None
+         })
+
+      //Act
+      let! submissionResult = createTrainingRequestFromForm formData insertRec
+
+      //Assert
+      let expectedForm = {
+            CaretakerType = CaretakerType.Person
+            CaretakerCompanyName = None
+            CaretakerFirstName = Some "Betty"
+            CaretakerLastName = Some "Blue"
             Email = "acme@example.com"
             Phone = "14145552983"
             SquirrelName = "Nutty"
