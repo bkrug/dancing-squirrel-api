@@ -15,6 +15,8 @@ open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
 open System.Collections.Generic
+open DanceType.Endpoints
+open DanceType.Queries
 open RegistrationEndpoints
 open TrainingRequest.Endpoints
 open TrainingRequest.Queries
@@ -30,6 +32,8 @@ let getEndpoints (wApp : WebApplication) =
     let selectMultiTrainingRequests = multiTrainingRequestSelectionFactory ctxtFactory
     let countTrainingRequests = trainingRequestCounterFactory ctxtFactory
     let insertOnboardedClient = OnboardedClientInsertionFactory ctxtFactory
+    let selectDanceTypes = danceTypeSelectorFactory ctxtFactory
+    let selectTeachersByDanceType = teachersByDanceTypeSelectorFactory ctxtFactory
 
     //This is an alternative to the above.
     //Just a class for a bunch of related stuff with the same dependency
@@ -49,6 +53,11 @@ let getEndpoints (wApp : WebApplication) =
                     { Name = "trainingRequestId"; Type = typeof<int64>; Required = true }
                 ]
             post "/api/squirrel/trainingRequest/{trainingRequestId:int}" (onboardClient insertOnboardedClient selectSingleTrainingRequest)
+            get "/api/danceType" (getDanceTypes selectDanceTypes)
+            get "/api/danceType/{danceTypeId:int}/teacher" (getTeachersByDanceType selectTeachersByDanceType)
+                |> OpenApi.route [
+                    { Name = "danceTypeId"; Type = typeof<int64>; Required = true }
+                ]
             post "/api/user" (registerNewUserHandler identityWrap.CreateUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
             post "/api/authentication" (loginUserWithClaimsHandler identityWrap.LoginUserAsync)

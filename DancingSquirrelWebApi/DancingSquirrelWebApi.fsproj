@@ -17,6 +17,9 @@
     <Compile Include="TrainingRequestModels.fs" />
     <Compile Include="TrainingRequestQueries.fs" />
     <Compile Include="TrainingRequestEndpoints.fs" />
+    <Compile Include="DanceTypeModels.fs" />
+    <Compile Include="DanceTypeQueries.fs" />
+    <Compile Include="DanceTypeEndpoints.fs" />
     <Compile Include="AspNetIdentityCoreExtensions.fs" />
     <Compile Include="Endpoints.fs" />
     <Compile Include="Program.fs" />
