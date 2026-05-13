@@ -8,6 +8,7 @@ open Falco
 open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Identity
+open GenericModels
 
 //When adding authentiction to an app, start with HttpOnly cookie authentication.
 //https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0
@@ -27,11 +28,6 @@ type LoginModel =
         Username: string
         Password: string
     }
-
-let defaultJsonOptions =
-    let options : JsonSerializerOptions = JsonSerializerOptions()
-    options.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase
-    options
 
 let registerNewUserHandler (createUserAsync : IdentityUser -> string -> Task<IdentityResult>) : HttpHandler = fun ctx -> 
     task {

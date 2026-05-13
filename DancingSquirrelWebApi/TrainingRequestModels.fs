@@ -32,6 +32,11 @@ type TrainingRequestForm =
         DescriptionOfNeeds: string;
     }
 
+type OnboardingRequest =
+    {
+        DanceTeachers: int64[];
+    }
+
 type TrainingRequestFormInserter<'a> = TrainingRequestForm -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<TrainingRequestValidation>>>
 type OnboardedClientInserter<'a> = string -> main.TrainingRequest -> Task<Result<main.TrainingRequest, GenericModelResponse<'a>>>
 type SingleTrainingRequestSelector = int64 -> Task<Result<main.TrainingRequest, GenericModelResponse<string>>>

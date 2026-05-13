@@ -5,6 +5,7 @@ open Falco
 open GenericModels
 open System
 open System.Collections.Generic
+open System.Text.Json
 open System.Text.RegularExpressions
 open System.Threading.Tasks
 open TrainingRequest.Models
@@ -178,7 +179,10 @@ let validatedOnboardingRequest (trainingRequest : main.TrainingRequest) =
             }
     Task.FromResult res
 
-let onboardClient (insertOnboardedClient:OnboardedClientInserter<string>) (recordSelect: int64 -> Task<Result<main.TrainingRequest, GenericModelResponse<string>>>) =
+let onboardClient
+        (insertOnboardedClient:OnboardedClientInserter<string>)
+        (recordSelect: int64 -> Task<Result<main.TrainingRequest, GenericModelResponse<string>>>)
+        =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
@@ -186,6 +190,8 @@ let onboardClient (insertOnboardedClient:OnboardedClientInserter<string>) (recor
                 let! authenticateResult = ctx.AuthenticateAsync CookieAuthenticationDefaults.AuthenticationScheme
                 let username = authenticateResult.Principal.Identity.Name
                 let trainingRequestId = (Request.getRoute ctx).GetInt "trainingRequestId"
+                let! onboardingRequestJson = Request.getBodyString ctx
+                let onboardingRequestObject = JsonSerializer.Deserialize<OnboardingRequest>(onboardingRequestJson, defaultJsonOptions)
                 let! onboardingResult =
                     recordSelect trainingRequestId
                     |> TaskResult.bind validatedOnboardingRequest

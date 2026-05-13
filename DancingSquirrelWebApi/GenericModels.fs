@@ -1,6 +1,7 @@
 module GenericModels
 
 open Falco
+open System.Text.Json
 
 type PagedData<'TValue> =
     {
@@ -77,3 +78,8 @@ let getHttpRecordResponse recordLookupResult =
         Response.withStatusCode 400 >> Response.ofJson errorResponse
     | Error errorResponse ->
         Response.withStatusCode 500 >> Response.ofJson errorResponse
+
+let defaultJsonOptions =
+    let options : JsonSerializerOptions = JsonSerializerOptions()
+    options.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase
+    options
