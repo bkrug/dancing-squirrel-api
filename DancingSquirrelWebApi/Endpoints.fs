@@ -33,7 +33,7 @@ let getEndpoints (wApp : WebApplication) =
 
     //This is an alternative to the above.
     //Just a class for a bunch of related stuff with the same dependency
-    let userAuthorizationWrapper = new UserAuthorizationWrapper(wApp.Services.CreateScope)
+    let identityWrap = new UserAuthorizationWrapper(wApp.Services.CreateScope)
         
     //This list of endpoints available in our application
     let endpoints =
@@ -49,11 +49,11 @@ let getEndpoints (wApp : WebApplication) =
                     { Name = "trainingRequestId"; Type = typeof<int64>; Required = true }
                 ]
             post "/api/squirrel/trainingRequest/{trainingRequestId:int}" (onboardClient insertOnboardedClient selectSingleTrainingRequest)
-            post "/api/user" (registerNewUserHandler userAuthorizationWrapper.CreateUserAsync)
+            post "/api/user" (registerNewUserHandler identityWrap.CreateUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
-            post "/api/authentication" (loginUserWithClaimsHandler userAuthorizationWrapper.LoginUserAsync)
+            post "/api/authentication" (loginUserWithClaimsHandler identityWrap.LoginUserAsync)
                 |> OpenApi.acceptsType typeof<LoginModel>
-            delete "/api/authentication" (logoutUser userAuthorizationWrapper.LogoutUserAsync)
+            delete "/api/authentication" (logoutUser identityWrap.LogoutUserAsync)
             get "/api/authentication" loginCheck
             get "/api/authorization/admin" adminCheck
         ]

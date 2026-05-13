@@ -12,67 +12,67 @@ open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 
 [<Literal>]
-let requiredMessage = "is required"
+let private requiredMessage = "is required"
 
-let emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
+let private emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
 // Must have exactly 10 digits, or a 1 followed by exactly 10 digits.
 // Non-digits are accepted and ignored.
-let unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
-let containsLetterRegex = Regex @"[a-zA-Z]+"
+let private unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
+let private containsLetterRegex = Regex @"[a-zA-Z]+"
 
 //***
 // Validation Methods
 //***
 
-let validateCompanyName form =
+let private validateCompanyName form =
     match form with
         | { CaretakerType = CaretakerType.Person } -> Ok()
         | { CaretakerCompanyName = None } -> Error requiredMessage
         | { CaretakerCompanyName = Some("") } -> Error requiredMessage
         | _ -> Ok()
 
-let validateFirstName form =
+let private validateFirstName form =
     match form with
         | { CaretakerType = CaretakerType.Company } -> Ok()
         | { CaretakerFirstName = None } -> Error requiredMessage
         | { CaretakerFirstName = Some("") } -> Error requiredMessage
         | _ -> Ok()
 
-let validateLastName form =
+let private validateLastName form =
     match form with
         | { CaretakerType = CaretakerType.Company } -> Ok()
         | { CaretakerLastName = None } -> Error requiredMessage
         | { CaretakerLastName = Some("") } -> Error requiredMessage
         | _ -> Ok()        
 
-let validateRequiredName nameValue =
+let private validateRequiredName nameValue =
     match nameValue with
         | "" -> Error requiredMessage
         | _ -> Ok()
 
-let validateEmail (value : string) =
+let private validateEmail (value : string) =
     match value with
     | var1 when emailRegex.IsMatch var1 -> Ok()
     | "" -> Error requiredMessage
     | _ -> Error "must be an email address"
 
-let validatePhone (value : string) =
+let private validatePhone (value : string) =
     match value with
     | "" -> Ok()
     | var1 when containsLetterRegex.IsMatch var1 -> Error "must not contain letters"
     | var1 when unitedStatePhoneRegex.IsMatch var1 -> Ok()
     | _ -> Error "must either have exactly 10 digits or a '1' followed by 10 digits"
 
-let removeNonDigits givenString =
+let private removeNonDigits givenString =
     Seq.toList givenString
     |> Seq.filter (fun c -> Char.IsDigit c)
     |> Seq.toArray
     |> String
 
-let getValidationMessage keyName (validationResults: IDictionary<string,Result<unit,string>>) =
+let private getValidationMessage keyName (validationResults: IDictionary<string,Result<unit,string>>) =
     match validationResults[keyName] with | Error msg -> msg | _ -> ""
 
-let validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, GenericModelResponse<TrainingRequestValidation>> =
+let private validateForm (form : TrainingRequestForm) : Result<TrainingRequestForm, GenericModelResponse<TrainingRequestValidation>> =
     let validationResults =
         dict [
             nameof form.CaretakerCompanyName,   validateCompanyName form;
