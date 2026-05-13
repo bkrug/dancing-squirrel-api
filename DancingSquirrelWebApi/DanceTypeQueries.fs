@@ -1,9 +1,9 @@
 module DanceType.Queries
 
 open DbLayer
+open DanceType.Models
 open GenericModels
 open SqlHydra.Query
-open DanceType.Models
 
 let danceTypeSelectorFactory (db: Database.QueryContextFactory) : DanceTypeSelector<'a> =
     task {

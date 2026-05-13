@@ -14,7 +14,6 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
-open System.Collections.Generic
 open DanceType.Endpoints
 open DanceType.Queries
 open RegistrationEndpoints
