@@ -24,8 +24,7 @@ let getEndpoints (wApp : WebApplication) =
     let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
     let ctxtFactory = ExternalDependencies.getDbContextFactory connStr
     let trQueries = TrainingRequestQueries(ctxtFactory)
-    let selectDanceTypes = danceTypeSelectorFactory ctxtFactory
-    let selectTeachersByDanceType = teachersByDanceTypeSelectorFactory ctxtFactory
+    let dtQueries = DanceTypeQueries(ctxtFactory)
     let identityWrap = new UserAuthorizationWrapper(wApp.Services.CreateScope)
         
     //This list of endpoints available in our application
@@ -42,8 +41,8 @@ let getEndpoints (wApp : WebApplication) =
                     { Name = "trainingRequestId"; Type = typeof<int64>; Required = true }
                 ]
             post "/api/squirrel/trainingRequest/{trainingRequestId:int}" (onboardClient trQueries.InsertOnboardedClient trQueries.SelectSingleTrainingRequest)
-            get "/api/danceType" (getDanceTypes selectDanceTypes)
-            get "/api/danceType/{danceTypeId:int}/teacher" (getTeachersByDanceType selectTeachersByDanceType)
+            get "/api/danceType" (getDanceTypes dtQueries.SelectDanceTypes)
+            get "/api/danceType/{danceTypeId:int}/teacher" (getTeachersByDanceType dtQueries.SelectTeachersByDanceType)
                 |> OpenApi.route [
                     { Name = "danceTypeId"; Type = typeof<int64>; Required = true }
                 ]
