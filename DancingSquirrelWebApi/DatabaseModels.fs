@@ -12,6 +12,17 @@ module Version =
 module main =
 
     [<CLIMutable>]
+    type DanceType = { DanceTypeId: int64; Name: string }
+
+    let DanceType = table<DanceType>
+
+    [<CLIMutable>]
+    type DanceTypeTeacher =
+        { DanceTypeId: int64; TeacherId: int64 }
+
+    let DanceTypeTeacher = table<DanceTypeTeacher>
+
+    [<CLIMutable>]
     type Organization = { OrganizationId: int64; Name: string }
 
     let Organization = table<Organization>
@@ -41,6 +52,19 @@ module main =
           Email: Option<string> }
 
     let SquirrelOwner = table<SquirrelOwner>
+
+    [<CLIMutable>]
+    type SquirrelTeacher = { SquirrelId: int64; TeacherId: int64 }
+
+    let SquirrelTeacher = table<SquirrelTeacher>
+
+    [<CLIMutable>]
+    type Teacher =
+        { TeacherId: int64
+          FirstName: string
+          LastName: string }
+
+    let Teacher = table<Teacher>
 
     [<CLIMutable>]
     type TrainingRequest =
