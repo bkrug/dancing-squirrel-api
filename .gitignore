@@ -278,6 +278,7 @@ paket-files/
 Database/*.db
 Database/*.db-shm
 Database/*.db-wal
+Database/*.db-journal
 
 # Contains passwords
 TestUsers.txt

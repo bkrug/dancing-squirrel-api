@@ -195,7 +195,7 @@ let onboardClient
                 let! onboardingResult =
                     recordSelect trainingRequestId
                     |> TaskResult.bind validatedOnboardingRequest
-                    |> TaskResult.bind (insertOnboardedClient username)
+                    |> TaskResult.bind (insertOnboardedClient username onboardingRequestObject)
                 let httpFormResponse = getHttpFormResponse onboardingResult
                 return! httpFormResponse ctx
             }

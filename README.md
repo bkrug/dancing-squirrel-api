@@ -75,6 +75,33 @@ https://code.visualstudio.com/docs/reference/variables-reference
 
 To Kill a port use: `fuser -k -n tcp 5626`
 
+To see who is using the database: `lsof | grep "/home/bkrug/Repos/dancing-squirrel-api/Database/DancingSquirrel.db"`
+
+## SqlHydra issues
+
+Don't use this syntax unless you add "getId" into the command. This causes Database locking issues for some reason.
+```
+    insertTask shared {
+        for _ in Database.main.SquirrelTeacher do
+            entity {
+                SquirrelTeacherId = 1;
+                SquirrelId = squirrelId;
+                TeacherId = teacherId;
+            }
+    } |> ignore
+```
+This seems to work fine.
+```
+    insertTask shared {
+        into Database.main.SquirrelTeacher
+            entity {
+                SquirrelTeacherId = 1;
+                SquirrelId = squirrelId;
+                TeacherId = teacherId;
+            }
+    } |> ignore
+```
+
 # Authentication
 
 Setting up authentication often only happens at the beginning of a project with relatively minor changes thereafter.
@@ -90,4 +117,3 @@ This will involve calling `.AllowCredentials()` in your Program.cs/fs file
 Afterwards you can worry about adding users and roles.
 Use this information to create a C# project with an AspNetCore Identity database:
 https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity?view=aspnetcore-10.0&tabs=visual-studio
-

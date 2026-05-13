@@ -40,8 +40,8 @@ let trainingRequestInsertionFactory (db:Database.QueryContextFactory) : Training
         }
     insertTrainingRequest
 
-let OnboardedClientInsertionFactory (db:Database.QueryContextFactory) : OnboardedClientInserter<'a> = 
-    let insertOnboardedClient (onboardingUsername: string) (trainingRequest : DbLayer.Database.main.TrainingRequest) =
+let OnboardedClientInsertionFactory (db:Database.QueryContextFactory) : OnboardedClientInserter<'a> =
+    let insertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest : Database.main.TrainingRequest) =
         task {
             use! shared = db.OpenContextAsync()
             try
@@ -89,6 +89,14 @@ let OnboardedClientInsertionFactory (db:Database.QueryContextFactory) : Onboarde
                     }
                     getId s.SquirrelId
                 }
+                for teacherId in onboardingRequest.DanceTeachers do
+                    insertTask shared {
+                        into Database.main.SquirrelTeacher
+                        entity {
+                            SquirrelId = squirrelId;
+                            TeacherId = teacherId;
+                        }
+                    } |> ignore
                 let nowUnix = System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeSeconds()
                 let! updateSuccess = updateTask shared {
                     for tr in Database.main.TrainingRequest do
