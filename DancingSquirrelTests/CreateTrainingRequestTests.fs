@@ -126,29 +126,77 @@ let ``Training Request is valid, but there was some DB Error. Expect a failure r
 
 let validationFailureData =
    [
-      [|
+      (
          [
             "caretakertype", RNumber (int32 CaretakerType.Company)
-            "caretakerCompanyName", RNull
+            "caretakerCompanyName", RString ""
             "caretakerFirstName", RNull
             "caretakerLastName", RNull
             "email", RString "acme@example.com"
             "phone", RString "1-414-555-2983"
             "squirrelname", RString "Nutty"
             "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
-         ] :> obj
-         "CaretakerCompanyName"
+         ],
+         "CaretakerCompanyName",
          "is required"
-      |]
+      )
+      (
+         [
+            "caretakertype", RNumber (int32 CaretakerType.Person)
+            "caretakerCompanyName", RNull
+            "caretakerFirstName", RNull
+            "caretakerLastName", RString "Smith"
+            "email", RString "acme@example.com"
+            "phone", RString "1-414-555-2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ],
+         "CaretakerFirstName",
+         "is required"
+      )
+      (
+         [
+            "caretakertype", RNumber (int32 CaretakerType.Person)
+            "caretakerCompanyName", RNull
+            "caretakerFirstName", RString "John"
+            "caretakerLastName", RString ""
+            "email", RString "acme@example.com"
+            "phone", RString "1-414-555-2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ],
+         "CaretakerLastName",
+         "is required"
+      )
+      (
+         [
+            "caretakertype", RNumber (int32 CaretakerType.Person)
+            "caretakerCompanyName", RNull
+            "caretakerFirstName", RString "Josie"
+            "caretakerLastName", RString "Cat"
+            "email", RString ""
+            "phone", RString "1-414-555-2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ],
+         "Email",
+         "is required"
+      )
    ]
 
 [<Theory>]
-[<MemberData(nameof(validationFailureData))>]
-let ``Training Request for Company but there is no Company Name. Expect a validation failure.`` 
-   (formValues:list<string*RequestValue>)
-   (validationField:string)
-   (validationMsg:string) =
+[<InlineData(0)>]
+[<InlineData(1)>]
+[<InlineData(2)>]
+[<InlineData(3)>]
+let ``Training Request is somehow invalid. Expect a validation failure.`` 
+   // (formValues:list<string*RequestValue>)
+   // (validationField:string)
+   // (validationMsg:string) =
+   testNumber =
    task {
+      let formValues, validationField, validationMsg = validationFailureData[testNumber]
+
       let formData = new FormData(RObject formValues, None)
 
       let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
