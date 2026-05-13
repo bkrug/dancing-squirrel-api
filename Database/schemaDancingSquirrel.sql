@@ -42,3 +42,29 @@ CREATE TABLE TrainingRequest (
 	CONSTRAINT PK_TrainingRequest PRIMARY KEY (TrainingRequestId),
 	CONSTRAINT FK_TrainingRequest_Squirrel FOREIGN KEY (SquirrelId) REFERENCES Squirrel(SquirrelId)
 );
+CREATE TABLE DanceType (
+	DanceTypeId INTEGER NOT NULL,
+	Name TEXT NOT NULL,
+	CONSTRAINT PK_DanceType PRIMARY KEY (DanceTypeId)
+);
+CREATE TABLE Teacher (
+	TeacherId INTEGER NOT NULL,
+	FirstName TEXT NOT NULL,
+	LastName TEXT NOT NULL,
+	CONSTRAINT PK_Teacher PRIMARY KEY (TeacherId)
+);
+CREATE INDEX Teacher_LastName_IDX ON Teacher (LastName, FirstName);
+CREATE TABLE DanceTypeTeacher (
+	DanceTypeId INTEGER NOT NULL,
+	TeacherId INTEGER NOT NULL,
+	CONSTRAINT PK_DanceTypeTeacher PRIMARY KEY (DanceTypeId, TeacherId),
+	CONSTRAINT FK_DanceTypeTeacher_DanceType FOREIGN KEY (DanceTypeId) REFERENCES DanceType(DanceTypeId),
+	CONSTRAINT FK_DanceTypeTeacher_Teacher FOREIGN KEY (TeacherId) REFERENCES Teacher(TeacherId)
+);
+CREATE TABLE SquirrelTeacher (
+	SquirrelId INTEGER NOT NULL,
+	TeacherId INTEGER NOT NULL,
+	CONSTRAINT PK_SquirrelTeacher PRIMARY KEY (SquirrelId, TeacherId),
+	CONSTRAINT FK_SquirrelTeacher_Squirrel FOREIGN KEY (SquirrelId) REFERENCES Squirrel(SquirrelId),
+	CONSTRAINT FK_SquirrelTeacher_Teacher FOREIGN KEY (TeacherId) REFERENCES Teacher(TeacherId)
+);
