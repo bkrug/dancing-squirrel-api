@@ -2,7 +2,6 @@ module CreateTrainingRequestTests
 
 open System.Threading.Tasks
 open Falco
-open FsUnit.Xunit
 open GenericModels
 open Shouldly
 open TrainingRequest.Endpoints
@@ -48,7 +47,7 @@ let ``Training Request for Company is valid. Expect a success response.`` () =
             DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
          }
 
-      submissionResult.IsOk |> should equal true
+      submissionResult.IsOk.ShouldBeTrue()
       actualRecievedForm.ShouldBeEquivalentTo(Some expectedForm)
    }
 
@@ -91,7 +90,7 @@ let ``Training Request for Person is valid. Expect a success response.`` () =
             DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
          }
 
-      submissionResult.IsOk |> should equal true
+      submissionResult.IsOk.ShouldBeTrue()
       actualRecievedForm.ShouldBeEquivalentTo(Some expectedForm)
    }
 
@@ -140,7 +139,7 @@ let ``Phone numbers may omit or not omit the international code. Expect a succes
             DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
          }
 
-      submissionResult.IsOk |> should equal true
+      submissionResult.IsOk.ShouldBeTrue()
       actualRecievedForm.ShouldBeEquivalentTo(Some expectedForm)
    }
 
@@ -168,8 +167,8 @@ let ``Training Request is valid, but there was some DB Error. Expect a failure r
       let! submissionResult = createTrainingRequestFromForm formData insertRec
 
       //Assert
-      submissionResult.IsError |> should equal true
-      actualRecievedForm |> should not' (be null)
+      submissionResult.IsError.ShouldBeTrue()
+      actualRecievedForm.ShouldNotBeNull() |> ignore
    }
 
 let validationFailureData =
