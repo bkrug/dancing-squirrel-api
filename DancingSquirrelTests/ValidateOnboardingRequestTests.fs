@@ -1,8 +1,5 @@
 module ValidateOnboardingRequestTests
 
-open System.Threading.Tasks
-open Falco
-open FsUnit.Xunit
 open GenericModels
 open Shouldly
 open TrainingRequest.Endpoints
