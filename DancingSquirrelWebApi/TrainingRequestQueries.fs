@@ -3,10 +3,11 @@ module TrainingRequest.Queries
 open DbLayer
 open GenericModels
 open SqlHydra.Query
+open System.Threading.Tasks
 open TrainingRequest.Models
 
-let trainingRequestInsertionFactory (db:Database.QueryContextFactory) : TrainingRequestFormInserter<'a> =
-    let insertTrainingRequest form =
+type TrainingRequestQueries(db: Database.QueryContextFactory) =
+    member _.InsertTrainingRequest(form: TrainingRequestForm) : Task<Result<GenericModelResponse<string>, GenericModelResponse<TrainingRequestValidation>>> =
         task {
             use! context = db.OpenContextAsync()
             try
@@ -32,16 +33,14 @@ let trainingRequestInsertionFactory (db:Database.QueryContextFactory) : Training
                     IsSuccess = true
                     IsInternalError = false
                     ValidationFailures = None
-                }            
+                }
             with
             | ex ->
                 printfn "SQL: %O" ex
                 return Error internalErrorResponse
         }
-    insertTrainingRequest
 
-let OnboardedClientInsertionFactory (db:Database.QueryContextFactory) : OnboardedClientInserter<'a> =
-    let insertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest : Database.main.TrainingRequest) =
+    member _.InsertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest: Database.main.TrainingRequest) : Task<Result<Database.main.TrainingRequest, GenericModelResponse<string>>> =
         task {
             use! shared = db.OpenContextAsync()
             try
@@ -137,10 +136,8 @@ let OnboardedClientInsertionFactory (db:Database.QueryContextFactory) : Onboarde
                 printfn "SQL: %O" ex
                 return Error internalErrorResponse
         }
-    insertOnboardedClient
 
-let singleTrainingRequestSelectionFactory (db:Database.QueryContextFactory) : SingleTrainingRequestSelector =
-    let selectSingleTrainingRequest (recordId : int64) =
+    member _.SelectSingleTrainingRequest(recordId: int64) =
         task {
             try
                 let! request =
@@ -150,7 +147,7 @@ let singleTrainingRequestSelectionFactory (db:Database.QueryContextFactory) : Si
                         take 2
                     }
                 let recordCount = request |> Seq.length
-                let response = 
+                let response =
                     match recordCount with
                     | 0 -> Error notFoundResponse
                     | 1 -> Ok (request |> Seq.head)
@@ -161,10 +158,8 @@ let singleTrainingRequestSelectionFactory (db:Database.QueryContextFactory) : Si
                 printfn "SQL: %O" ex
                 return Error internalErrorResponse
         }
-    selectSingleTrainingRequest
 
-let multiTrainingRequestSelectionFactory (db:Database.QueryContextFactory) : MultiTrainingRequestSelector<'a> =
-    let selectMultiTrainingRequests skipNumber length =
+    member _.SelectMultiTrainingRequests (skipNumber: int) (length: int) =
         task {
             try
                 let! requests =
@@ -180,10 +175,8 @@ let multiTrainingRequestSelectionFactory (db:Database.QueryContextFactory) : Mul
                 printfn "SQL: %O" ex
                 return Error internalErrorResponse
         }
-    selectMultiTrainingRequests
 
-let trainingRequestCounterFactory (db:Database.QueryContextFactory) : TrainingRequestCounter<'a> =
-    let countTrainingRequests =
+    member _.CountTrainingRequests =
         task {
             try
                 let! requests =
@@ -198,4 +191,3 @@ let trainingRequestCounterFactory (db:Database.QueryContextFactory) : TrainingRe
                 printfn "SQL: %O" ex
                 return Error internalErrorResponse
         }
-    countTrainingRequests

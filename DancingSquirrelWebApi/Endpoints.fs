@@ -21,37 +21,27 @@ open TrainingRequest.Endpoints
 open TrainingRequest.Queries
 
 let getEndpoints (wApp : WebApplication) =
-    //Kind of an example of what not to do:
-    //I'm leaving this set of functions in place as an example of what things look like if we insist on refusing to use classes.
-    //Since all of these methods share the same dependency, passing this in as a constructor is actually what classes are for.
     let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
     let ctxtFactory = ExternalDependencies.getDbContextFactory connStr
-    let insertTrainingRequest = trainingRequestInsertionFactory ctxtFactory
-    let selectSingleTrainingRequest = singleTrainingRequestSelectionFactory ctxtFactory
-    let selectMultiTrainingRequests = multiTrainingRequestSelectionFactory ctxtFactory
-    let countTrainingRequests = trainingRequestCounterFactory ctxtFactory
-    let insertOnboardedClient = OnboardedClientInsertionFactory ctxtFactory
+    let trQueries = TrainingRequestQueries(ctxtFactory)
     let selectDanceTypes = danceTypeSelectorFactory ctxtFactory
     let selectTeachersByDanceType = teachersByDanceTypeSelectorFactory ctxtFactory
-
-    //This is an alternative to the above.
-    //Just a class for a bunch of related stuff with the same dependency
     let identityWrap = new UserAuthorizationWrapper(wApp.Services.CreateScope)
         
     //This list of endpoints available in our application
     let endpoints =
         [
-            post "/api/trainingRequest" (createTrainingRequest insertTrainingRequest)
-            get "/api/trainingRequest" (getTrainingRequests selectMultiTrainingRequests countTrainingRequests)
+            post "/api/trainingRequest" (createTrainingRequest trQueries.InsertTrainingRequest)
+            get "/api/trainingRequest" (getTrainingRequests trQueries.SelectMultiTrainingRequests trQueries.CountTrainingRequests)
                 |> OpenApi.query [
                     { Name = "page"; Type = typeof<int64>; Required = false }
                     { Name = "length"; Type = typeof<int64>; Required = false }
                 ]
-            get "/api/trainingRequest/{trainingRequestId:int}" (getSingleTrainingRequest selectSingleTrainingRequest)
+            get "/api/trainingRequest/{trainingRequestId:int}" (getSingleTrainingRequest trQueries.SelectSingleTrainingRequest)
                 |> OpenApi.route [
                     { Name = "trainingRequestId"; Type = typeof<int64>; Required = true }
                 ]
-            post "/api/squirrel/trainingRequest/{trainingRequestId:int}" (onboardClient insertOnboardedClient selectSingleTrainingRequest)
+            post "/api/squirrel/trainingRequest/{trainingRequestId:int}" (onboardClient trQueries.InsertOnboardedClient trQueries.SelectSingleTrainingRequest)
             get "/api/danceType" (getDanceTypes selectDanceTypes)
             get "/api/danceType/{danceTypeId:int}/teacher" (getTeachersByDanceType selectTeachersByDanceType)
                 |> OpenApi.route [
