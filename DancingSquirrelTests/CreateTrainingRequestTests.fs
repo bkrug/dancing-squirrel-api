@@ -4,7 +4,6 @@ open System.Threading.Tasks
 open Falco
 open FsUnit.Xunit
 open GenericModels
-open Microsoft.FSharp.Reflection
 open Shouldly
 open TrainingRequest.Endpoints
 open TrainingRequest.Models
@@ -88,6 +87,55 @@ let ``Training Request for Person is valid. Expect a success response.`` () =
             CaretakerLastName = Some "Blue"
             Email = "acme@example.com"
             Phone = "14145552983"
+            SquirrelName = "Nutty"
+            DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
+         }
+
+      submissionResult.IsOk |> should equal true
+      actualRecievedForm.ShouldBeEquivalentTo(Some expectedForm)
+   }
+
+[<Theory>]
+[<InlineData("1(212)555-1234", "12125551234")>]
+[<InlineData("(212)555-1234", "2125551234")>]
+[<InlineData("212-555-1234", "2125551234")>]
+[<InlineData("1-212-555-1234", "12125551234")>]
+[<InlineData("1  212 5551234 ", "12125551234")>]
+[<InlineData("2125551234", "2125551234")>]
+let ``Phone numbers may omit or not omit the international code. Expect a success response.`` inputPhoneNumber persistedPhoneNumber =
+   task {
+      let formValues = [
+            "caretakertype", RNumber (int32 CaretakerType.Person)
+            "caretakerCompanyName", RNull
+            "caretakerFirstName", RString "Betty"
+            "caretakerLastName", RString "Blue"
+            "email", RString "acme@example.com"
+            "phone", RString inputPhoneNumber
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ]
+      let formData = new FormData(RObject formValues, None)
+
+      let mutable actualRecievedForm : Option<TrainingRequestForm> = None
+      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+         actualRecievedForm <- Some form
+         Task.FromResult( Ok {
+            IsSuccess = true
+            IsInternalError = false
+            ValidationFailures = None
+         })
+
+      //Act
+      let! submissionResult = createTrainingRequestFromForm formData insertRec
+
+      //Assert
+      let expectedForm = {
+            CaretakerType = CaretakerType.Person
+            CaretakerCompanyName = None
+            CaretakerFirstName = Some "Betty"
+            CaretakerLastName = Some "Blue"
+            Email = "acme@example.com"
+            Phone = persistedPhoneNumber
             SquirrelName = "Nutty"
             DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
          }
@@ -182,6 +230,34 @@ let validationFailureData =
          "Email",
          "is required"
       )
+      (
+         [
+            "caretakertype", RNumber (int32 CaretakerType.Person)
+            "caretakerCompanyName", RNull
+            "caretakerFirstName", RString "Josie"
+            "caretakerLastName", RString "Cat"
+            "email", RString "b@a.com"
+            "phone", RString "9-414-555-2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ],
+         "Phone",
+         "must either have exactly 10 digits or a '1' followed by 10 digits"
+      )
+      (
+         [
+            "caretakertype", RNumber (int32 CaretakerType.Person)
+            "caretakerCompanyName", RNull
+            "caretakerFirstName", RString "Josie"
+            "caretakerLastName", RString "Cat"
+            "email", RString "b@a.com"
+            "phone", RString "1i414i555i2983"
+            "squirrelname", RString "Nutty"
+            "descriptionOfNeeds", RString "Dancing will give this squirrel a more rewarding life"
+         ],
+         "Phone",
+         "must not contain letters"
+      )            
    ]
 
 [<Theory>]
@@ -190,6 +266,8 @@ let validationFailureData =
 [<InlineData(1)>]
 [<InlineData(2)>]
 [<InlineData(3)>]
+[<InlineData(4)>]
+[<InlineData(5)>]
 let ``Training Request is somehow invalid. Expect a validation failure.`` 
    // (formValues:list<string*RequestValue>)
    // (validationField:string)
