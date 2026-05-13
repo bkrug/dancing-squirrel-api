@@ -3,11 +3,10 @@ module TrainingRequest.Queries
 open DbLayer
 open GenericModels
 open SqlHydra.Query
-open System.Threading.Tasks
 open TrainingRequest.Models
 
 type TrainingRequestQueries(db: Database.QueryContextFactory) =
-    member _.InsertTrainingRequest(form: TrainingRequestForm) : Task<Result<GenericModelResponse<string>, GenericModelResponse<TrainingRequestValidation>>> =
+    member _.InsertTrainingRequest(form: TrainingRequestForm) =
         task {
             use! context = db.OpenContextAsync()
             try
@@ -40,7 +39,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                 return Error internalErrorResponse
         }
 
-    member _.InsertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest: Database.main.TrainingRequest) : Task<Result<Database.main.TrainingRequest, GenericModelResponse<string>>> =
+    member _.InsertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest: Database.main.TrainingRequest) =
         task {
             use! shared = db.OpenContextAsync()
             try
