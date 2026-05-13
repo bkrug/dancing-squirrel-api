@@ -89,14 +89,18 @@ let OnboardedClientInsertionFactory (db:Database.QueryContextFactory) : Onboarde
                     }
                     getId s.SquirrelId
                 }
-                for teacherId in onboardingRequest.DanceTeachers do
-                    insertTask shared {
-                        into Database.main.SquirrelTeacher
-                        entity {
+                let squirrelTeacherEntitites =
+                    onboardingRequest.DanceTeachers
+                    |> Array.map (fun teacherId ->
+                        let newEntity:Database.main.SquirrelTeacher = {
                             SquirrelId = squirrelId;
                             TeacherId = teacherId;
                         }
-                    } |> ignore
+                        newEntity)
+                insertTask shared {
+                    into Database.main.SquirrelTeacher
+                    entities squirrelTeacherEntitites
+                } |> ignore
                 let nowUnix = System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeSeconds()
                 let! updateSuccess = updateTask shared {
                     for tr in Database.main.TrainingRequest do
