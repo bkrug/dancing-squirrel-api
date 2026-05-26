@@ -35,32 +35,35 @@ INSERT INTO TrainingRequest (CaretakerType, SquirrelName, OrganizationName, Owne
     (1, 'Just Bob', NULL, 'Harrison', 'William', 'harrison@example.com', '4145558392', NULL, NULL, 'Interested in traditional dance forms', NULL),
     (1, 'Soulmate', NULL, 'Tyler', 'John', 'tyler@example.com', '13135552891', NULL, NULL, 'Needs help with balance', NULL);
 
-INSERT INTO DanceTypeTeacher (DanceTypeId, TeacherId) VALUES
-    (2, 1),
-    (3, 1),
-    (4, 2),
-    (6, 2),
-    (9, 2),
-    (5, 3),
-    (7, 3),
-    (10, 3),
-    (1, 4),
-    (3, 4),
-    (8, 4),
-    (4, 5),
-    (6, 5),
-    (10, 5),
-    (3, 6),
-    (5, 6),
-    (6, 7),
-    (7, 7),
-    (9, 7),
-    (1, 8),
-    (2, 8),
-    (7, 9),
-    (8, 9),
-    (1, 10),
-    (2, 10),
-    (3, 10),
-    (5, 10),
-    (7, 10);
+INSERT INTO DanceTypeTeacher (DanceTypeId, TeacherId)
+SELECT dt.DanceTypeId, t.TeacherId
+FROM DanceType dt
+JOIN Teacher t ON 1=1
+WHERE (dt.Name = 'Tango'        AND t.FirstName = 'Maria'  AND t.LastName = 'Gonzalez')
+   OR (dt.Name = 'Ballet'       AND t.FirstName = 'Maria'  AND t.LastName = 'Gonzalez')
+   OR (dt.Name = 'Hip Hop'      AND t.FirstName = 'James'  AND t.LastName = 'Chen')
+   OR (dt.Name = 'Breakdancing' AND t.FirstName = 'James'  AND t.LastName = 'Chen')
+   OR (dt.Name = 'Jive'         AND t.FirstName = 'James'  AND t.LastName = 'Chen')
+   OR (dt.Name = 'Salsa'        AND t.FirstName = 'Priya'  AND t.LastName = 'Sharma')
+   OR (dt.Name = 'Tap'          AND t.FirstName = 'Priya'  AND t.LastName = 'Sharma')
+   OR (dt.Name = 'Contemporary' AND t.FirstName = 'Priya'  AND t.LastName = 'Sharma')
+   OR (dt.Name = 'Waltz'        AND t.FirstName = 'Derek'  AND t.LastName = 'Okafor')
+   OR (dt.Name = 'Ballet'       AND t.FirstName = 'Derek'  AND t.LastName = 'Okafor')
+   OR (dt.Name = 'Foxtrot'      AND t.FirstName = 'Derek'  AND t.LastName = 'Okafor')
+   OR (dt.Name = 'Hip Hop'      AND t.FirstName = 'Sofia'  AND t.LastName = 'Petrov')
+   OR (dt.Name = 'Breakdancing' AND t.FirstName = 'Sofia'  AND t.LastName = 'Petrov')
+   OR (dt.Name = 'Contemporary' AND t.FirstName = 'Sofia'  AND t.LastName = 'Petrov')
+   OR (dt.Name = 'Ballet'       AND t.FirstName = 'Liam'   AND t.LastName = 'Nakamura')
+   OR (dt.Name = 'Salsa'        AND t.FirstName = 'Liam'   AND t.LastName = 'Nakamura')
+   OR (dt.Name = 'Breakdancing' AND t.FirstName = 'Amara'  AND t.LastName = 'Diallo')
+   OR (dt.Name = 'Tap'          AND t.FirstName = 'Amara'  AND t.LastName = 'Diallo')
+   OR (dt.Name = 'Jive'         AND t.FirstName = 'Amara'  AND t.LastName = 'Diallo')
+   OR (dt.Name = 'Waltz'        AND t.FirstName = 'Ethan'  AND t.LastName = 'Kowalski')
+   OR (dt.Name = 'Tango'        AND t.FirstName = 'Ethan'  AND t.LastName = 'Kowalski')
+   OR (dt.Name = 'Tap'          AND t.FirstName = 'Yasmin' AND t.LastName = 'Hassan')
+   OR (dt.Name = 'Foxtrot'      AND t.FirstName = 'Yasmin' AND t.LastName = 'Hassan')
+   OR (dt.Name = 'Waltz'        AND t.FirstName = 'Carlos' AND t.LastName = 'Rivera')
+   OR (dt.Name = 'Tango'        AND t.FirstName = 'Carlos' AND t.LastName = 'Rivera')
+   OR (dt.Name = 'Ballet'       AND t.FirstName = 'Carlos' AND t.LastName = 'Rivera')
+   OR (dt.Name = 'Salsa'        AND t.FirstName = 'Carlos' AND t.LastName = 'Rivera')
+   OR (dt.Name = 'Tap'          AND t.FirstName = 'Carlos' AND t.LastName = 'Rivera');
