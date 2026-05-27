@@ -1,7 +1,7 @@
 #Microsoft recommends including the SHA.
 #We can get tags and SHAs from Web pages like this: https://mcr.microsoft.com/en-us/artifact/mar/dotnet/sdk/tags
 #FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:3fcf6f1e809c0553f9feb222369f58749af314af6f063f389cbd2f913b4ad556 AS build
-FROM mcr.microsoft.com/dotnet/sdk:10.0.300-alpine3.23-amd64@sha256:92e53630a00550b2b8430dd413c20edf6ce41733d6322c7c8d822ffd603540b6 as dev
+FROM mcr.microsoft.com/dotnet/sdk:10.0.300-alpine3.23-amd64@sha256:92e53630a00550b2b8430dd413c20edf6ce41733d6322c7c8d822ffd603540b6 AS dev
 WORKDIR /App
 
 # Copy everything
@@ -14,7 +14,6 @@ RUN dotnet publish -o out
 # Build runtime image
 #FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b4bea3a52a0a77317fa93c5bbdb076623f81e3e2f201078d89914da71318b5d8
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.8-alpine3.23-amd64@sha256:1b3a34768687d583ebdf16ca8dd9a21ec93de9cdf81bb424e3c1a706e2a453d7
-WORKDIR /App
+WORKDIR /App/DancingSquirrelWebApi
 COPY --from=dev /App/out .
-# ENTRYPOINT ["dotnet", "run" ]
-ENTRYPOINT ["dotnet", "run", "--project", "DancingSquirrelWebApi"]
+ENTRYPOINT ["dotnet", "DancingSquirrelWebApi.dll"]

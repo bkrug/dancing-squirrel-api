@@ -16,6 +16,7 @@ open Microsoft.Extensions.Configuration.Json
 open Microsoft.Extensions.Logging
 open Microsoft.EntityFrameworkCore
 open System
+open System.Reflection
 
 [<Literal>]
 let allowedOriginsPolicy = "DancingSquirrelOrigins"
@@ -52,6 +53,8 @@ let wApp = builder.Build()
 
 ensureIdentitySeedData wApp.Services |> ignore
 
+let executionPath = Assembly.GetExecutingAssembly().Location
+printfn "Running on path %s" executionPath
 wApp.UseAuthentication() |> ignore
 wApp.UseAuthorization() |> ignore
 wApp.UseCookiePolicy(new CookiePolicyOptions( MinimumSameSitePolicy = SameSiteMode.Strict; ) ) |> ignore
