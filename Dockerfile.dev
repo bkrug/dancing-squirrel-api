@@ -16,5 +16,5 @@ RUN dotnet publish -o out
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.8-alpine3.23-amd64@sha256:1b3a34768687d583ebdf16ca8dd9a21ec93de9cdf81bb424e3c1a706e2a453d7
 WORKDIR /App
 COPY --from=dev /App/out .
-ENTRYPOINT ["dotnet", "run" ]
-# ENTRYPOINT ["dotnet","DancingSquirrelWebApi/bin/Debug/net10.0/DancingSquirrelWebApi.dll"]
+# ENTRYPOINT ["dotnet", "run" ]
+ENTRYPOINT ["dotnet","DancingSquirrelWebApi/bin/Debug/net10.0/DancingSquirrelWebApi.dll"]

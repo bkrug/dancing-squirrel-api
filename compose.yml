@@ -1,0 +1,9 @@
+version: '3.4'
+
+services:
+  dancing-squirrel-api:
+    image: dancing-squirrel-api
+    expose:
+      - "5626"
+    ports:
+      - "5626:5626"

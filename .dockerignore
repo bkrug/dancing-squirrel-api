@@ -273,9 +273,8 @@ paket-files/
 # CodeRush
 .cr/
 
-# We store DDL scripts to the repo, but do not store the database itself
+# Include the test database in the docker image, but not these other db-related files
 # (see /Database/schema.sql)
-Database/*.db
 Database/*.db-shm
 Database/*.db-wal
 Database/*.db-journal
