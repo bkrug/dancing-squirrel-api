@@ -68,6 +68,9 @@ Use this command to after adding or removing objects from one of the databases.
 It updates some DDL SQL scripts, so that we don't need to store the databases as part of the git repo, but can easily create blank versions of the databases.
 Each time the debugger is started up, VS Code auto-runs the above script.
 
+`sudo docker run -it --entrypoint /bin/sh dancing-squirrel-api`
+Example the contents of a container through a shell
+
 # Troubleshooting
 
 See this source for data on path variables used in launch.json
