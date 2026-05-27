@@ -56,9 +56,7 @@ ensureIdentitySeedData wApp.Services |> ignore
 
 let executionPath = Assembly.GetExecutingAssembly().Location
 printfn "Running on path %s" executionPath
-let directories = String.Join(", ", Directory.GetDirectories(".."))
-printfn "Directories are %s" directories
-let path = @"../Database"
+let path = @".."
 let directoryFiles = String.Join(", ", Directory.GetFiles(path))
 printfn "Files at path %s are: %s" path directoryFiles
 wApp.UseAuthentication() |> ignore
