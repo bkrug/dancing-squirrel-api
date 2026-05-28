@@ -60,6 +60,10 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }
                 ]
+            get "/api/user/{userId}" (getUserHandler identityWrap)
+                |> OpenApi.route [
+                    { Name = "userId"; Type = typeof<string>; Required = true }
+                ]
             get "api/user" (getUsers identityWrap)
                 |> OpenApi.query [
                     { Name = "page"; Type = typeof<int64>; Required = false }

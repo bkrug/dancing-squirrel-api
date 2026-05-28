@@ -155,6 +155,20 @@ let deleteUser (queries: IUserAuthorizationWrapper) =
             }
         )
 
+let getUserHandler (queries: IUserAuthorizationWrapper) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let userId = (Request.getRoute ctx).GetString "userId"
+                let! userResult = queries.GetUserAsync userId
+                let viewModelResult =
+                    userResult |> Result.map (fun user ->
+                        { Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber })
+                let httpResponse = getHttpRecordResponse viewModelResult
+                return! httpResponse ctx
+            }
+        )
+
 let getUsers (queries: IUserAuthorizationWrapper) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
