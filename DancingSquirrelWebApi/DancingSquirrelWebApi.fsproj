@@ -12,8 +12,9 @@
     </Compile>
     <Compile Include="ExternalDependencies.fs" />
     <Compile Include="GenericModels.fs" />
-    <Compile Include="RegistrationModels.fs" />
-    <Compile Include="Auth.fs" />
+    <Compile Include="Auth.fs" /><Compile Include="RegistrationModels.fs" />
+    <Compile Include="RegistrationQueries.fs" />
+    
     <Compile Include="RegistrationEndpoints.fs" />
     <Compile Include="TrainingRequestModels.fs" />
     <Compile Include="TrainingRequestQueries.fs" />

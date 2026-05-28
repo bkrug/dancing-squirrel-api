@@ -10,13 +10,14 @@ open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Identity
 open GenericModels
 open Registration.Models
+open Registration.Queries
 
 //When adding authentiction to an app, start with HttpOnly cookie authentication.
 //https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0
 //
 //Once you have successful use of HttpOnly cookies, worry about AspNetCore Identity later.
 
-let registerNewUserHandler (queries: Auth.IUserAuthorizationWrapper) : HttpHandler = fun ctx -> 
+let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx -> 
     task {
         let! jsonString = Request.getBodyString ctx
         let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
@@ -103,7 +104,7 @@ let adminCheck : HttpHandler =
 
     Request.ifAuthenticatedInRole authScheme rolesAllowed handleAuthInRole
 
-let unlockUser (queries: Auth.IUserAuthorizationWrapper) =
+let unlockUser (queries: IUserAuthorizationWrapper) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
@@ -116,7 +117,7 @@ let unlockUser (queries: Auth.IUserAuthorizationWrapper) =
             }
         )
 
-let deleteUser (queries: Auth.IUserAuthorizationWrapper) =
+let deleteUser (queries: IUserAuthorizationWrapper) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
@@ -127,7 +128,7 @@ let deleteUser (queries: Auth.IUserAuthorizationWrapper) =
             }
         )
 
-let getUsers (queries: Auth.IUserAuthorizationWrapper) =
+let getUsers (queries: IUserAuthorizationWrapper) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {

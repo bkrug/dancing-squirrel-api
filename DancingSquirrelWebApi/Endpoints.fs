@@ -17,6 +17,7 @@ open Microsoft.EntityFrameworkCore
 open DanceType.Endpoints
 open DanceType.Queries
 open Registration.Models
+open Registration.Queries
 open Registration.Endpoints
 open TrainingRequest.Endpoints
 open TrainingRequest.Queries
