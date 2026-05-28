@@ -48,6 +48,8 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.route [
                     { Name = "danceTypeId"; Type = typeof<int64>; Required = true }
                 ]
+            post "/api/firstuser" (registerFirstUserHandler identityWrap)
+                |> OpenApi.acceptsType typeof<RegisterModel>
             post "/api/user" (registerNewUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<RegisterModel>
             put "/api/user/{userId}" (editUserHandler identityWrap)

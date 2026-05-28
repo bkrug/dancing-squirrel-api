@@ -10,6 +10,7 @@ open System.Threading.Tasks
 type IUserAuthorizationWrapper =
     abstract member CreateUserAsync: (IdentityUser -> string -> Task<IdentityResult>) with get
     abstract member EditUserAsync: (IdentityUser -> Task<IdentityResult>) with get
+    abstract member AddToRoleAsync: (IdentityUser -> string -> Task<IdentityResult>) with get
     abstract member LoginUserAsync: (string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>) with get
     abstract member LogoutUserAsync: (unit -> Task<unit>) with get
     abstract member GetUserAsync: string -> Task<Result<IdentityUser, GenericModelResponse<string>>>
@@ -32,7 +33,14 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 use scope = createScope()
                 use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                 return! userManager.UpdateAsync(user)
-            }            
+            }
+
+        member _.AddToRoleAsync = fun user role ->
+            task {
+                use scope = createScope()
+                use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+                return! userManager.AddToRoleAsync(user, role)
+            }
 
         member _.LoginUserAsync = fun (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) ->
             task {

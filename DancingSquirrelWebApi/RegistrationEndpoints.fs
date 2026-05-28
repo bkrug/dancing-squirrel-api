@@ -17,27 +17,64 @@ open Registration.Queries
 //
 //Once you have successful use of HttpOnly cookies, worry about AspNetCore Identity later.
 
-let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
+let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
-        let! jsonString = Request.getBodyString ctx
-        let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
-
-        let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username, PhoneNumber = registrationData.PhoneNumber)
-        let! userCreationResult = queries.CreateUserAsync user registrationData.Password
-
-        let jsonResponse =
-            match userCreationResult.Succeeded with
-            | true -> Response.withStatusCode 201 >> Response.ofJson "success"
-            | _ ->
-                // result.Errors contains stuff like:
-                //  Passwords must have at least one non alphanumeric character.
-                //  Passwords must have at least one digit ('0'-'9').
-                //  Passwords must have at least one uppercase ('A'-'Z').
-                let errors = userCreationResult.Errors |> Seq.map (fun e -> e.Description)  |> List.ofSeq
-                Response.withStatusCode 400 >> Response.ofJson errors
-
-        return! jsonResponse ctx            
+        let! countResult = queries.CountUsers
+        match countResult with
+        | Error _ ->
+            return! (Response.withStatusCode 500 >> Response.ofJson internalErrorResponse) ctx
+        | Ok count when count > 0 ->
+            let responseModel =
+                {
+                    IsSuccess = false
+                    IsInternalError = false
+                    ValidationFailures = Some "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
+                }
+            return! (Response.withStatusCode 400 >> Response.ofJson responseModel) ctx
+        | Ok _ ->
+            let! jsonString = Request.getBodyString ctx
+            let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
+            let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username, PhoneNumber = registrationData.PhoneNumber)
+            let! createResult = queries.CreateUserAsync user registrationData.Password
+            match createResult.Succeeded with
+            | false ->
+                let errors = createResult.Errors |> Seq.map (fun e -> e.Description) |> List.ofSeq
+                return! (Response.withStatusCode 400 >> Response.ofJson errors) ctx
+            | true ->
+                let! roleResult = queries.AddToRoleAsync user "Admin"
+                let jsonResponse =
+                    match roleResult.Succeeded with
+                    | true -> Response.withStatusCode 201 >> Response.ofJson "success"
+                    | _ ->
+                        let errors = roleResult.Errors |> Seq.map (fun e -> e.Description) |> List.ofSeq
+                        Response.withStatusCode 400 >> Response.ofJson errors
+                return! jsonResponse ctx
     }
+
+let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = 
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let! jsonString = Request.getBodyString ctx
+                let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
+
+                let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username, PhoneNumber = registrationData.PhoneNumber)
+                let! userCreationResult = queries.CreateUserAsync user registrationData.Password
+
+                let jsonResponse =
+                    match userCreationResult.Succeeded with
+                    | true -> Response.withStatusCode 201 >> Response.ofJson "success"
+                    | _ ->
+                        // result.Errors contains stuff like:
+                        //  Passwords must have at least one non alphanumeric character.
+                        //  Passwords must have at least one digit ('0'-'9').
+                        //  Passwords must have at least one uppercase ('A'-'Z').
+                        let errors = userCreationResult.Errors |> Seq.map (fun e -> e.Description)  |> List.ofSeq
+                        Response.withStatusCode 400 >> Response.ofJson errors
+
+                return! jsonResponse ctx            
+            }
+        )
 
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
     Auth.processAuthenticatedRequest
