@@ -6,6 +6,7 @@ type RegisterModel =
         Username: string
         //TODO: Better practice is to generate a one-time password upon creation. Not accept one from the user.
         Password : string
+        PhoneNumber: string
     }
 
 type LoginModel =
@@ -19,7 +20,7 @@ type UnlockUserModel =
         Password: string
     }
 
-type CreateEditUserModel =
+type EditUserModel =
     {
         Email: string
         PhoneNumber: string

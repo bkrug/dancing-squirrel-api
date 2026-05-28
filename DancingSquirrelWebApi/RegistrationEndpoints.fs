@@ -22,7 +22,7 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = 
         let! jsonString = Request.getBodyString ctx
         let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
 
-        let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username)
+        let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username, PhoneNumber = registrationData.PhoneNumber)
         let! userCreationResult = queries.CreateUserAsync user registrationData.Password
 
         let jsonResponse =
@@ -37,6 +37,30 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = 
                 Response.withStatusCode 400 >> Response.ofJson errors
 
         return! jsonResponse ctx            
+    }
+
+let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
+    task {
+        let userId = (Request.getRoute ctx).GetString "userId"
+        let! jsonString = Request.getBodyString ctx
+        let editData = JsonSerializer.Deserialize<EditUserModel>(jsonString, defaultJsonOptions)
+
+        let! getUserResult = queries.GetUserAsync userId
+
+        match getUserResult with
+        | Error err ->
+            return! (getHttpRecordResponse (Error err)) ctx
+        | Ok user ->
+            user.Email <- editData.Email
+            user.PhoneNumber <- editData.PhoneNumber
+            let! editResult = queries.EditUserAsync user
+            let jsonResponse =
+                match editResult.Succeeded with
+                | true -> Response.withStatusCode 200 >> Response.ofJson "success"
+                | _ ->
+                    let errors = editResult.Errors |> Seq.map (fun e -> e.Description) |> List.ofSeq
+                    Response.withStatusCode 400 >> Response.ofJson errors
+            return! jsonResponse ctx
     }
 
 let getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>) =

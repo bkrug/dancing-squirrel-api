@@ -5,15 +5,18 @@ open Microsoft.AspNetCore.Identity
 open Microsoft.Extensions.DependencyInjection
 open System.Collections.Generic
 open System.Linq
+open System.Threading.Tasks
 
 type IUserAuthorizationWrapper =
-    abstract member CreateUserAsync: (IdentityUser -> string -> System.Threading.Tasks.Task<IdentityResult>) with get
-    abstract member LoginUserAsync: (string -> string -> bool -> bool -> System.Threading.Tasks.Task<bool * IdentityUser * IList<string>>) with get
-    abstract member LogoutUserAsync: (unit -> System.Threading.Tasks.Task<unit>) with get
-    abstract member SelectMultiUsers: int -> int -> System.Threading.Tasks.Task<Result<seq<IdentityUser>, GenericModelResponse<string>>>
-    abstract member CountUsers: System.Threading.Tasks.Task<Result<int, GenericModelResponse<string>>>
-    abstract member DeleteUserAsync: string -> System.Threading.Tasks.Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
-    abstract member UnlockUserAsync: string -> string -> System.Threading.Tasks.Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
+    abstract member CreateUserAsync: (IdentityUser -> string -> Task<IdentityResult>) with get
+    abstract member EditUserAsync: (IdentityUser -> Task<IdentityResult>) with get
+    abstract member LoginUserAsync: (string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>) with get
+    abstract member LogoutUserAsync: (unit -> Task<unit>) with get
+    abstract member GetUserAsync: string -> Task<Result<IdentityUser, GenericModelResponse<string>>>
+    abstract member SelectMultiUsers: int -> int -> Task<Result<seq<IdentityUser>, GenericModelResponse<string>>>
+    abstract member CountUsers: Task<Result<int, GenericModelResponse<string>>>
+    abstract member DeleteUserAsync: string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
+    abstract member UnlockUserAsync: string -> string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
 type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
     interface IUserAuthorizationWrapper with
@@ -23,6 +26,13 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                 return! userManager.CreateAsync(user, password)
             }
+
+        member _.EditUserAsync = fun user ->
+            task {
+                use scope = createScope()
+                use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+                return! userManager.UpdateAsync(user)
+            }            
 
         member _.LoginUserAsync = fun (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) ->
             task {
@@ -46,6 +56,19 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 use scope = createScope()
                 let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
                 return! signInManager.SignOutAsync()
+            }
+
+        member _.GetUserAsync (userId: string) =
+            task {
+                try
+                    use scope = createScope()
+                    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+                    let! user = userManager.FindByIdAsync(userId)
+                    return Ok user
+                with
+                | ex ->
+                    printfn "SQL: %O" ex
+                    return Error internalErrorResponse
             }
 
         member _.SelectMultiUsers (skip: int) (length: int) =
