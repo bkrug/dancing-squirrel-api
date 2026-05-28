@@ -50,7 +50,7 @@ let getEndpoints (wApp : WebApplication) =
                 ]
             post "/api/user" (registerNewUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<RegisterModel>
-            put "/api/user" (editUserHandler identityWrap)
+            put "/api/user/{userId}" (editUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<EditUserModel>                
             post "/api/user/{userId}/unlock" (unlockUser identityWrap)
                 |> OpenApi.route [
