@@ -1,17 +1,32 @@
 This is a WebApi for managing an imaginary company that trains squirrels to work in the entertainment industry.
 See also the companion repo for the ReactJS application: https://github.com/bkrug/dancing-squirrel-ui
 
-# Initial Setup
+# Running this program locally through Docker
+
+Download the file "compose.yml" from the root directory of this git repo.
+From the folder where you download that .yml file to:
+```
+docker pull krugee/dancing-squirrel-ui
+docker pull krugee/dancing-squirrel-api
+docker compose up
+```
+
+# Initial Setup without Docker
 
 This repo expects SQLite databases at path /Database/*.db
 The databases are not stored in the repo, so create the database using the DDL in schema.sql
 (https://www.codegenes.net/blog/how-to-create-a-db-file-in-sqlite3-using-a-schema-file/)
 
 ```
-sqlite3 /Database/DancingSquirrel.db
+sqlite3 ./Database/DancingSquirrel.db
 (This takes you into the sqlite3 program)
-read /Database/schema.sql
+.read ./Database/schemaDancingSquirrel.sql
+.read ./Database/insertTestData.sql
 ^Z
+sqlite3 ./Database/Security.db
+.read ./Database/schemaSecurity.sql
+^Z
+dotnet run --project DancingSquirrelWebApi
 ```
 
 # How to create a new solution containing a Falco project from command line
