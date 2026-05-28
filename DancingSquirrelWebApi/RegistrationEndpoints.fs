@@ -115,3 +115,17 @@ let adminCheck : HttpHandler =
     let rolesAllowed = [ "Admin" ]
 
     Request.ifAuthenticatedInRole authScheme rolesAllowed handleAuthInRole
+
+let getUsers (queries: Auth.IUserAuthorizationWrapper) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let page = System.Math.Max(1, (Request.getQuery ctx).GetInt("page"))
+                let pageLength = System.Math.Max(10, (Request.getQuery ctx).GetInt("length"))
+                let skipCount = (page - 1) * pageLength
+                let! users = queries.SelectMultiUsers skipCount pageLength
+                let! recordCountResult = queries.CountUsers
+                let httpPagedResponse = getHttpPagedDataResponse users recordCountResult page pageLength
+                return! httpPagedResponse ctx
+            }
+        )

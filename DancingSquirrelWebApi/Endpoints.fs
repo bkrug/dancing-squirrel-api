@@ -25,7 +25,7 @@ let getEndpoints (wApp : WebApplication) =
     let ctxtFactory = ExternalDependencies.getDbContextFactory connStr
     let trQueries: ITrainingRequestQueries = TrainingRequestQueries(ctxtFactory)
     let dtQueries: IDanceTypeQueries = DanceTypeQueries(ctxtFactory)
-    let identityWrap = new UserAuthorizationWrapper(wApp.Services.CreateScope)
+    let identityWrap: IUserAuthorizationWrapper = new UserAuthorizationWrapper(wApp.Services.CreateScope)
         
     //This list of endpoints available in our application
     let endpoints =
@@ -48,6 +48,11 @@ let getEndpoints (wApp : WebApplication) =
                 ]
             post "/api/user" (registerNewUserHandler identityWrap.CreateUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
+            get "api/user" (getUsers identityWrap)
+                |> OpenApi.query [
+                    { Name = "page"; Type = typeof<int64>; Required = false }
+                    { Name = "length"; Type = typeof<int64>; Required = false }
+                ]                
             post "/api/authentication" (loginUserWithClaimsHandler identityWrap.LoginUserAsync)
                 |> OpenApi.acceptsType typeof<LoginModel>
             delete "/api/authentication" (logoutUser identityWrap.LogoutUserAsync)
