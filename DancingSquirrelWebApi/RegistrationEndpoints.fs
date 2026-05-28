@@ -16,13 +16,13 @@ open Registration.Models
 //
 //Once you have successful use of HttpOnly cookies, worry about AspNetCore Identity later.
 
-let registerNewUserHandler (createUserAsync : IdentityUser -> string -> Task<IdentityResult>) : HttpHandler = fun ctx -> 
+let registerNewUserHandler (queries: Auth.IUserAuthorizationWrapper) : HttpHandler = fun ctx -> 
     task {
         let! jsonString = Request.getBodyString ctx
         let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
 
         let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username)
-        let! userCreationResult = createUserAsync user registrationData.Password
+        let! userCreationResult = queries.CreateUserAsync user registrationData.Password
 
         let jsonResponse =
             match userCreationResult.Succeeded with

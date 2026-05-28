@@ -47,7 +47,7 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.route [
                     { Name = "danceTypeId"; Type = typeof<int64>; Required = true }
                 ]
-            post "/api/user" (registerNewUserHandler identityWrap.CreateUserAsync)
+            post "/api/user" (registerNewUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<RegisterModel>
             post "/api/user/{userId}/unlock" (unlockUser identityWrap)
                 |> OpenApi.route [
