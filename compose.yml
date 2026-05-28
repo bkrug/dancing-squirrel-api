@@ -1,8 +1,27 @@
-version: '3.4'
-
 services:
+  dancing-squirrel-ui:
+    image: dancing-squirrel-ui
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3626:3626"
+    environment:
+      - NODE_ENV=development
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./package.json
+          target: /app/package.json
   dancing-squirrel-api:
     image: dancing-squirrel-api
+    environment:
+      - ASPNETCORE_HTTP_PORTS=5626
     expose:
       - "5626"
     ports:
