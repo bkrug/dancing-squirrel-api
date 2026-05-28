@@ -29,6 +29,11 @@ type LoginModel =
         Password: string
     }
 
+type UnlockUserModel =
+    {
+        Password: string
+    }
+
 let registerNewUserHandler (createUserAsync : IdentityUser -> string -> Task<IdentityResult>) : HttpHandler = fun ctx -> 
     task {
         let! jsonString = Request.getBodyString ctx
@@ -115,6 +120,19 @@ let adminCheck : HttpHandler =
     let rolesAllowed = [ "Admin" ]
 
     Request.ifAuthenticatedInRole authScheme rolesAllowed handleAuthInRole
+
+let unlockUser (queries: Auth.IUserAuthorizationWrapper) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let userId = (Request.getRoute ctx).GetString "userId"
+                let! jsonString = Request.getBodyString ctx
+                let unlockData = JsonSerializer.Deserialize<UnlockUserModel>(jsonString, defaultJsonOptions)
+                let! unlockResult = queries.UnlockUserAsync userId unlockData.Password
+                let httpResponse = getHttpRecordResponse unlockResult
+                return! httpResponse ctx
+            }
+        )
 
 let deleteUser (queries: Auth.IUserAuthorizationWrapper) =
     Auth.processAuthenticatedRequest

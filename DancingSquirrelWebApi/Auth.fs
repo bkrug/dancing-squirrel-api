@@ -22,6 +22,7 @@ type IUserAuthorizationWrapper =
     abstract member SelectMultiUsers: int -> int -> System.Threading.Tasks.Task<Result<seq<IdentityUser>, GenericModelResponse<string>>>
     abstract member CountUsers: System.Threading.Tasks.Task<Result<int, GenericModelResponse<string>>>
     abstract member DeleteUserAsync: string -> System.Threading.Tasks.Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
+    abstract member UnlockUserAsync: string -> string -> System.Threading.Tasks.Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
 type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
     interface IUserAuthorizationWrapper with
@@ -76,6 +77,29 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                     let count = userManager.Users.Count()
                     return Ok count
+                with
+                | ex ->
+                    printfn "SQL: %O" ex
+                    return Error internalErrorResponse
+            }
+
+        member _.UnlockUserAsync (userId: string) (newPassword: string) =
+            task {
+                try
+                    use scope = createScope()
+                    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+                    let! user = userManager.FindByIdAsync(userId)
+                    match user with
+                    | null -> return Error notFoundResponse
+                    | _ ->
+                        let! resetToken = userManager.GeneratePasswordResetTokenAsync(user)
+                        let! resetResult = userManager.ResetPasswordAsync(user, resetToken, newPassword)
+                        if not resetResult.Succeeded then
+                            return Error internalErrorResponse
+                        else
+                            let! _ = userManager.ResetAccessFailedCountAsync(user)
+                            let! _ = userManager.SetLockoutEndDateAsync(user, System.Nullable<System.DateTimeOffset>())
+                            return Ok { IsSuccess = true; IsInternalError = false; ValidationFailures = None }
                 with
                 | ex ->
                     printfn "SQL: %O" ex

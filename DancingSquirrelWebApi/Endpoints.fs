@@ -48,6 +48,10 @@ let getEndpoints (wApp : WebApplication) =
                 ]
             post "/api/user" (registerNewUserHandler identityWrap.CreateUserAsync)
                 |> OpenApi.acceptsType typeof<RegisterModel>
+            post "/api/user/{userId}/unlock" (unlockUser identityWrap)
+                |> OpenApi.route [
+                    { Name = "userId"; Type = typeof<string>; Required = true }
+                ]
             delete "/api/user/{userId}" (deleteUser identityWrap)
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }
