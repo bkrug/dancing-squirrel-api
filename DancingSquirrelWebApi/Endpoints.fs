@@ -16,7 +16,8 @@ open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
 open DanceType.Endpoints
 open DanceType.Queries
-open RegistrationEndpoints
+open Registration.Models
+open Registration.Endpoints
 open TrainingRequest.Endpoints
 open TrainingRequest.Queries
 

@@ -1,4 +1,4 @@
-module RegistrationEndpoints
+module Registration.Endpoints
 
 open System.Text.Json
 open System.Threading.Tasks
@@ -9,30 +9,12 @@ open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Identity
 open GenericModels
+open Registration.Models
 
 //When adding authentiction to an app, start with HttpOnly cookie authentication.
 //https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0
 //
 //Once you have successful use of HttpOnly cookies, worry about AspNetCore Identity later.
-
-type RegisterModel = 
-    {
-        Email : string
-        Username: string
-        //TODO: Better practice is to generate a one-time password upon creation. Not accept one from the user.
-        Password : string
-    }
-
-type LoginModel =
-    {
-        Username: string
-        Password: string
-    }
-
-type UnlockUserModel =
-    {
-        Password: string
-    }
 
 let registerNewUserHandler (createUserAsync : IdentityUser -> string -> Task<IdentityResult>) : HttpHandler = fun ctx -> 
     task {
