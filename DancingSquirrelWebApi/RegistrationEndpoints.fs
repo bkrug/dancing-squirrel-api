@@ -116,6 +116,17 @@ let adminCheck : HttpHandler =
 
     Request.ifAuthenticatedInRole authScheme rolesAllowed handleAuthInRole
 
+let deleteUser (queries: Auth.IUserAuthorizationWrapper) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let userId = (Request.getRoute ctx).GetString "userId"
+                let! deleteResult = queries.DeleteUserAsync userId
+                let httpResponse = getHttpRecordResponse deleteResult
+                return! httpResponse ctx
+            }
+        )
+
 let getUsers (queries: Auth.IUserAuthorizationWrapper) =
     Auth.processAuthenticatedRequest
         (fun ctx ->

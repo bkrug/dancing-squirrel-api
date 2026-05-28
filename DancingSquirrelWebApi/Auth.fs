@@ -21,6 +21,7 @@ type IUserAuthorizationWrapper =
     abstract member LogoutUserAsync: (unit -> System.Threading.Tasks.Task<unit>) with get
     abstract member SelectMultiUsers: int -> int -> System.Threading.Tasks.Task<Result<seq<IdentityUser>, GenericModelResponse<string>>>
     abstract member CountUsers: System.Threading.Tasks.Task<Result<int, GenericModelResponse<string>>>
+    abstract member DeleteUserAsync: string -> System.Threading.Tasks.Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
 type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
     interface IUserAuthorizationWrapper with
@@ -75,6 +76,27 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                     let count = userManager.Users.Count()
                     return Ok count
+                with
+                | ex ->
+                    printfn "SQL: %O" ex
+                    return Error internalErrorResponse
+            }
+
+        member _.DeleteUserAsync (userId: string) =
+            task {
+                try
+                    use scope = createScope()
+                    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+                    let! user = userManager.FindByIdAsync(userId)
+                    match user with
+                    | null -> return Error notFoundResponse
+                    | _ ->
+                        let! result = userManager.DeleteAsync(user)
+                        match result.Succeeded with
+                        | true -> return Ok { IsSuccess = true; IsInternalError = false; ValidationFailures = None }
+                        | false ->
+                            printfn "Delete user failed: %A" (result.Errors |> Seq.map (fun e -> e.Description))
+                            return Error internalErrorResponse
                 with
                 | ex ->
                     printfn "SQL: %O" ex
