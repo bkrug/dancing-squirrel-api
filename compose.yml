@@ -1,9 +1,6 @@
 services:
   dancing-squirrel-ui:
-    image: dancing-squirrel-ui
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
+    image: krugee/dancing-squirrel-ui
     ports:
       - "3626:3626"
     environment:
@@ -19,7 +16,7 @@ services:
           path: ./package.json
           target: /app/package.json
   dancing-squirrel-api:
-    image: dancing-squirrel-api
+    image: krugee/dancing-squirrel-api
     environment:
       - ASPNETCORE_HTTP_PORTS=5626
     expose:
