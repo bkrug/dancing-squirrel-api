@@ -18,3 +18,16 @@ type UnlockUserModel =
     {
         Password: string
     }
+
+type CreateEditUserModel =
+    {
+        Email: string
+        PhoneNumber: string
+    }
+
+type ViewUserModel =
+    {
+        Username: string
+        Email: string
+        PhoneNumber: string
+    }
