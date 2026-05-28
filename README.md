@@ -23,9 +23,11 @@ sqlite3 ./Database/DancingSquirrel.db
 .read ./Database/schemaDancingSquirrel.sql
 .read ./Database/insertTestData.sql
 ^Z
+
 sqlite3 ./Database/Security.db
 .read ./Database/schemaSecurity.sql
 ^Z
+
 dotnet run --project DancingSquirrelWebApi
 ```
 

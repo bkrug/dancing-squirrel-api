@@ -9,6 +9,7 @@ open System.Text.Json
 open System.Text.RegularExpressions
 open System.Threading.Tasks
 open TrainingRequest.Models
+open TrainingRequest.Queries
 open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 
@@ -134,34 +135,34 @@ let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestFor
         |> TaskResult.bindToTask insertRec
     submissionResult
 
-let createTrainingRequest (insertRec:TrainingRequestFormInserter<'a>) : HttpHandler = fun ctx ->
+let createTrainingRequest (queries: ITrainingRequestQueries) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
-        let! submissionResult = createTrainingRequestFromForm form insertRec
+        let! submissionResult = createTrainingRequestFromForm form queries.InsertTrainingRequest
         let httpFormResponse = getHttpFormResponse submissionResult
         return! httpFormResponse ctx
     }
 
-let getTrainingRequests (selectRec: MultiTrainingRequestSelector<'a>) (countRec: TrainingRequestCounter<'a>) =
+let getTrainingRequests (queries: ITrainingRequestQueries) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
                 let page = Math.Max(1, (Request.getQuery ctx).GetInt("page"))
                 let pageLength = Math.Max(10, (Request.getQuery ctx).GetInt("length"))
                 let skipCount = (page - 1) * pageLength
-                let! existingTrainingRequests = selectRec skipCount pageLength
-                let! recordCountResult = countRec
+                let! existingTrainingRequests = queries.SelectMultiTrainingRequests skipCount pageLength
+                let! recordCountResult = queries.CountTrainingRequests
                 let httpPagedResponse = getHttpPagedDataResponse existingTrainingRequests recordCountResult page pageLength
                 return! httpPagedResponse ctx
             }
         )
 
-let getSingleTrainingRequest (recordSelect: SingleTrainingRequestSelector) =
+let getSingleTrainingRequest (queries: ITrainingRequestQueries) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
                 let trainingRequestId = Math.Max(0, (Request.getRoute ctx).GetInt("trainingRequestId"))
-                let! existingTrainingRequest = recordSelect trainingRequestId
+                let! existingTrainingRequest = queries.SelectSingleTrainingRequest trainingRequestId
                 let httpRecordResponse = getHttpRecordResponse existingTrainingRequest
                 return! httpRecordResponse ctx
             }
@@ -179,10 +180,7 @@ let validatedOnboardingRequest (trainingRequest : main.TrainingRequest) =
             }
     Task.FromResult res
 
-let onboardClient
-        (insertOnboardedClient:OnboardedClientInserter<string>)
-        (recordSelect: int64 -> Task<Result<main.TrainingRequest, GenericModelResponse<string>>>)
-        =
+let onboardClient (queries: ITrainingRequestQueries) =
     Auth.processAuthenticatedRequest
         (fun ctx ->
             task {
@@ -193,9 +191,9 @@ let onboardClient
                 let! onboardingRequestJson = Request.getBodyString ctx
                 let onboardingRequestObject = JsonSerializer.Deserialize<OnboardingRequest>(onboardingRequestJson, defaultJsonOptions)
                 let! onboardingResult =
-                    recordSelect trainingRequestId
+                    queries.SelectSingleTrainingRequest trainingRequestId
                     |> TaskResult.bind validatedOnboardingRequest
-                    |> TaskResult.bind (insertOnboardedClient username onboardingRequestObject)
+                    |> TaskResult.bind (queries.InsertOnboardedClient username onboardingRequestObject)
                 let httpFormResponse = getHttpFormResponse onboardingResult
                 return! httpFormResponse ctx
             }
