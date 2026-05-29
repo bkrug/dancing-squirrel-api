@@ -59,7 +59,6 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
             task {
                 let! jsonString = Request.getBodyString ctx
                 let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
-
                 let user = mapToIdentityUser registrationData
                 let! userCreationResult = queries.CreateUserAsync user registrationData.Password
                 return! (identityResultToResponse 201 userCreationResult) ctx            
