@@ -111,3 +111,7 @@ let defaultJsonOptions =
     let options : JsonSerializerOptions = JsonSerializerOptions()
     options.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase
     options
+
+let AdminRole = "Admin"
+let OnboarderRole = "Onboarder"
+type Roles = AdminRole | OnboarderRole
