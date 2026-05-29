@@ -26,10 +26,17 @@ type EditUserModel =
         PhoneNumber: string
     }
 
+type ViewRoleModel =
+    {
+        RoleId: string
+        Name: string
+    }
+
 type ViewUserModel =
     {
         UserId: string
         Username: string
         Email: string
         PhoneNumber: string
+        Roles: ViewRoleModel[]
     }

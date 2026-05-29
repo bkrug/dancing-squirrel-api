@@ -21,7 +21,7 @@ let private mapToIdentityUser (data: RegisterModel) =
     IdentityUser(Email = data.Email, UserName = data.Username, PhoneNumber = data.PhoneNumber)
 
 let private mapToViewUserModel (user: IdentityUser) : ViewUserModel =
-    { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber }
+    { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber; Roles = Array.empty }
 
 //This method isn't great. Maybe we can convert more user creation stuff to use Result objects.
 let private identityResultToResponse successCode (result: IdentityResult) =
