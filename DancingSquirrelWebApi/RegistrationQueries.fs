@@ -6,6 +6,7 @@ open Microsoft.Extensions.DependencyInjection
 open System.Collections.Generic
 open System.Linq
 open System.Threading.Tasks
+open SecurityDbLayer
 
 type IUserAuthorizationWrapper =
     abstract member CreateUserAsync: IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
@@ -16,7 +17,8 @@ type IUserAuthorizationWrapper =
     abstract member DeleteUserAsync: string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
     abstract member SelectAllRoles: seq<IdentityRole>
-    abstract member AddToRoleAsync: IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
+    abstract member AddToRolesAsync: seq<string> -> IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
+    abstract member UpdateUserRolesAsyncAsync: seq<string> -> seq<string> -> IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
     abstract member GetRoleAsync: IdentityUser -> Task<IList<string>>
 
     abstract member LoginUserAsync: string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>
@@ -106,14 +108,32 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
             let allRoles = roleManager.Roles |> Seq.toList
             allRoles
 
-        member _.AddToRoleAsync user role =
+        member _.AddToRolesAsync roles user =
             task {
-                let! result = userManager.AddToRoleAsync(user, role)
+                let! result = userManager.AddToRolesAsync(user, roles)
                 return
                     match result.Succeeded with
                     | true -> Ok ()
                     | false -> Error (getGenericValidationFailure result.Errors)
-            }            
+            }
+
+        member _.UpdateUserRolesAsyncAsync addToRoles removeFromRoles user = 
+            task {
+                let dbContext = scope.ServiceProvider.GetService<SecurityDbContext>()
+                use! transaction = dbContext.Database.BeginTransactionAsync()
+                let! removeResult = userManager.RemoveFromRolesAsync(user, removeFromRoles)
+                if not removeResult.Succeeded then
+                    do! transaction.RollbackAsync()
+                    return Error (getGenericValidationFailure removeResult.Errors)
+                else
+                    let! addResult = userManager.AddToRolesAsync(user, addToRoles)
+                    if not addResult.Succeeded then
+                        do! transaction.RollbackAsync()
+                        return Error (getGenericValidationFailure addResult.Errors)
+                    else
+                        do! transaction.CommitAsync()
+                        return Ok()
+            }
 
         member _.GetRoleAsync user =
             task { return! userManager.GetRolesAsync(user) }

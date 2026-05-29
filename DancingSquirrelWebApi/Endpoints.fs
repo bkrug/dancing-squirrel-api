@@ -28,7 +28,7 @@ let getEndpoints (wApp : WebApplication) =
     let trQueries: ITrainingRequestQueries = TrainingRequestQueries(ctxtFactory)
     let dtQueries: IDanceTypeQueries = DanceTypeQueries(ctxtFactory)
     let identityWrap: IUserAuthorizationWrapper = new UserAuthorizationWrapper(wApp.Services.CreateScope)
-        
+
     //This list of endpoints available in our application
     let endpoints =
         [
@@ -56,7 +56,9 @@ let getEndpoints (wApp : WebApplication) =
             post "/api/user" (registerNewUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<RegisterModel>
             put "/api/user/{userId}" (editUserHandler identityWrap)
-                |> OpenApi.acceptsType typeof<EditUserModel>                
+                |> OpenApi.acceptsType typeof<EditUserModel>
+            put "/api/user/{userId}/role" (editUserRolesHandler identityWrap)
+                |> OpenApi.acceptsType typeof<seq<RoleModel>>
             post "/api/user/{userId}/unlock" (unlockUser identityWrap)
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }

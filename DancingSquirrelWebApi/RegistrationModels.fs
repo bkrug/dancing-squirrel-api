@@ -20,7 +20,7 @@ type EditUserModel =
         PhoneNumber: string
     }
 
-type ViewRoleModel =
+type RoleModel =
     {
         Name: string
     }
@@ -31,7 +31,7 @@ type ViewUserModel =
         Username: string
         Email: string
         PhoneNumber: string
-        Roles: seq<ViewRoleModel>
+        Roles: seq<RoleModel>
     }
 
 type GridUserModel =
@@ -39,4 +39,9 @@ type GridUserModel =
         UserId: string
         Username: string
         Email: string
+    }
+
+type RoleEditingModel =
+    {
+        Roles: seq<RoleModel>
     }

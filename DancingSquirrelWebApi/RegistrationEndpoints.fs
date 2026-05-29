@@ -32,7 +32,7 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
             let user = mapToIdentityUser registrationData
             let! userCreationResult =
                 queries.CreateUserAsync user registrationData.Password
-                |> TaskResult.bind (fun _ -> queries.AddToRoleAsync user "Admin")
+                |> TaskResult.bind (fun _ -> queries.AddToRolesAsync ["Admin"] user)
             return! getFormCreateResponse userCreationResult ctx            
         | Ok _ ->
             let responseModel = getGenericValidationFailure "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
@@ -83,6 +83,39 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                     |> TaskResult.bind (editUserFields queries editData)
                 let httpFormResponse = getFormEditResponse editResult
                 return! httpFormResponse ctx
+            }
+        )
+
+let private updateUserRolesAsync (queries: IUserAuthorizationWrapper) (requestedRoles: seq<string>) (user: IdentityUser) =
+    task {
+        let! existingRoles = queries.GetRoleAsync user
+        let addedRoles = requestedRoles |> Seq.except existingRoles
+        let deletedRoles = existingRoles |> Seq.except requestedRoles
+        let! updateResult = queries.UpdateUserRolesAsyncAsync addedRoles deletedRoles user
+        let result = 
+            match updateResult with
+            | Ok _ -> Ok()
+            | Error error ->
+                let vFailure = match error.ValidationFailures with | Some vFail -> vFail | _ -> []
+                let errMsg = vFailure |> Seq.map (fun idErr -> idErr.Description) |> String.concat ", "
+                Error (getGenericValidationFailure errMsg)
+        return result
+    }
+
+let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            task {
+                let userId = (Request.getRoute ctx).GetString "userId"
+                let! jsonString = Request.getBodyString ctx
+                let roleSeq = JsonSerializer.Deserialize<RoleEditingModel>(jsonString, defaultJsonOptions)
+                let roleNameSeq = roleSeq.Roles |> Seq.map (fun role -> role.Name)
+                let! editResult =
+                    Ok userId
+                    |> TaskResult.bindToTask queries.GetUserAsync
+                    |> TaskResult.bind (updateUserRolesAsync queries roleNameSeq)
+                let httpFormResponse = getFormEditResponse editResult
+                return! httpFormResponse ctx                
             }
         )
 
