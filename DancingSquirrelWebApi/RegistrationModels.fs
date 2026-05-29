@@ -33,3 +33,9 @@ type ViewUserModel =
         PhoneNumber: string
         Roles: seq<ViewRoleModel>
     }
+
+type GridUserModel =
+    {
+        UserId: string
+        Username: string
+    }

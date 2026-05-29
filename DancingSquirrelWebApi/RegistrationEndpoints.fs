@@ -19,6 +19,9 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : V
     let roles = roleNames |> Seq.map (fun name -> { Name = name })
     { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber; Roles = roles }
 
+let private mapToGridUserModel (user: IdentityUser) : GridUserModel =
+    { UserId = user.Id; Username = user.UserName; }
+
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
         let! countResult = queries.CountUsers
@@ -131,7 +134,7 @@ let getUsers (queries: IUserAuthorizationWrapper) =
                 let pageLength = System.Math.Max(10, (Request.getQuery ctx).GetInt("length"))
                 let skipCount = (page - 1) * pageLength
                 let! userResult = queries.SelectMultiUsers skipCount pageLength
-                let transformationResult = userResult |> Result.map (Seq.map (fun u -> mapToViewUserModel u Seq.empty))
+                let transformationResult = userResult |> Result.map (Seq.map mapToGridUserModel)
                 let! recordCountResult = queries.CountUsers
                 let httpPagedResponse = getHttpPagedDataResponse transformationResult recordCountResult page pageLength
                 return! httpPagedResponse ctx
