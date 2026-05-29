@@ -17,6 +17,20 @@ open Registration.Queries
 //
 //Once you have successful use of HttpOnly cookies, worry about AspNetCore Identity later.
 
+let private mapToIdentityUser (data: RegisterModel) =
+    IdentityUser(Email = data.Email, UserName = data.Username, PhoneNumber = data.PhoneNumber)
+
+let private mapToViewUserModel (user: IdentityUser) : ViewUserModel =
+    { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber }
+
+//This method isn't great. Maybe we can convert more user creation stuff to use Result objects.
+let private identityResultToResponse successCode (result: IdentityResult) =
+    match result.Succeeded with
+    | true -> Response.withStatusCode successCode >> Response.ofJson "success"
+    | _ ->
+        let errors = result.Errors |> Seq.map (fun e -> e.Description) |> List.ofSeq
+        Response.withStatusCode 400 >> Response.ofJson errors
+
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
         let! countResult = queries.CountUsers
@@ -29,21 +43,13 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
         | Ok _ ->
             let! jsonString = Request.getBodyString ctx
             let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
-            let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username, PhoneNumber = registrationData.PhoneNumber)
+            let user = mapToIdentityUser registrationData
             let! createResult = queries.CreateUserAsync user registrationData.Password
             match createResult.Succeeded with
-            | false ->
-                let errors = createResult.Errors |> Seq.map (fun e -> e.Description) |> List.ofSeq
-                return! (Response.withStatusCode 400 >> Response.ofJson errors) ctx
+            | false -> return! (identityResultToResponse 201 createResult) ctx
             | true ->
                 let! roleResult = queries.AddToRoleAsync user "Admin"
-                let jsonResponse =
-                    match roleResult.Succeeded with
-                    | true -> Response.withStatusCode 201 >> Response.ofJson "success"
-                    | _ ->
-                        let errors = roleResult.Errors |> Seq.map (fun e -> e.Description) |> List.ofSeq
-                        Response.withStatusCode 400 >> Response.ofJson errors
-                return! jsonResponse ctx
+                return! (identityResultToResponse 201 roleResult) ctx
     }
 
 let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = 
@@ -53,25 +59,13 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                 let! jsonString = Request.getBodyString ctx
                 let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
 
-                let user = IdentityUser(Email = registrationData.Email, UserName = registrationData.Username, PhoneNumber = registrationData.PhoneNumber)
+                let user = mapToIdentityUser registrationData
                 let! userCreationResult = queries.CreateUserAsync user registrationData.Password
-
-                let jsonResponse =
-                    match userCreationResult.Succeeded with
-                    | true -> Response.withStatusCode 201 >> Response.ofJson "success"
-                    | _ ->
-                        // result.Errors contains stuff like:
-                        //  Passwords must have at least one non alphanumeric character.
-                        //  Passwords must have at least one digit ('0'-'9').
-                        //  Passwords must have at least one uppercase ('A'-'Z').
-                        let errors = userCreationResult.Errors |> Seq.map (fun e -> e.Description)  |> List.ofSeq
-                        Response.withStatusCode 400 >> Response.ofJson errors
-
-                return! jsonResponse ctx            
+                return! (identityResultToResponse 201 userCreationResult) ctx            
             }
         )
 
-let editUserDeterministic (queries: IUserAuthorizationWrapper) (editData: EditUserModel) (user: IdentityUser) =
+let private editUserDeterministic (queries: IUserAuthorizationWrapper) (editData: EditUserModel) (user: IdentityUser) =
     task {
         user.Email <- editData.Email
         user.PhoneNumber <- editData.PhoneNumber
@@ -199,14 +193,7 @@ let getUserHandler (queries: IUserAuthorizationWrapper) =
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
                 let! userResult = queries.GetUserAsync userId
-                let viewModelResult =
-                    userResult |> Result.map (fun user ->
-                        {
-                            UserId = user.Id;
-                            Username = user.UserName;
-                            Email = user.Email;
-                            PhoneNumber = user.PhoneNumber
-                        })
+                let viewModelResult = userResult |> Result.map mapToViewUserModel
                 let httpResponse = getHttpRecordResponse viewModelResult
                 return! httpResponse ctx
             }
@@ -220,21 +207,7 @@ let getUsers (queries: IUserAuthorizationWrapper) =
                 let pageLength = System.Math.Max(10, (Request.getQuery ctx).GetInt("length"))
                 let skipCount = (page - 1) * pageLength
                 let! userResult = queries.SelectMultiUsers skipCount pageLength
-                let transformationResult =
-                    match userResult with
-                        | Ok userSeq ->
-                            Ok (
-                                userSeq
-                                |> Seq.map (fun user ->
-                                    {
-                                        UserId = user.Id;
-                                        Username = user.UserName;
-                                        Email = user.Email;
-                                        PhoneNumber = user.PhoneNumber;
-                                    }
-                                )
-                            )
-                        | Error e -> Error e
+                let transformationResult = userResult |> Result.map (Seq.map mapToViewUserModel)
                 let! recordCountResult = queries.CountUsers
                 let httpPagedResponse = getHttpPagedDataResponse transformationResult recordCountResult page pageLength
                 return! httpPagedResponse ctx
