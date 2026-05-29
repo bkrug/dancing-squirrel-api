@@ -8,17 +8,17 @@ open System.Linq
 open System.Threading.Tasks
 
 type IUserAuthorizationWrapper =
-    abstract member CreateUserAsync: (IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>)
-    abstract member EditUserAsync: (IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>)
+    abstract member CreateUserAsync: IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
+    abstract member EditUserAsync: IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
     abstract member GetUserAsync: string -> Task<Result<IdentityUser, GenericModelResponse<string>>>
     abstract member SelectMultiUsers: int -> int -> Task<Result<seq<IdentityUser>, GenericModelResponse<string>>>
     abstract member CountUsers: Task<Result<int, GenericModelResponse<string>>>
     abstract member DeleteUserAsync: string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
-    abstract member AddToRoleAsync: (IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>)
-    abstract member GetRoleAsync: (IdentityUser -> Task<IList<string>>)
+    abstract member AddToRoleAsync: IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
+    abstract member GetRoleAsync: IdentityUser -> Task<IList<string>>
 
-    abstract member LoginUserAsync: (string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>)
+    abstract member LoginUserAsync: string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>
     abstract member LogoutUserAsync: (unit -> Task<unit>)
     abstract member UnlockUserAsync: string -> string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
@@ -27,7 +27,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
     let userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
 
     interface IUserAuthorizationWrapper with
-        member _.CreateUserAsync = fun user password ->
+        member _.CreateUserAsync user password =
             task {
                 let! result = userManager.CreateAsync(user, password)
                 return
@@ -36,7 +36,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     | false -> Error (getGenericValidationFailure result.Errors)
             }
 
-        member _.EditUserAsync = fun user ->
+        member _.EditUserAsync user =
             task {
                 let! result = userManager.UpdateAsync(user)
                 return
@@ -100,7 +100,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     return Error internalErrorResponse
             }
 
-        member _.AddToRoleAsync = fun user role ->
+        member _.AddToRoleAsync user role =
             task {
                 let! result = userManager.AddToRoleAsync(user, role)
                 return
@@ -109,10 +109,10 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     | false -> Error (getGenericValidationFailure result.Errors)
             }            
 
-        member _.GetRoleAsync = fun user ->
+        member _.GetRoleAsync user =
             task { return! userManager.GetRolesAsync(user) }
 
-        member _.LoginUserAsync = fun (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) ->
+        member _.LoginUserAsync (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) =
             task {
                 let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
                 let! user = signInManager.UserManager.FindByNameAsync(username)

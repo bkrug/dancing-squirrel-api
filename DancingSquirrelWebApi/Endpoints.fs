@@ -32,6 +32,7 @@ let getEndpoints (wApp : WebApplication) =
     //This list of endpoints available in our application
     let endpoints =
         [
+            //Training Request
             post "/api/trainingRequest" (createTrainingRequest trQueries)
             get "/api/trainingRequest" (getTrainingRequests trQueries)
                 |> OpenApi.query [
@@ -48,6 +49,8 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.route [
                     { Name = "danceTypeId"; Type = typeof<int64>; Required = true }
                 ]
+
+            //User Management
             post "/api/firstuser" (registerFirstUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<RegisterModel>
             post "/api/user" (registerNewUserHandler identityWrap)
@@ -70,7 +73,9 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.query [
                     { Name = "page"; Type = typeof<int64>; Required = false }
                     { Name = "length"; Type = typeof<int64>; Required = false }
-                ]                
+                ]
+
+            //Authentication
             post "/api/authentication" (loginUserWithClaimsHandler identityWrap.LoginUserAsync)
                 |> OpenApi.acceptsType typeof<LoginModel>
             delete "/api/authentication" (logoutUser identityWrap.LogoutUserAsync)
