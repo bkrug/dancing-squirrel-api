@@ -122,17 +122,21 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 let dbContext = scope.ServiceProvider.GetService<SecurityDbContext>()
                 use! transaction = dbContext.Database.BeginTransactionAsync()
                 let! removeResult = userManager.RemoveFromRolesAsync(user, removeFromRoles)
-                if not removeResult.Succeeded then
-                    do! transaction.RollbackAsync()
-                    return Error (getGenericValidationFailure removeResult.Errors)
-                else
-                    let! addResult = userManager.AddToRolesAsync(user, addToRoles)
-                    if not addResult.Succeeded then
-                        do! transaction.RollbackAsync()
-                        return Error (getGenericValidationFailure addResult.Errors)
-                    else
+                let! updateResult =
+                    match removeResult.Succeeded with
+                        | true ->
+                            task {
+                                let! addResult = userManager.AddToRolesAsync(user, addToRoles)
+                                return addResult
+                            }
+                        | false -> task { return removeResult }
+                match updateResult.Succeeded with
+                    | true ->
                         do! transaction.CommitAsync()
                         return Ok()
+                    | false ->
+                        do! transaction.RollbackAsync()
+                        return Error (getGenericValidationFailure updateResult.Errors)         
             }
 
         member _.GetRoleAsync user =
