@@ -38,4 +38,5 @@ type GridUserModel =
     {
         UserId: string
         Username: string
+        Email: string
     }

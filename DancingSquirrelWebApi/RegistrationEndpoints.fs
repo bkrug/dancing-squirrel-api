@@ -20,7 +20,7 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : V
     { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber; Roles = roles }
 
 let private mapToGridUserModel (user: IdentityUser) : GridUserModel =
-    { UserId = user.Id; Username = user.UserName; }
+    { UserId = user.Id; Username = user.UserName; Email = user.Email }
 
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
