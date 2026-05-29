@@ -30,23 +30,21 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
     let userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
     let roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>()
 
+    static let mapToResult (t: Task<IdentityResult>) =
+        task {
+            let! r = t
+            return if r.Succeeded then Ok () else Error (getGenericValidationFailure r.Errors)
+        }
+
     interface IUserAuthorizationWrapper with
         member _.CreateUserAsync user password =
             task {
-                let! result = userManager.CreateAsync(user, password)
-                return
-                    match result.Succeeded with
-                    | true -> Ok ()
-                    | false -> Error (getGenericValidationFailure result.Errors)
+                return! userManager.CreateAsync(user, password) |> mapToResult
             }
 
         member _.EditUserAsync user =
             task {
-                let! result = userManager.UpdateAsync(user)
-                return
-                    match result.Succeeded with
-                    | true -> Ok ()
-                    | false -> Error (getGenericValidationFailure result.Errors)
+                return! userManager.UpdateAsync(user) |> mapToResult
             }            
 
         member _.GetUserAsync (userId: string) =
@@ -110,33 +108,18 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
 
         member _.AddToRolesAsync roles user =
             task {
-                let! result = userManager.AddToRolesAsync(user, roles)
-                return
-                    match result.Succeeded with
-                    | true -> Ok ()
-                    | false -> Error (getGenericValidationFailure result.Errors)
+                return! userManager.AddToRolesAsync(user, roles) |> mapToResult
             }
 
-        member _.UpdateUserRolesAsyncAsync addToRoles removeFromRoles user = 
+        member _.UpdateUserRolesAsyncAsync addToRoles removeFromRoles user =
             task {
                 let dbContext = scope.ServiceProvider.GetService<SecurityDbContext>()
                 use! transaction = dbContext.Database.BeginTransactionAsync()
-                let! removeResult = userManager.RemoveFromRolesAsync(user, removeFromRoles)
-                let! updateResult =
-                    match removeResult.Succeeded with
-                        | true ->
-                            task {
-                                let! addResult = userManager.AddToRolesAsync(user, addToRoles)
-                                return addResult
-                            }
-                        | false -> task { return removeResult }
-                match updateResult.Succeeded with
-                    | true ->
-                        do! transaction.CommitAsync()
-                        return Ok()
-                    | false ->
-                        do! transaction.RollbackAsync()
-                        return Error (getGenericValidationFailure updateResult.Errors)         
+                let! result =
+                    userManager.RemoveFromRolesAsync(user, removeFromRoles) |> mapToResult
+                    |> TaskResult.bind (fun _ -> userManager.AddToRolesAsync(user, addToRoles) |> mapToResult)
+                if Result.isOk result then do! transaction.CommitAsync()
+                return result
             }
 
         member _.GetRoleAsync user =
