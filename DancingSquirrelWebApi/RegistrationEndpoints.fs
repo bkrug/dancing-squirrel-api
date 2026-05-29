@@ -1,12 +1,7 @@
 module Registration.Endpoints
 
 open System.Text.Json
-open System.Threading.Tasks
-open System.Security.Claims
-open System.Collections.Generic
 open Falco
-open Microsoft.AspNetCore.Authentication
-open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Identity
 open GenericModels
 open Registration.Models
@@ -24,13 +19,6 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : V
     let roles = roleNames |> Seq.map (fun name -> { Name = name })
     { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber; Roles = roles }
 
-let private identityResultToResponse successCode (result: IdentityResult) =
-    match result.Succeeded with
-    | true -> Response.withStatusCode successCode >> Response.ofJson "success"
-    | _ ->
-        let errors = result.Errors |> Seq.map (fun e -> e.Description) |> List.ofSeq
-        Response.withStatusCode 400 >> Response.ofJson errors
-
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
         let! countResult = queries.CountUsers
@@ -44,12 +32,12 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
             let! jsonString = Request.getBodyString ctx
             let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
             let user = mapToIdentityUser registrationData
-            let! createResult = queries.CreateUserAsync user registrationData.Password
-            match createResult with
-            | Error _ -> return! (getFormCreateResponse createResult) ctx
-            | Ok _ ->
-                let! roleResult = queries.AddToRoleAsync user "Admin"
-                return! (identityResultToResponse 201 roleResult) ctx
+            let! userCreationResult =
+                queries.CreateUserAsync user registrationData.Password
+                |> TaskResult.bind (fun success -> task {
+                    return! queries.AddToRoleAsync user "Admin"
+                })
+            return! getFormCreateResponse userCreationResult ctx            
     }
 
 let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = 
