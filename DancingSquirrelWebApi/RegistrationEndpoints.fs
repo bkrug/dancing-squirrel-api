@@ -220,7 +220,7 @@ let getUsers (queries: IUserAuthorizationWrapper) =
                 let pageLength = System.Math.Max(10, (Request.getQuery ctx).GetInt("length"))
                 let skipCount = (page - 1) * pageLength
                 let! userResult = queries.SelectMultiUsers skipCount pageLength
-                let transformationResult : Result<seq<ViewUserModel>, GenericModelResponse<string>> =
+                let transformationResult =
                     match userResult with
                         | Ok userSeq ->
                             Ok (
