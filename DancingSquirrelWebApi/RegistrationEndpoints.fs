@@ -20,8 +20,9 @@ open Registration.Queries
 let private mapToIdentityUser (data: RegisterModel) =
     IdentityUser(Email = data.Email, UserName = data.Username, PhoneNumber = data.PhoneNumber)
 
-let private mapToViewUserModel (user: IdentityUser) : ViewUserModel =
-    { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber; Roles = Array.empty }
+let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : ViewUserModel =
+    let roles = roleNames |> Seq.map (fun name -> { Name = name })
+    { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber; Roles = roles }
 
 //This method isn't great. Maybe we can convert more user creation stuff to use Result objects.
 let private identityResultToResponse successCode (result: IdentityResult) =
@@ -127,8 +128,12 @@ let getUserHandler (queries: IUserAuthorizationWrapper) =
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
-                let! userResult = queries.GetUserAsync userId
-                let viewModelResult = userResult |> Result.map mapToViewUserModel
+                let! viewModelResult =
+                    queries.GetUserAsync userId
+                    |> TaskResult.bind (fun user -> task {
+                        let! roleNames = queries.GetRoleAsync user
+                        return Ok (mapToViewUserModel user roleNames)
+                    })
                 let httpResponse = getHttpRecordResponse viewModelResult
                 return! httpResponse ctx
             }
@@ -142,7 +147,7 @@ let getUsers (queries: IUserAuthorizationWrapper) =
                 let pageLength = System.Math.Max(10, (Request.getQuery ctx).GetInt("length"))
                 let skipCount = (page - 1) * pageLength
                 let! userResult = queries.SelectMultiUsers skipCount pageLength
-                let transformationResult = userResult |> Result.map (Seq.map mapToViewUserModel)
+                let transformationResult = userResult |> Result.map (Seq.map (fun u -> mapToViewUserModel u Seq.empty))
                 let! recordCountResult = queries.CountUsers
                 let httpPagedResponse = getHttpPagedDataResponse transformationResult recordCountResult page pageLength
                 return! httpPagedResponse ctx

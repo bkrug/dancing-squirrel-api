@@ -11,6 +11,7 @@ type IUserAuthorizationWrapper =
     abstract member CreateUserAsync: (IdentityUser -> string -> Task<IdentityResult>) with get
     abstract member EditUserAsync: (IdentityUser -> Task<IdentityResult>) with get
     abstract member AddToRoleAsync: (IdentityUser -> string -> Task<IdentityResult>) with get
+    abstract member GetRoleAsync: (IdentityUser -> Task<IList<string>>)
     abstract member LoginUserAsync: (string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>) with get
     abstract member LogoutUserAsync: (unit -> Task<unit>) with get
     abstract member GetUserAsync: string -> Task<Result<IdentityUser, GenericModelResponse<string>>>
@@ -32,6 +33,9 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
 
         member _.AddToRoleAsync = fun user role ->
             task { return! userManager.AddToRoleAsync(user, role) }
+
+        member _.GetRoleAsync = fun user ->
+            task { return! userManager.GetRolesAsync(user) }
 
         member _.LoginUserAsync = fun (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) ->
             task {

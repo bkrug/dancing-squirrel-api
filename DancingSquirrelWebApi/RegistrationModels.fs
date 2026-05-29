@@ -22,7 +22,6 @@ type EditUserModel =
 
 type ViewRoleModel =
     {
-        RoleId: string
         Name: string
     }
 
@@ -32,5 +31,5 @@ type ViewUserModel =
         Username: string
         Email: string
         PhoneNumber: string
-        Roles: ViewRoleModel[]
+        Roles: seq<ViewRoleModel>
     }
