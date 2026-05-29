@@ -76,6 +76,24 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
             }
         )
 
+let editUserDeterministic (queries: IUserAuthorizationWrapper) (editData: EditUserModel) (user: IdentityUser) =
+    task {
+        user.Email <- editData.Email
+        user.PhoneNumber <- editData.PhoneNumber
+        let! editResult = queries.EditUserAsync user        
+        return
+            match editResult.Succeeded with
+            | true -> Ok editResult
+            | false -> Error {
+                    IsInternalError = false
+                    IsSuccess = false
+                    ValidationFailures = Some (
+                        editResult.Errors
+                        |> Seq.map (fun identityError -> identityError.Description)
+                        |> String.concat ", ")
+                }
+    }
+
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
     Auth.processAuthenticatedRequest
         (fun ctx ->
@@ -83,23 +101,12 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                 let userId = (Request.getRoute ctx).GetString "userId"
                 let! jsonString = Request.getBodyString ctx
                 let editData = JsonSerializer.Deserialize<EditUserModel>(jsonString, defaultJsonOptions)
-
-                let! getUserResult = queries.GetUserAsync userId
-
-                match getUserResult with
-                | Error err ->
-                    return! (getHttpRecordResponse (Error err)) ctx
-                | Ok user ->
-                    user.Email <- editData.Email
-                    user.PhoneNumber <- editData.PhoneNumber
-                    let! editResult = queries.EditUserAsync user
-                    let jsonResponse =
-                        match editResult.Succeeded with
-                        | true -> Response.withStatusCode 200 >> Response.ofJson "success"
-                        | _ ->
-                            let errors = editResult.Errors |> Seq.map (fun e -> e.Description) |> List.ofSeq
-                            Response.withStatusCode 400 >> Response.ofJson errors
-                    return! jsonResponse ctx
+                let! editResult =
+                    Ok userId
+                    |> TaskResult.bindToTask queries.GetUserAsync
+                    |> TaskResult.bind (editUserDeterministic queries editData)
+                let httpFormResponse = getHttpFormResponse editResult
+                return! httpFormResponse ctx
             }
         )
 

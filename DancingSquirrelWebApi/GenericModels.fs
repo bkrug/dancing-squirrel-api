@@ -47,12 +47,16 @@ let notFoundResponse =
 
 let getHttpFormResponse formSubmissionResult =
     match formSubmissionResult with
+    | Error failureResponse when failureResponse.IsInternalError ->
+        Response.withStatusCode 500 >> Response.ofJson failureResponse
+    //TODO: Add a NotFound boolean field to the GenericModelResponse.
+    //      That way we can uncomment this code without forcing the generic to be some specific type
+    // | Error failureResponse when failureResponse.ValidationFailures = typeof string ->
+    //     Response.withStatusCode 404 >> Response.ofJson failureResponse
+    | Error failureResponse ->
+        Response.withStatusCode 400 >> Response.ofJson failureResponse
     | Ok successResponse ->
         Response.withStatusCode 201 >> Response.ofJson successResponse
-    | Error failureResponse when failureResponse.ValidationFailures.IsSome ->
-        Response.withStatusCode 400 >> Response.ofJson failureResponse
-    | Error failureResponse ->
-        Response.withStatusCode 500 >> Response.ofJson failureResponse
 
 let getHttpPagedDataResponse recordSequenceResult recordCountResult page pageLength =
     match recordSequenceResult with
@@ -74,8 +78,8 @@ let getHttpRecordResponse recordLookupResult =
     match recordLookupResult with
     | Error errorResponse when errorResponse.IsInternalError->
         Response.withStatusCode 500 >> Response.ofJson errorResponse
-    | Error errorResponse when errorResponse = notFoundResponse ->
-        Response.withStatusCode 404 >> Response.ofJson errorResponse
+    // | Error errorResponse when errorResponse = notFoundResponse ->
+    //     Response.withStatusCode 404 >> Response.ofJson errorResponse
     | Error errorResponse ->
         Response.withStatusCode 400 >> Response.ofJson errorResponse
     | Ok foundRecord ->
