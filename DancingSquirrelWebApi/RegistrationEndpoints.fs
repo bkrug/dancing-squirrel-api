@@ -23,21 +23,19 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
     task {
         let! countResult = queries.CountUsers
         match countResult with
-        | Error _ ->
-            return! (Response.withStatusCode 500 >> Response.ofJson internalErrorResponse) ctx
-        | Ok count when count > 0 ->
-            let responseModel = getGenericValidationFailure "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
-            return! (Response.withStatusCode 400 >> Response.ofJson responseModel) ctx
-        | Ok _ ->
+        | Ok 0 ->
             let! jsonString = Request.getBodyString ctx
             let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
             let user = mapToIdentityUser registrationData
             let! userCreationResult =
                 queries.CreateUserAsync user registrationData.Password
-                |> TaskResult.bind (fun success -> task {
-                    return! queries.AddToRoleAsync user "Admin"
-                })
+                |> TaskResult.bind (fun _ -> queries.AddToRoleAsync user "Admin")
             return! getFormCreateResponse userCreationResult ctx            
+        | Ok _ ->
+            let responseModel = getGenericValidationFailure "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
+            return! (Response.withStatusCode 400 >> Response.ofJson responseModel) ctx
+        | Error _ ->
+            return! (Response.withStatusCode 500 >> Response.ofJson internalErrorResponse) ctx
     }
 
 let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = 
@@ -52,18 +50,18 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
             }
         )
 
-let private editUserDeterministic (queries: IUserAuthorizationWrapper) (editData: EditUserModel) (user: IdentityUser) =
+let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditUserModel) (user: IdentityUser) =
     task {
         user.Email <- editData.Email
         user.PhoneNumber <- editData.PhoneNumber
         let! editResult = queries.EditUserAsync user        
         return
-            match editResult.Succeeded with
-            | true -> Ok editResult
-            | false ->
+            match editResult with
+            | Ok _ -> Ok()
+            | Error identityError ->
                 let failMsg =
-                    editResult.Errors
-                    |> Seq.map (fun identityError -> identityError.Description)
+                    match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
+                    |> Seq.map (fun vFail -> vFail.Description)
                     |> String.concat ", "
                 Error (getGenericValidationFailure failMsg)
                         
@@ -79,7 +77,7 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                 let! editResult =
                     Ok userId
                     |> TaskResult.bindToTask queries.GetUserAsync
-                    |> TaskResult.bind (editUserDeterministic queries editData)
+                    |> TaskResult.bind (editUserFields queries editData)
                 let httpFormResponse = getFormEditResponse editResult
                 return! httpFormResponse ctx
             }
