@@ -36,11 +36,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                         }
                         getId s.TrainingRequestId
                     } |> ignore
-                    return Ok {
-                        IsSuccess = true
-                        IsInternalError = false
-                        ValidationFailures = None
-                    }
+                    return Ok getGenericSuccess
                 with
                 | ex ->
                     printfn "SQL: %O" ex

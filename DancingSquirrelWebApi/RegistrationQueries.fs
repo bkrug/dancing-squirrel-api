@@ -103,7 +103,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                         else
                             let! _ = userManager.ResetAccessFailedCountAsync(user)
                             let! _ = userManager.SetLockoutEndDateAsync(user, System.Nullable<System.DateTimeOffset>())
-                            return Ok { IsSuccess = true; IsInternalError = false; ValidationFailures = None }
+                            return Ok getGenericSuccess
                 with
                 | ex ->
                     printfn "SQL: %O" ex
@@ -119,7 +119,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     | _ ->
                         let! result = userManager.DeleteAsync(user)
                         match result.Succeeded with
-                        | true -> return Ok { IsSuccess = true; IsInternalError = false; ValidationFailures = None }
+                        | true -> return Ok getGenericSuccess
                         | false ->
                             printfn "Delete user failed: %A" (result.Errors |> Seq.map (fun e -> e.Description))
                             return Error internalErrorResponse

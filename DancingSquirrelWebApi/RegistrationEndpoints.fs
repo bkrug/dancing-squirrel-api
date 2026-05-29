@@ -24,12 +24,7 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
         | Error _ ->
             return! (Response.withStatusCode 500 >> Response.ofJson internalErrorResponse) ctx
         | Ok count when count > 0 ->
-            let responseModel =
-                {
-                    IsSuccess = false
-                    IsInternalError = false
-                    ValidationFailures = Some "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
-                }
+            let responseModel = getGenericValidationFailure "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
             return! (Response.withStatusCode 400 >> Response.ofJson responseModel) ctx
         | Ok _ ->
             let! jsonString = Request.getBodyString ctx
@@ -84,14 +79,13 @@ let editUserDeterministic (queries: IUserAuthorizationWrapper) (editData: EditUs
         return
             match editResult.Succeeded with
             | true -> Ok editResult
-            | false -> Error {
-                    IsInternalError = false
-                    IsSuccess = false
-                    ValidationFailures = Some (
-                        editResult.Errors
-                        |> Seq.map (fun identityError -> identityError.Description)
-                        |> String.concat ", ")
-                }
+            | false ->
+                let failMsg =
+                    editResult.Errors
+                    |> Seq.map (fun identityError -> identityError.Description)
+                    |> String.concat ", "
+                Error (getGenericValidationFailure failMsg)
+                        
     }
 
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =

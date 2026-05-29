@@ -26,11 +26,7 @@ let ``Training Request for Company is valid. Expect a success response.`` () =
       let mutable actualRecievedForm : Option<TrainingRequestForm> = None
       let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
          actualRecievedForm <- Some form
-         Task.FromResult( Ok {
-            IsSuccess = true
-            IsInternalError = false
-            ValidationFailures = None
-         })
+         Task.FromResult( Ok getGenericSuccess)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec
@@ -69,11 +65,7 @@ let ``Training Request for Person is valid. Expect a success response.`` () =
       let mutable actualRecievedForm : Option<TrainingRequestForm> = None
       let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
          actualRecievedForm <- Some form
-         Task.FromResult( Ok {
-            IsSuccess = true
-            IsInternalError = false
-            ValidationFailures = None
-         })
+         Task.FromResult( Ok getGenericSuccess)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec
@@ -118,11 +110,7 @@ let ``Phone numbers may omit or not omit the international code. Expect a succes
       let mutable actualRecievedForm : Option<TrainingRequestForm> = None
       let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
          actualRecievedForm <- Some form
-         Task.FromResult( Ok {
-            IsSuccess = true
-            IsInternalError = false
-            ValidationFailures = None
-         })
+         Task.FromResult( Ok getGenericSuccess)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec
@@ -278,11 +266,7 @@ let ``Training Request is somehow invalid. Expect a validation failure.``
       let formData = new FormData(RObject formValues, None)
 
       let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
-         Task.FromResult( Ok {
-            IsSuccess = true
-            IsInternalError = false
-            ValidationFailures = None
-         })
+         Task.FromResult( Ok getGenericSuccess)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec

@@ -99,6 +99,7 @@ let private validateForm (form : TrainingRequestForm) : Result<TrainingRequestFo
         | _ -> Error {
                 IsSuccess = false
                 IsInternalError = false
+                IsNotFoundError = true
                 ValidationFailures = Some {
                     CaretakerType = ""
                     CaretakerCompanyName = getValidationMessage (nameof form.CaretakerCompanyName) validationResults
@@ -173,11 +174,7 @@ let validatedOnboardingRequest (trainingRequest : main.TrainingRequest) =
         match trainingRequest.SquirrelId with
         | None -> Ok trainingRequest
         | _ -> 
-            Error {
-                IsSuccess = false
-                IsInternalError = false
-                ValidationFailures = Some "Caretaker and Squirrel have already been onboarded"
-            }
+            Error (getGenericValidationFailure "Caretaker and Squirrel have already been onboarded")
     Task.FromResult res
 
 let onboardClient (queries: ITrainingRequestQueries) =

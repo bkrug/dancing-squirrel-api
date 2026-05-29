@@ -14,6 +14,7 @@ type GenericModelResponse<'TValue> =
     {
         IsSuccess: bool;
         IsInternalError: bool;
+        IsNotFoundError: bool;
         ValidationFailures: Option<'TValue>;
     }
 
@@ -26,6 +27,7 @@ let internalErrorResponse =
     {
         IsSuccess = false
         IsInternalError = true
+        IsNotFoundError = false
         ValidationFailures = None
     }
 
@@ -34,6 +36,7 @@ let foundMultipleRecordsResponse =
     {
         IsSuccess = false
         IsInternalError = true
+        IsNotFoundError = false
         ValidationFailures = Some "Expected single record, but found multiple"
     }
 
@@ -42,17 +45,32 @@ let notFoundResponse =
     {
         IsSuccess = false
         IsInternalError = false
+        IsNotFoundError = true
         ValidationFailures = Some "Not found"
+    }
+
+let getGenericSuccess =
+    {
+        IsSuccess = true
+        IsInternalError = false
+        IsNotFoundError = false
+        ValidationFailures = None
+    }
+
+let getGenericValidationFailure vFailure =
+    {
+        IsSuccess = false
+        IsInternalError = false
+        IsNotFoundError = false
+        ValidationFailures = Some vFailure
     }
 
 let getFormResponse successCode formSubmissionResult =
     match formSubmissionResult with
     | Error failureResponse when failureResponse.IsInternalError ->
         Response.withStatusCode 500 >> Response.ofJson failureResponse
-    //TODO: Add a NotFound boolean field to the GenericModelResponse.
-    //      That way we can uncomment this code without forcing the generic to be some specific type
-    // | Error failureResponse when failureResponse.ValidationFailures = typeof string ->
-    //     Response.withStatusCode 404 >> Response.ofJson failureResponse
+    | Error failureResponse when failureResponse.IsNotFoundError ->
+        Response.withStatusCode 404 >> Response.ofJson failureResponse
     | Error failureResponse ->
         Response.withStatusCode 400 >> Response.ofJson failureResponse
     | Ok successResponse ->
@@ -82,8 +100,8 @@ let getHttpRecordResponse recordLookupResult =
     match recordLookupResult with
     | Error errorResponse when errorResponse.IsInternalError->
         Response.withStatusCode 500 >> Response.ofJson errorResponse
-    // | Error errorResponse when errorResponse = notFoundResponse ->
-    //     Response.withStatusCode 404 >> Response.ofJson errorResponse
+    | Error failureResponse when failureResponse.IsNotFoundError ->
+        Response.withStatusCode 404 >> Response.ofJson failureResponse
     | Error errorResponse ->
         Response.withStatusCode 400 >> Response.ofJson errorResponse
     | Ok foundRecord ->
