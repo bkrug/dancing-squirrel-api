@@ -15,6 +15,7 @@ type IUserAuthorizationWrapper =
     abstract member CountUsers: Task<Result<int, GenericModelResponse<string>>>
     abstract member DeleteUserAsync: string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
+    abstract member SelectAllRoles: seq<IdentityRole>
     abstract member AddToRoleAsync: IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
     abstract member GetRoleAsync: IdentityUser -> Task<IList<string>>
 
@@ -25,6 +26,7 @@ type IUserAuthorizationWrapper =
 type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
     let scope = createScope()
     let userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+    let roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>()
 
     interface IUserAuthorizationWrapper with
         member _.CreateUserAsync user password =
@@ -99,6 +101,10 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     printfn "SQL: %O" ex
                     return Error internalErrorResponse
             }
+
+        member _.SelectAllRoles =
+            let allRoles = roleManager.Roles |> Seq.toList
+            allRoles
 
         member _.AddToRoleAsync user role =
             task {

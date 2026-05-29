@@ -60,7 +60,7 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
         let! editResult = queries.EditUserAsync user        
         return
             match editResult with
-            | Ok _ -> Ok()
+            | Ok _ -> Ok getGenericSuccess
             | Error identityError ->
                 let failMsg =
                     match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
@@ -139,4 +139,13 @@ let getUsers (queries: IUserAuthorizationWrapper) =
                 let httpPagedResponse = getHttpPagedDataResponse transformationResult recordCountResult page pageLength
                 return! httpPagedResponse ctx
             }
+        )
+
+let getRoles (queries: IUserAuthorizationWrapper) =
+    Auth.processAuthenticatedRequest
+        (fun ctx ->
+            let roleNames = queries.SelectAllRoles |> Seq.map (fun r -> r.Name) |> Seq.toList
+            let roleCount = roleNames.Length
+            let httpPagedResponse = getHttpPagedDataResponse (Ok roleNames) (Ok roleCount) 1 roleCount
+            httpPagedResponse ctx
         )
