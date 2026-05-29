@@ -15,6 +15,6 @@ type ExHandler (next : RequestDelegate)  =
             //| :? Exception as ex ->
             | ex ->
                 printfn "SQL: %O" ex
-                context.Response.StatusCode <- int HttpStatusCode.BadRequest
+                context.Response.StatusCode <- int HttpStatusCode.InternalServerError
                 do! context.Response.WriteAsync(ex.Message) |> Async.AwaitTask               
         } |> Async.StartAsTask :> Task

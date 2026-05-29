@@ -20,48 +20,35 @@ type IUserAuthorizationWrapper =
     abstract member UnlockUserAsync: string -> string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
 type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
+    let scope = createScope()
+    let userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
+
     interface IUserAuthorizationWrapper with
         member _.CreateUserAsync = fun user password ->
-            task {
-                use scope = createScope()
-                use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
-                return! userManager.CreateAsync(user, password)
-            }
+            task { return! userManager.CreateAsync(user, password) }
 
         member _.EditUserAsync = fun user ->
-            task {
-                use scope = createScope()
-                use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
-                return! userManager.UpdateAsync(user)
-            }
+            task { return! userManager.UpdateAsync(user) }
 
         member _.AddToRoleAsync = fun user role ->
-            task {
-                use scope = createScope()
-                use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
-                return! userManager.AddToRoleAsync(user, role)
-            }
+            task { return! userManager.AddToRoleAsync(user, role) }
 
         member _.LoginUserAsync = fun (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) ->
             task {
-                use scope = createScope()
                 let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
-                let userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                 let! user = signInManager.UserManager.FindByNameAsync(username)
-                if user = null
-                then
+                if user = null then
                     let user: IdentityUser = null
-                    let roles: IList<string> = List<string> [ ]
+                    let roles: IList<string> = List<string> []
                     return false, user, roles
                 else
                     let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
-                    let! roles = userManager.GetRolesAsync(user)
+                    let! roles = signInManager.UserManager.GetRolesAsync(user)
                     return isCorrectPassword, user, roles
             }
 
         member _.LogoutUserAsync = fun () ->
             task {
-                use scope = createScope()
                 let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
                 return! signInManager.SignOutAsync()
             }
@@ -69,10 +56,8 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
         member _.GetUserAsync (userId: string) =
             task {
                 try
-                    use scope = createScope()
-                    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                     let! user = userManager.FindByIdAsync(userId)
-                    return 
+                    return
                         match user with
                         | null -> Error notFoundResponse
                         | _ -> Ok user
@@ -85,8 +70,6 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
         member _.SelectMultiUsers (skip: int) (length: int) =
             task {
                 try
-                    use scope = createScope()
-                    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                     let users = userManager.Users.Skip(skip).Take(length) |> Seq.toList
                     return Ok (users :> seq<IdentityUser>)
                 with
@@ -98,8 +81,6 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
         member _.CountUsers =
             task {
                 try
-                    use scope = createScope()
-                    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                     let count = userManager.Users.Count()
                     return Ok count
                 with
@@ -111,8 +92,6 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
         member _.UnlockUserAsync (userId: string) (newPassword: string) =
             task {
                 try
-                    use scope = createScope()
-                    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                     let! user = userManager.FindByIdAsync(userId)
                     match user with
                     | null -> return Error notFoundResponse
@@ -134,8 +113,6 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
         member _.DeleteUserAsync (userId: string) =
             task {
                 try
-                    use scope = createScope()
-                    use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                     let! user = userManager.FindByIdAsync(userId)
                     match user with
                     | null -> return Error notFoundResponse
