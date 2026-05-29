@@ -105,7 +105,7 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                     Ok userId
                     |> TaskResult.bindToTask queries.GetUserAsync
                     |> TaskResult.bind (editUserDeterministic queries editData)
-                let httpFormResponse = getHttpFormResponse editResult
+                let httpFormResponse = getFormEditResponse editResult
                 return! httpFormResponse ctx
             }
         )

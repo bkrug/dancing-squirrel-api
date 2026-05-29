@@ -139,7 +139,7 @@ let createTrainingRequest (queries: ITrainingRequestQueries) : HttpHandler = fun
     task {
         let! form = Request.getForm ctx
         let! submissionResult = createTrainingRequestFromForm form queries.InsertTrainingRequest
-        let httpFormResponse = getHttpFormResponse submissionResult
+        let httpFormResponse = getFormCreateResponse submissionResult
         return! httpFormResponse ctx
     }
 
@@ -194,7 +194,7 @@ let onboardClient (queries: ITrainingRequestQueries) =
                     queries.SelectSingleTrainingRequest trainingRequestId
                     |> TaskResult.bind validatedOnboardingRequest
                     |> TaskResult.bind (queries.InsertOnboardedClient username onboardingRequestObject)
-                let httpFormResponse = getHttpFormResponse onboardingResult
+                let httpFormResponse = getFormCreateResponse onboardingResult
                 return! httpFormResponse ctx
             }
         )

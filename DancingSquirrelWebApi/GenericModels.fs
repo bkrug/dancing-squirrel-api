@@ -45,7 +45,7 @@ let notFoundResponse =
         ValidationFailures = Some "Not found"
     }
 
-let getHttpFormResponse formSubmissionResult =
+let getFormResponse successCode formSubmissionResult =
     match formSubmissionResult with
     | Error failureResponse when failureResponse.IsInternalError ->
         Response.withStatusCode 500 >> Response.ofJson failureResponse
@@ -56,7 +56,11 @@ let getHttpFormResponse formSubmissionResult =
     | Error failureResponse ->
         Response.withStatusCode 400 >> Response.ofJson failureResponse
     | Ok successResponse ->
-        Response.withStatusCode 201 >> Response.ofJson successResponse
+        Response.withStatusCode successCode >> Response.ofJson successResponse  
+
+let getFormCreateResponse formSubmissionResult = getFormResponse 201 formSubmissionResult
+
+let getFormEditResponse formSubmissionResult = getFormResponse 200 formSubmissionResult
 
 let getHttpPagedDataResponse recordSequenceResult recordCountResult page pageLength =
     match recordSequenceResult with
