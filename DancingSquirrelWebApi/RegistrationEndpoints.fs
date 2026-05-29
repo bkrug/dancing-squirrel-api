@@ -24,7 +24,6 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : V
     let roles = roleNames |> Seq.map (fun name -> { Name = name })
     { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber; Roles = roles }
 
-//This method isn't great. Maybe we can convert more user creation stuff to use Result objects.
 let private identityResultToResponse successCode (result: IdentityResult) =
     match result.Succeeded with
     | true -> Response.withStatusCode successCode >> Response.ofJson "success"
@@ -46,9 +45,9 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
             let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
             let user = mapToIdentityUser registrationData
             let! createResult = queries.CreateUserAsync user registrationData.Password
-            match createResult.Succeeded with
-            | false -> return! (identityResultToResponse 201 createResult) ctx
-            | true ->
+            match createResult with
+            | Error _ -> return! (getFormCreateResponse createResult) ctx
+            | Ok _ ->
                 let! roleResult = queries.AddToRoleAsync user "Admin"
                 return! (identityResultToResponse 201 roleResult) ctx
     }
@@ -61,7 +60,7 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                 let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
                 let user = mapToIdentityUser registrationData
                 let! userCreationResult = queries.CreateUserAsync user registrationData.Password
-                return! (identityResultToResponse 201 userCreationResult) ctx            
+                return! getFormCreateResponse userCreationResult ctx            
             }
         )
 
