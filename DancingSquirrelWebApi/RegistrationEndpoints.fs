@@ -200,7 +200,12 @@ let getUserHandler (queries: IUserAuthorizationWrapper) =
                 let! userResult = queries.GetUserAsync userId
                 let viewModelResult =
                     userResult |> Result.map (fun user ->
-                        { Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber })
+                        {
+                            UserId = user.Id;
+                            Username = user.UserName;
+                            Email = user.Email;
+                            PhoneNumber = user.PhoneNumber
+                        })
                 let httpResponse = getHttpRecordResponse viewModelResult
                 return! httpResponse ctx
             }
@@ -213,9 +218,24 @@ let getUsers (queries: IUserAuthorizationWrapper) =
                 let page = System.Math.Max(1, (Request.getQuery ctx).GetInt("page"))
                 let pageLength = System.Math.Max(10, (Request.getQuery ctx).GetInt("length"))
                 let skipCount = (page - 1) * pageLength
-                let! users = queries.SelectMultiUsers skipCount pageLength
+                let! userResult = queries.SelectMultiUsers skipCount pageLength
+                let transformationResult : Result<seq<ViewUserModel>, GenericModelResponse<string>> =
+                    match userResult with
+                        | Ok userSeq ->
+                            Ok (
+                                userSeq
+                                |> Seq.map (fun user ->
+                                    {
+                                        UserId = user.Id;
+                                        Username = user.UserName;
+                                        Email = user.Email;
+                                        PhoneNumber = user.PhoneNumber;
+                                    }
+                                )
+                            )
+                        | Error e -> Error e
                 let! recordCountResult = queries.CountUsers
-                let httpPagedResponse = getHttpPagedDataResponse users recordCountResult page pageLength
+                let httpPagedResponse = getHttpPagedDataResponse transformationResult recordCountResult page pageLength
                 return! httpPagedResponse ctx
             }
         )

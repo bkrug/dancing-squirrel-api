@@ -72,12 +72,14 @@ let getHttpPagedDataResponse recordSequenceResult recordCountResult page pageLen
 
 let getHttpRecordResponse recordLookupResult =
     match recordLookupResult with
+    | Error errorResponse when errorResponse.IsInternalError->
+        Response.withStatusCode 500 >> Response.ofJson errorResponse
+    | Error errorResponse when errorResponse = notFoundResponse ->
+        Response.withStatusCode 404 >> Response.ofJson errorResponse
+    | Error errorResponse ->
+        Response.withStatusCode 400 >> Response.ofJson errorResponse
     | Ok foundRecord ->
         Response.withStatusCode 200 >> Response.ofJson foundRecord
-    | Error errorResponse when not errorResponse.IsInternalError ->
-        Response.withStatusCode 400 >> Response.ofJson errorResponse
-    | Error errorResponse ->
-        Response.withStatusCode 500 >> Response.ofJson errorResponse
 
 let defaultJsonOptions =
     let options : JsonSerializerOptions = JsonSerializerOptions()

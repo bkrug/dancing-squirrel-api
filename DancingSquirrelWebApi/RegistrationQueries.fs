@@ -72,7 +72,10 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     use scope = createScope()
                     use userManager = scope.ServiceProvider.GetService<UserManager<IdentityUser>>()
                     let! user = userManager.FindByIdAsync(userId)
-                    return Ok user
+                    return 
+                        match user with
+                        | null -> Error notFoundResponse
+                        | _ -> Ok user
                 with
                 | ex ->
                     printfn "SQL: %O" ex

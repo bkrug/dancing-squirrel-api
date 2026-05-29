@@ -28,6 +28,7 @@ type EditUserModel =
 
 type ViewUserModel =
     {
+        UserId: string
         Username: string
         Email: string
         PhoneNumber: string
