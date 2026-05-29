@@ -8,16 +8,18 @@ open System.Linq
 open System.Threading.Tasks
 
 type IUserAuthorizationWrapper =
-    abstract member CreateUserAsync: (IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>) with get
-    abstract member EditUserAsync: (IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>) with get
-    abstract member AddToRoleAsync: (IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>) with get
-    abstract member GetRoleAsync: (IdentityUser -> Task<IList<string>>)
-    abstract member LoginUserAsync: (string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>) with get
-    abstract member LogoutUserAsync: (unit -> Task<unit>) with get
+    abstract member CreateUserAsync: (IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>)
+    abstract member EditUserAsync: (IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>)
     abstract member GetUserAsync: string -> Task<Result<IdentityUser, GenericModelResponse<string>>>
     abstract member SelectMultiUsers: int -> int -> Task<Result<seq<IdentityUser>, GenericModelResponse<string>>>
     abstract member CountUsers: Task<Result<int, GenericModelResponse<string>>>
     abstract member DeleteUserAsync: string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
+
+    abstract member AddToRoleAsync: (IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>)
+    abstract member GetRoleAsync: (IdentityUser -> Task<IList<string>>)
+
+    abstract member LoginUserAsync: (string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>)
+    abstract member LogoutUserAsync: (unit -> Task<unit>)
     abstract member UnlockUserAsync: string -> string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
 type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
@@ -42,38 +44,6 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     | true -> Ok ()
                     | false -> Error (getGenericValidationFailure result.Errors)
             }            
-
-        member _.AddToRoleAsync = fun user role ->
-            task {
-                let! result = userManager.AddToRoleAsync(user, role)
-                return
-                    match result.Succeeded with
-                    | true -> Ok ()
-                    | false -> Error (getGenericValidationFailure result.Errors)
-            }            
-
-        member _.GetRoleAsync = fun user ->
-            task { return! userManager.GetRolesAsync(user) }
-
-        member _.LoginUserAsync = fun (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) ->
-            task {
-                let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
-                let! user = signInManager.UserManager.FindByNameAsync(username)
-                if user = null then
-                    let user: IdentityUser = null
-                    let roles: IList<string> = List<string> []
-                    return false, user, roles
-                else
-                    let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
-                    let! roles = signInManager.UserManager.GetRolesAsync(user)
-                    return isCorrectPassword, user, roles
-            }
-
-        member _.LogoutUserAsync = fun () ->
-            task {
-                let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
-                return! signInManager.SignOutAsync()
-            }
 
         member _.GetUserAsync (userId: string) =
             task {
@@ -111,6 +81,57 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     return Error internalErrorResponse
             }
 
+        member _.DeleteUserAsync (userId: string) =
+            task {
+                try
+                    let! user = userManager.FindByIdAsync(userId)
+                    match user with
+                    | null -> return Error notFoundResponse
+                    | _ ->
+                        let! result = userManager.DeleteAsync(user)
+                        match result.Succeeded with
+                        | true -> return Ok getGenericSuccess
+                        | false ->
+                            printfn "Delete user failed: %A" (result.Errors |> Seq.map (fun e -> e.Description))
+                            return Error internalErrorResponse
+                with
+                | ex ->
+                    printfn "SQL: %O" ex
+                    return Error internalErrorResponse
+            }
+
+        member _.AddToRoleAsync = fun user role ->
+            task {
+                let! result = userManager.AddToRoleAsync(user, role)
+                return
+                    match result.Succeeded with
+                    | true -> Ok ()
+                    | false -> Error (getGenericValidationFailure result.Errors)
+            }            
+
+        member _.GetRoleAsync = fun user ->
+            task { return! userManager.GetRolesAsync(user) }
+
+        member _.LoginUserAsync = fun (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) ->
+            task {
+                let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
+                let! user = signInManager.UserManager.FindByNameAsync(username)
+                if user = null then
+                    let user: IdentityUser = null
+                    let roles: IList<string> = List<string> []
+                    return false, user, roles
+                else
+                    let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
+                    let! roles = signInManager.UserManager.GetRolesAsync(user)
+                    return isCorrectPassword, user, roles
+            }
+
+        member _.LogoutUserAsync = fun () ->
+            task {
+                let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
+                return! signInManager.SignOutAsync()
+            }
+
         member _.UnlockUserAsync (userId: string) (newPassword: string) =
             task {
                 try
@@ -126,25 +147,6 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                             let! _ = userManager.ResetAccessFailedCountAsync(user)
                             let! _ = userManager.SetLockoutEndDateAsync(user, System.Nullable<System.DateTimeOffset>())
                             return Ok getGenericSuccess
-                with
-                | ex ->
-                    printfn "SQL: %O" ex
-                    return Error internalErrorResponse
-            }
-
-        member _.DeleteUserAsync (userId: string) =
-            task {
-                try
-                    let! user = userManager.FindByIdAsync(userId)
-                    match user with
-                    | null -> return Error notFoundResponse
-                    | _ ->
-                        let! result = userManager.DeleteAsync(user)
-                        match result.Succeeded with
-                        | true -> return Ok getGenericSuccess
-                        | false ->
-                            printfn "Delete user failed: %A" (result.Errors |> Seq.map (fun e -> e.Description))
-                            return Error internalErrorResponse
                 with
                 | ex ->
                     printfn "SQL: %O" ex
