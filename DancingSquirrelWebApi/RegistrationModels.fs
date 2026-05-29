@@ -9,12 +9,6 @@ type RegisterModel =
         PhoneNumber: string
     }
 
-type LoginModel =
-    {
-        Username: string
-        Password: string
-    }
-
 type UnlockUserModel =
     {
         Password: string

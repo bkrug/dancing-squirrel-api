@@ -1,6 +1,8 @@
 module Endpoints
 
-open Auth
+open Authentication.Endpoints
+open DanceType.Endpoints
+open DanceType.Queries
 open Falco.Routing
 open Falco.OpenApi
 open Microsoft.AspNetCore
@@ -14,8 +16,6 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration.Json
 open Microsoft.AspNetCore.Identity
 open Microsoft.EntityFrameworkCore
-open DanceType.Endpoints
-open DanceType.Queries
 open Registration.Models
 open Registration.Queries
 open Registration.Endpoints
