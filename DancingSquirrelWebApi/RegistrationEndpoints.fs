@@ -22,6 +22,13 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : V
 let private mapToGridUserModel (user: IdentityUser) : GridUserModel =
     { UserId = user.Id; Username = user.UserName; Email = user.Email }
 
+let private flattenIdentityError (identityError : GenericModelResponse<seq<IdentityError>>) =
+    let failMsg =
+        match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
+        |> Seq.map (fun vFail -> vFail.Description)
+        |> String.concat ", "
+    Error (getGenericValidationFailure failMsg)
+
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
         let! countResult = queries.CountUsers
@@ -61,13 +68,7 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
         return
             match editResult with
             | Ok _ -> Ok getGenericSuccess
-            | Error identityError ->
-                let failMsg =
-                    match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
-                    |> Seq.map (fun vFail -> vFail.Description)
-                    |> String.concat ", "
-                Error (getGenericValidationFailure failMsg)
-                        
+            | Error identityError -> flattenIdentityError identityError                        
     }
 
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
@@ -92,14 +93,10 @@ let private updateUserRolesAsync (queries: IUserAuthorizationWrapper) (requested
         let addedRoles = requestedRoles |> Seq.except existingRoles
         let deletedRoles = existingRoles |> Seq.except requestedRoles
         let! updateResult = queries.UpdateUserRolesAsyncAsync addedRoles deletedRoles user
-        let result = 
+        return
             match updateResult with
             | Ok _ -> Ok()
-            | Error error ->
-                let vFailure = match error.ValidationFailures with | Some vFail -> vFail | _ -> []
-                let errMsg = vFailure |> Seq.map (fun idErr -> idErr.Description) |> String.concat ", "
-                Error (getGenericValidationFailure errMsg)
-        return result
+            | Error identityError -> flattenIdentityError identityError
     }
 
 let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
