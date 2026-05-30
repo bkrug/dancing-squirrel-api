@@ -16,6 +16,8 @@ open Microsoft.AspNetCore.Authentication.Cookies
 [<Literal>]
 let private requiredMessage = "is required"
 
+let private roles = [OnboarderRole]
+
 let private emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
 // Must have exactly 10 digits, or a 1 followed by exactly 10 digits.
 // Non-digits are accepted and ignored.
@@ -145,7 +147,7 @@ let createTrainingRequest (queries: ITrainingRequestQueries) : HttpHandler = fun
     }
 
 let getTrainingRequests (queries: ITrainingRequestQueries) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let page = Math.Max(1, (Request.getQuery ctx).GetInt("page"))
@@ -159,7 +161,7 @@ let getTrainingRequests (queries: ITrainingRequestQueries) =
         )
 
 let getSingleTrainingRequest (queries: ITrainingRequestQueries) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let trainingRequestId = Math.Max(0, (Request.getRoute ctx).GetInt("trainingRequestId"))
@@ -178,7 +180,7 @@ let validatedOnboardingRequest (trainingRequest : main.TrainingRequest) =
     Task.FromResult res
 
 let onboardClient (queries: ITrainingRequestQueries) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 //SUSPECT: Authenticating a second time just so I can get the username

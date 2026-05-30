@@ -18,7 +18,7 @@ type LoginModel =
 
 let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
-let getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>) =
+let private getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>) =
     let roleClaims = 
         roles
         |> Seq.map (fun role -> new Claim(ClaimTypes.Role, role))

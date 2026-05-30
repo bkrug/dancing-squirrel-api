@@ -12,6 +12,8 @@ open Registration.Queries
 //
 //Once you have successful use of HttpOnly cookies, worry about AspNetCore Identity later.
 
+let private roles = [AdminRole]
+
 let private mapToIdentityUser (data: RegisterModel) =
     IdentityUser(Email = data.Email, UserName = data.Username, PhoneNumber = data.PhoneNumber)
 
@@ -52,7 +54,7 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
     }
 
 let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = 
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let! jsonString = Request.getBodyString ctx
@@ -71,6 +73,8 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
         return editResult |> flattenIdentityError
     }
 
+//TODO: This needs a more complicated authorization check.
+//In order to call this, the user must either be an Admin, or the user must be editing their own data
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
     Auth.processAuthenticatedRequest
         (fun ctx ->
@@ -97,7 +101,7 @@ let private updateUserRolesAsync (queries: IUserAuthorizationWrapper) (requested
     }
 
 let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
@@ -114,7 +118,7 @@ let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
         )
 
 let unlockUser (queries: IUserAuthorizationWrapper) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
@@ -127,7 +131,7 @@ let unlockUser (queries: IUserAuthorizationWrapper) =
         )
 
 let deleteUser (queries: IUserAuthorizationWrapper) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
@@ -138,7 +142,7 @@ let deleteUser (queries: IUserAuthorizationWrapper) =
         )
 
 let getUserHandler (queries: IUserAuthorizationWrapper) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
@@ -154,7 +158,7 @@ let getUserHandler (queries: IUserAuthorizationWrapper) =
         )
 
 let getUsers (queries: IUserAuthorizationWrapper) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let page = System.Math.Max(1, (Request.getQuery ctx).GetInt("page"))
@@ -169,7 +173,7 @@ let getUsers (queries: IUserAuthorizationWrapper) =
         )
 
 let getRoles (queries: IUserAuthorizationWrapper) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             let roleNames = queries.SelectAllRoles |> Seq.map (fun r -> r.Name) |> Seq.toList
             let roleCount = roleNames.Length

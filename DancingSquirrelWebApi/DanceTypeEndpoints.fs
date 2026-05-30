@@ -4,8 +4,10 @@ open Falco
 open GenericModels
 open DanceType.Queries
 
+let private roles = [OnboarderRole]
+
 let getDanceTypes (queries: IDanceTypeQueries) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let! danceTypes = queries.SelectDanceTypes
@@ -15,7 +17,7 @@ let getDanceTypes (queries: IDanceTypeQueries) =
         )
 
 let getTeachersByDanceType (queries: IDanceTypeQueries) =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let danceTypeId = (Request.getRoute ctx).GetInt64("danceTypeId")
