@@ -67,8 +67,8 @@ type IServiceCollection with
             options.Cookie.HttpOnly <- true
             options.ExpireTimeSpan <- TimeSpan.FromMinutes(int64 60)
 
-            options.LoginPath <- "/api/authentication"
-            options.AccessDeniedPath <- String.Empty
+            //options.LoginPath <- "/api/authentication"
+            options.AccessDeniedPath <- "/api/notauthorized"
             options.SlidingExpiration <- true
         ) |> ignore
 

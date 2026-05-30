@@ -84,5 +84,6 @@ let getEndpoints (wApp : WebApplication) =
             delete "/api/authentication" (logoutUser identityWrap.LogoutUserAsync)
             get "/api/authentication" loginCheck
             get "/api/authorization/admin" adminCheck
+            get "api/notauthorized" notAuthorized
         ]
     endpoints

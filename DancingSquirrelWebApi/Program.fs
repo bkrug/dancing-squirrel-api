@@ -56,8 +56,8 @@ wApp.UseAuthentication() |> ignore
 wApp.UseAuthorization() |> ignore
 wApp.UseCookiePolicy(new CookiePolicyOptions( MinimumSameSitePolicy = SameSiteMode.Strict; ) ) |> ignore
 wApp.UseRouting() |> ignore
-wApp.UseHttpsRedirection()
-    .UseSwagger()
+//wApp.UseHttpsRedirection()
+wApp.UseSwagger()
     .UseSwaggerUI() |> ignore
 wApp.UseCors(allowedOriginsPolicy) |> ignore
 wApp.UseMiddleware<ExHandler>() |> ignore

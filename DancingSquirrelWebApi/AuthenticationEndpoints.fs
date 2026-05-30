@@ -80,3 +80,6 @@ let adminCheck : HttpHandler =
     let rolesAllowed = [ "Admin" ]
 
     Request.ifAuthenticatedInRole authScheme rolesAllowed handleAuthInRole
+
+let notAuthorized : HttpHandler =
+    Response.withStatusCode 401 >> Response.ofPlainText "you are not authorized"
