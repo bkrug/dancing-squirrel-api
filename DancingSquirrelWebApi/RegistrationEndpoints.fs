@@ -22,12 +22,15 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : V
 let private mapToGridUserModel (user: IdentityUser) : GridUserModel =
     { UserId = user.Id; Username = user.UserName; Email = user.Email }
 
-let private flattenIdentityError (identityError : GenericModelResponse<seq<IdentityError>>) =
-    let failMsg =
-        match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
-        |> Seq.map (fun vFail -> vFail.Description)
-        |> String.concat ", "
-    Error (getGenericValidationFailure failMsg)
+let private flattenIdentityError (result : Result<'a, GenericModelResponse<seq<IdentityError>>>) =
+    match result with
+    | Ok okVal -> Ok okVal
+    | Error identityError ->
+        let failMsg =
+            match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
+            |> Seq.map (fun vFail -> vFail.Description)
+            |> String.concat ", "
+        Error (getGenericValidationFailure failMsg)
 
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
@@ -65,10 +68,7 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
         user.Email <- editData.Email
         user.PhoneNumber <- editData.PhoneNumber
         let! editResult = queries.EditUserAsync user        
-        return
-            match editResult with
-            | Ok _ -> Ok getGenericSuccess
-            | Error identityError -> flattenIdentityError identityError                        
+        return editResult |> flattenIdentityError
     }
 
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
@@ -93,10 +93,7 @@ let private updateUserRolesAsync (queries: IUserAuthorizationWrapper) (requested
         let addedRoles = requestedRoles |> Seq.except existingRoles
         let deletedRoles = existingRoles |> Seq.except requestedRoles
         let! updateResult = queries.UpdateUserRolesAsyncAsync addedRoles deletedRoles user
-        return
-            match updateResult with
-            | Ok _ -> Ok()
-            | Error identityError -> flattenIdentityError identityError
+        return updateResult |> flattenIdentityError
     }
 
 let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
