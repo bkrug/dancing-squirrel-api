@@ -34,6 +34,11 @@ let private flattenIdentityError (result : Result<'a, GenericModelResponse<seq<I
             |> String.concat ", "
         Error (getGenericValidationFailure failMsg)
 
+let private replaceUnitSuccess (result: Result<unit, 'a>) =
+    match result with
+    | Ok _ -> Ok getGenericSuccess
+    | Error err -> Error err
+
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
         let! countResult = queries.CountUsers
@@ -86,7 +91,7 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                     Ok userId
                     |> TaskResult.bindToTask queries.GetUserAsync
                     |> TaskResult.bind (editUserFields queries editData)
-                let httpFormResponse = getFormEditResponse editResult
+                let httpFormResponse = getFormEditResponse (editResult |> replaceUnitSuccess)
                 return! httpFormResponse ctx
             }
         )
@@ -112,7 +117,7 @@ let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                     Ok userId
                     |> TaskResult.bindToTask queries.GetUserAsync
                     |> TaskResult.bind (updateUserRolesAsync queries roleNameSeq)
-                let httpFormResponse = getFormEditResponse editResult
+                let httpFormResponse = getFormEditResponse (editResult |> replaceUnitSuccess)
                 return! httpFormResponse ctx                
             }
         )
