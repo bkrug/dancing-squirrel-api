@@ -66,7 +66,7 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                 let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
                 let user = mapToIdentityUser registrationData
                 let! userCreationResult = queries.CreateUserAsync user registrationData.Password
-                return! getFormCreateResponse userCreationResult ctx            
+                return! getFormCreateResponse (userCreationResult |> replaceUnitSuccess) ctx            
             }
         )
 
@@ -91,8 +91,7 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                     Ok userId
                     |> TaskResult.bindToTask queries.GetUserAsync
                     |> TaskResult.bind (editUserFields queries editData)
-                let httpFormResponse = getFormEditResponse (editResult |> replaceUnitSuccess)
-                return! httpFormResponse ctx
+                return! getFormEditResponse (editResult |> replaceUnitSuccess) ctx
             }
         )
 
@@ -117,8 +116,7 @@ let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                     Ok userId
                     |> TaskResult.bindToTask queries.GetUserAsync
                     |> TaskResult.bind (updateUserRolesAsync queries roleNameSeq)
-                let httpFormResponse = getFormEditResponse (editResult |> replaceUnitSuccess)
-                return! httpFormResponse ctx                
+                return! getFormEditResponse (editResult |> replaceUnitSuccess) ctx                
             }
         )
 
