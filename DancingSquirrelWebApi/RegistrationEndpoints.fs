@@ -14,7 +14,7 @@ open Registration.Queries
 
 let private roles = [AdminRole]
 
-let private mapToIdentityUser (data: RegisterModel) =
+let private mapToIdentityUser (data: CreateUserModel) =
     IdentityUser(Email = data.Email, UserName = data.Username, PhoneNumber = data.PhoneNumber)
 
 let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : ViewUserModel =
@@ -45,7 +45,7 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
         match countResult with
         | Ok 0 ->
             let! jsonString = Request.getBodyString ctx
-            let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
+            let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
             let user = mapToIdentityUser registrationData
             let! userCreationResult =
                 queries.CreateUserAsync user registrationData.Password
@@ -63,7 +63,7 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
         (fun ctx ->
             task {
                 let! jsonString = Request.getBodyString ctx
-                let registrationData = JsonSerializer.Deserialize<RegisterModel>(jsonString, defaultJsonOptions)
+                let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
                 let user = mapToIdentityUser registrationData
                 let! userCreationResult = queries.CreateUserAsync user registrationData.Password
                 return! getFormCreateResponse userCreationResult ctx            

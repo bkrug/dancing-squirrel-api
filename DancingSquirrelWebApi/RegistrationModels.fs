@@ -1,6 +1,6 @@
 module Registration.Models
 
-type RegisterModel = 
+type CreateUserModel = 
     {
         Email : string
         Username: string
