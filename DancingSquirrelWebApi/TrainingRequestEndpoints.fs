@@ -149,8 +149,7 @@ let validatedOnboardingRequest (trainingRequest : main.TrainingRequest) =
     let res =
         match trainingRequest.SquirrelId with
         | None -> Ok trainingRequest
-        | _ -> 
-            Error (getGenericValidationFailure "Caretaker and Squirrel have already been onboarded")
+        | _ -> Error (getGenericValidationFailure "Caretaker and Squirrel have already been onboarded")
     Task.FromResult res
 
 let onboardClient (queries: ITrainingRequestQueries) =

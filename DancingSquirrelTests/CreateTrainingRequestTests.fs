@@ -272,17 +272,6 @@ let ``Training Request is somehow invalid. Expect a validation failure.``
       let! submissionResult = createTrainingRequestFromForm formData insertRec
 
       //Assert
-      let expectedForm = {
-            CaretakerType = CaretakerType.Company
-            CaretakerCompanyName = Some "Acme"
-            CaretakerFirstName = None
-            CaretakerLastName = None
-            Email = "acme@example.com"
-            Phone = "14145552983"
-            SquirrelName = "Nutty"
-            DescriptionOfNeeds = "Dancing will give this squirrel a more rewarding life"
-         }
-
       match submissionResult with
          | Ok _ -> failwith "Expected a validation failure"
          | Error errResp ->
