@@ -2,10 +2,18 @@ module Registration.Models
 
 type CreateUserModel = 
     {
-        Email : string
         Username: string
         //TODO: Better practice is to generate a one-time password upon creation. Not accept one from the user.
         Password : string
+        Email : string
+        PhoneNumber: string
+    }
+
+type CreateUserModelValidation = 
+    {
+        Username: string
+        Password : string
+        Email : string
         PhoneNumber: string
     }
 
