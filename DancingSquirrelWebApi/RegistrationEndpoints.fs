@@ -63,7 +63,7 @@ let validateCreateUserModel (userModel: CreateUserModel) =
             Email = getFieldValidationMessage (nameof userModel.Email) validationResults
         })
 
-let mapToCreateUserFailure (identityError: GenericModelResponse<seq<IdentityError>>) =
+let private mapToCreateUserFailure (identityError: GenericModelResponse<seq<IdentityError>>) =
     let failMsg =
         match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
         |> Seq.map (fun vFail -> vFail.Description)
@@ -75,7 +75,7 @@ let mapToCreateUserFailure (identityError: GenericModelResponse<seq<IdentityErro
         Email = System.String.Empty
     })
 
-let tempUserCreate (queries: IUserAuthorizationWrapper) (registrationData: CreateUserModel) user =
+let private getUserCreationResult (queries: IUserAuthorizationWrapper) (registrationData: CreateUserModel) user =
     task {
         let! userCreationResult = queries.CreateUserAsync user registrationData.Password
         return 
@@ -84,7 +84,7 @@ let tempUserCreate (queries: IUserAuthorizationWrapper) (registrationData: Creat
             | Error identityError -> mapToCreateUserFailure identityError
     }
 
-let tempAddToRoles (queries: IUserAuthorizationWrapper) (roles: seq<string>) (user: IdentityUser) =
+let private getEnrollmentResult (queries: IUserAuthorizationWrapper) (roles: seq<string>) (user: IdentityUser) =
     task {
         let! rolesResult = queries.AddToRolesAsync roles user
         return 
@@ -103,8 +103,8 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
             let! validatedResult =
                 validateCreateUserModel registrationData
                 |> Result.bind (fun validData -> Ok (mapToIdentityUser validData))
-                |> TaskResult.bindToTask (tempUserCreate queries registrationData)
-                |> TaskResult.bind (tempAddToRoles queries ["Admin"])
+                |> TaskResult.bindToTask (getUserCreationResult queries registrationData)
+                |> TaskResult.bind (getEnrollmentResult queries ["Admin"])
             return! getFormCreateResponse (validatedResult |> replaceSuccessObject) ctx
         | Ok _ ->
             let responseModel = getGenericValidationFailure "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
@@ -122,7 +122,7 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                 let! validatedResult =
                     validateCreateUserModel registrationData
                     |> Result.bind (fun validData -> Ok (mapToIdentityUser validData))
-                    |> TaskResult.bindToTask (tempUserCreate queries registrationData)
+                    |> TaskResult.bindToTask (getUserCreationResult queries registrationData)
                 return! getFormCreateResponse (validatedResult |> replaceSuccessObject) ctx
             }
         )
