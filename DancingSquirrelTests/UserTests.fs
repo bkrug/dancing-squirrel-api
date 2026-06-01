@@ -16,8 +16,10 @@ let ``CreateUserModel is valid. Expect a success response.`` () =
       PhoneNumber = ""
     }
 
+  //Act
   let result = validateCreateUserModel model
 
+  //Assert
   result.IsSuccess.ShouldBeTrue()
 
 let validationFailureData : list<CreateUserModel * string * string> =
@@ -68,6 +70,7 @@ let ``CreateUserModel is somehow invalid. Expect a validation failure.``
   //Act
   let result = validateCreateUserModel model
 
+  //Asert
   result.IsSuccess.ShouldBeFalse()
   result.ValidationFailures.IsSome.ShouldBeTrue()
   match result.ValidationFailures.Value with
