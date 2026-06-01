@@ -63,8 +63,6 @@ let validateCreateUserModel (userModel: CreateUserModel) =
             Email = getFieldValidationMessage (nameof userModel.Email) validationResults
         })
 
-let tempMap validData = Ok (mapToIdentityUser validData)
-
 let mapToCreateUserFailure (identityError: GenericModelResponse<seq<IdentityError>>) =
     let failMsg =
         match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
@@ -104,7 +102,7 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
             let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
             let! validatedResult =
                 validateCreateUserModel registrationData
-                |> Result.bind tempMap
+                |> Result.bind (fun validData -> Ok (mapToIdentityUser validData))
                 |> TaskResult.bindToTask (tempUserCreate queries registrationData)
                 |> TaskResult.bind (tempAddToRoles queries ["Admin"])
             return! getFormCreateResponse (validatedResult |> replaceSuccessObject) ctx
@@ -123,7 +121,7 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                 let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
                 let! validatedResult =
                     validateCreateUserModel registrationData
-                    |> Result.bind tempMap
+                    |> Result.bind (fun validData -> Ok (mapToIdentityUser validData))
                     |> TaskResult.bindToTask (tempUserCreate queries registrationData)
                 return! getFormCreateResponse (validatedResult |> replaceSuccessObject) ctx
             }

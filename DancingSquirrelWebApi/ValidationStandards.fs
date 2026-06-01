@@ -9,6 +9,8 @@ let private emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
 let private unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
 let private containsLetterRegex = Regex @"[a-zA-Z]+"
 
+//TODO: One of these methods treats the message as required, the other does not, without being explicit. Address that.
+
 let validateEmailField (value : string) =
     match value with
     | var1 when emailRegex.IsMatch var1 -> Ok()
