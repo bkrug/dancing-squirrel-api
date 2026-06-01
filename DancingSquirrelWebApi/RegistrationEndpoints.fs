@@ -167,7 +167,7 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
 //TODO: This needs a more complicated authorization check.
 //In order to call this, the user must either be an Admin, or the user must be editing their own data
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
-    Auth.processAuthenticatedRequest
+    Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
