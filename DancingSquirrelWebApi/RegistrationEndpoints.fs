@@ -156,7 +156,7 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
         let! editResult = queries.EditUserAsync user        
         return 
             match editResult with
-            | Ok _ -> Ok editData
+            | Ok _ -> Ok getGenericSuccess
             | Error identityError ->
                 Error (getGenericValidationFailure {
                     PhoneNumber = flattenIdentityError identityError
