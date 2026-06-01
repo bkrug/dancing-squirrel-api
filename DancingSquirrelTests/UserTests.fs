@@ -20,7 +20,7 @@ let ``CreateUserModel is valid. Expect a success response.`` () =
   let result = validateCreateUserModel model
 
   //Assert
-  result.IsSuccess.ShouldBeTrue()
+  result.IsOk.ShouldBeTrue()
 
 let validationFailureData : list<CreateUserModel * string * string> =
   [
@@ -71,12 +71,11 @@ let ``CreateUserModel is somehow invalid. Expect a validation failure.``
   let result = validateCreateUserModel model
 
   //Asert
-  result.IsSuccess.ShouldBeFalse()
-  result.ValidationFailures.IsSome.ShouldBeTrue()
-  match result.ValidationFailures.Value with
-  | Error validFails ->
-    validFails.GetType()
-      .GetProperty(validationField)
-      .GetValue(validFails)
-      .ShouldBeEquivalentTo(validationMsg)
-  | Ok _ -> failwith "Expected a validation failure"
+  match result with
+    | Ok _ -> failwith "Expected a validation failure"
+    | Error errResp ->
+      errResp.ValidationFailures.IsSome.ShouldBeTrue()
+      errResp.ValidationFailures.Value.GetType()
+        .GetProperty(validationField)
+        .GetValue(errResp.ValidationFailures.Value)
+        .ShouldBeEquivalentTo(validationMsg)

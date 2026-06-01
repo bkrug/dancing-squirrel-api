@@ -49,7 +49,7 @@ let private validateRequiredField (value: string) =
 let private getFieldValidationMessage keyName (validationResults: IDictionary<string, Result<unit, string>>) =
     match validationResults[keyName] with | Error msg -> msg | _ -> ""
 
-let validateCreateUserModel (userModel: CreateUserModel) : GenericModelResponse<Result<unit, CreateUserModelValidation>> =
+let validateCreateUserModel (userModel: CreateUserModel) =
     let validationResults =
         dict [
             nameof userModel.Email,       validateEmail userModel.Email
@@ -59,14 +59,16 @@ let validateCreateUserModel (userModel: CreateUserModel) : GenericModelResponse<
         ]
     let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
     match failureCount with
-    | 0 -> getGenericSuccess
+    | 0 -> Ok userModel
     | _ ->
-        getGenericValidationFailure (Error {
+        Error (getGenericValidationFailure {
             Username = getFieldValidationMessage (nameof userModel.Username) validationResults
             Password = getFieldValidationMessage (nameof userModel.Password) validationResults
             PhoneNumber = getFieldValidationMessage (nameof userModel.PhoneNumber) validationResults
             Email = getFieldValidationMessage (nameof userModel.Email) validationResults
         })
+
+let tempMap validData = Ok (mapToIdentityUser validData)
 
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
@@ -75,11 +77,14 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
         | Ok 0 ->
             let! jsonString = Request.getBodyString ctx
             let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
-            let user = mapToIdentityUser registrationData
-            let! userCreationResult =
-                queries.CreateUserAsync user registrationData.Password
-                |> TaskResult.bind (fun _ -> queries.AddToRolesAsync ["Admin"] user)
-            return! getFormCreateResponse userCreationResult ctx            
+            let validatedResult = validateCreateUserModel registrationData |> Result.bind tempMap
+            match validatedResult with
+            | Ok user ->
+                let! userCreationResult =
+                    queries.CreateUserAsync user registrationData.Password
+                    |> TaskResult.bind (fun _ -> queries.AddToRolesAsync ["Admin"] user)
+                return! getFormCreateResponse userCreationResult ctx
+            | Error err -> return! getFormCreateResponse (Error err) ctx
         | Ok _ ->
             let responseModel = getGenericValidationFailure "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
             return! (Response.withStatusCode 400 >> Response.ofJson responseModel) ctx
@@ -93,9 +98,12 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
             task {
                 let! jsonString = Request.getBodyString ctx
                 let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
-                let user = mapToIdentityUser registrationData
-                let! userCreationResult = queries.CreateUserAsync user registrationData.Password
-                return! getFormCreateResponse (userCreationResult |> replaceUnitSuccess) ctx            
+                let validatedResult = validateCreateUserModel registrationData |> Result.bind tempMap
+                match validatedResult with
+                | Ok user ->
+                    let! userCreationResult = queries.CreateUserAsync user registrationData.Password
+                    return! getFormCreateResponse (userCreationResult |> replaceUnitSuccess) ctx            
+                | Error err -> return! getFormCreateResponse (Error err) ctx
             }
         )
 

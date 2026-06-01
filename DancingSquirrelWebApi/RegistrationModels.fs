@@ -9,14 +9,6 @@ type CreateUserModel =
         PhoneNumber: string
     }
 
-type CreateUserModelValidation = 
-    {
-        Username: string
-        Password : string
-        Email : string
-        PhoneNumber: string
-    }
-
 type UnlockUserModel =
     {
         Password: string
