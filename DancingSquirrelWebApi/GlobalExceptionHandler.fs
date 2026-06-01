@@ -8,7 +8,7 @@ open System.Threading.Tasks
 
 type ExHandler (next : RequestDelegate)  =
     member this.InvokeAsync (context : HttpContext) : Task =
-        async{
+        async {
             try
                 do! next.Invoke(context) |> Async.AwaitTask
             with

@@ -98,3 +98,80 @@ let ``All fields on CreateUserModel are invalid. Expect validation failures on a
     | Error errResp ->
       errResp.ValidationFailures.IsSome.ShouldBeTrue()
       errResp.ValidationFailures.Value.ShouldBeEquivalentTo(expectedValidationFailures)
+
+[<Fact>]
+let ``EditUserModel is valid. Expect a success response.`` () =
+  let model : Registration.Models.EditUserModel =
+    {
+      Email = "user@example.com"
+      PhoneNumber = ""
+    }
+
+  //Act
+  let result = validateEditUserModel model
+
+  //Assert
+  result.IsOk.ShouldBeTrue()
+
+let editUserValidationFailureData : list<Registration.Models.EditUserModel * string * string> =
+  [
+    (
+      { Email = ""; PhoneNumber = "" },
+      "Email",
+      "is required"
+    )
+    (
+      { Email = "not-an-email"; PhoneNumber = "" },
+      "Email",
+      "must be an email address"
+    )
+    (
+      { Email = "user@example.com"; PhoneNumber = "9-414-555-2983" },
+      "PhoneNumber",
+      "must either have exactly 10 digits or a '1' followed by 10 digits"
+    )
+    (
+      { Email = "user@example.com"; PhoneNumber = "1i414i555i2983" },
+      "PhoneNumber",
+      "must not contain letters"
+    )
+  ]
+
+[<Theory>]
+[<InlineData(0)>]
+[<InlineData(1)>]
+[<InlineData(2)>]
+[<InlineData(3)>]
+let ``EditUserModel is somehow invalid. Expect a validation failure.`` testNumber =
+  let model, validationField, validationMsg = editUserValidationFailureData[testNumber]
+
+  //Act
+  let result = validateEditUserModel model
+
+  //Assert
+  match result with
+    | Ok _ -> failwith "Expected a validation failure"
+    | Error errResp ->
+      errResp.ValidationFailures.IsSome.ShouldBeTrue()
+      errResp.ValidationFailures.Value.GetType()
+        .GetProperty(validationField)
+        .GetValue(errResp.ValidationFailures.Value)
+        .ShouldBeEquivalentTo(validationMsg)
+
+[<Fact>]
+let ``All fields on EditUserModel are invalid. Expect validation failures on all fields.`` () =
+  let model : Registration.Models.EditUserModel = { Email = "notAnEmail!"; PhoneNumber = "414" }
+  let expectedValidationFailures : Registration.Models.EditUserModel = {
+    Email = "must be an email address"
+    PhoneNumber = "must either have exactly 10 digits or a '1' followed by 10 digits"
+  }
+
+  //Act
+  let result = validateEditUserModel model
+
+  //Assert
+  match result with
+    | Ok _ -> failwith "Expected a validation failure"
+    | Error errResp ->
+      errResp.ValidationFailures.IsSome.ShouldBeTrue()
+      errResp.ValidationFailures.Value.ShouldBeEquivalentTo(expectedValidationFailures)

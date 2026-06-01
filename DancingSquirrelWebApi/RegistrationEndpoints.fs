@@ -127,6 +127,23 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
             }
         )
 
+let validateEditUserModel (userModel: EditUserModel) : Result<EditUserModel, GenericModelResponse<EditUserModel>> =
+    // let validationResults =
+    //     dict [
+    //         nameof userModel.Email,       validateEmailField userModel.Email
+    //         nameof userModel.Username,    validateRequiredField userModel.Username
+    //         nameof userModel.Password,    validateRequiredField userModel.Password
+    //         nameof userModel.PhoneNumber, validatePhoneField userModel.PhoneNumber
+    //     ]
+    // let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
+    match 0 with
+    | 0 -> Ok userModel
+    | _ ->
+        Error (getGenericValidationFailure {
+            PhoneNumber = ""
+            Email = ""
+        })
+
 let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditUserModel) (user: IdentityUser) =
     task {
         user.Email <- editData.Email
