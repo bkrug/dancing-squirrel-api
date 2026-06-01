@@ -36,15 +36,10 @@ let private flattenIdentityError (result : Result<'a, GenericModelResponse<seq<I
             |> String.concat ", "
         Error (getGenericValidationFailure failMsg)
 
-let private replaceUnitSuccess (result: Result<unit, 'a>) =
+let private replaceSuccessObject (result: Result<'a, 'b>) =
     match result with
     | Ok _ -> Ok getGenericSuccess
     | Error err -> Error err
-
-let private validateRequiredField (value: string) =
-    match value with
-    | "" -> Error requiredMessage
-    | _ -> Ok()
 
 let private getFieldValidationMessage keyName (validationResults: IDictionary<string, Result<unit, string>>) =
     match validationResults[keyName] with | Error msg -> msg | _ -> ""
@@ -52,10 +47,10 @@ let private getFieldValidationMessage keyName (validationResults: IDictionary<st
 let validateCreateUserModel (userModel: CreateUserModel) =
     let validationResults =
         dict [
-            nameof userModel.Email,       validateEmail userModel.Email
+            nameof userModel.Email,       validateEmailField userModel.Email
             nameof userModel.Username,    validateRequiredField userModel.Username
             nameof userModel.Password,    validateRequiredField userModel.Password
-            nameof userModel.PhoneNumber, validatePhone userModel.PhoneNumber
+            nameof userModel.PhoneNumber, validatePhoneField userModel.PhoneNumber
         ]
     let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
     match failureCount with
@@ -70,6 +65,36 @@ let validateCreateUserModel (userModel: CreateUserModel) =
 
 let tempMap validData = Ok (mapToIdentityUser validData)
 
+let mapToCreateUserFailure (identityError: GenericModelResponse<seq<IdentityError>>) =
+    let failMsg =
+        match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
+        |> Seq.map (fun vFail -> vFail.Description)
+        |> String.concat ", "
+    Error (getGenericValidationFailure {
+        Username = failMsg
+        Password = System.String.Empty
+        PhoneNumber = System.String.Empty
+        Email = System.String.Empty
+    })
+
+let tempUserCreate (queries: IUserAuthorizationWrapper) (registrationData: CreateUserModel) user =
+    task {
+        let! userCreationResult = queries.CreateUserAsync user registrationData.Password
+        return 
+            match userCreationResult with
+            | Ok _ -> Ok user
+            | Error identityError -> mapToCreateUserFailure identityError
+    }
+
+let tempAddToRoles (queries: IUserAuthorizationWrapper) (roles: seq<string>) (user: IdentityUser) =
+    task {
+        let! rolesResult = queries.AddToRolesAsync roles user
+        return 
+            match rolesResult with
+            | Ok okObj -> Ok okObj
+            | Error identityError -> mapToCreateUserFailure identityError
+    }
+
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
         let! countResult = queries.CountUsers
@@ -77,14 +102,12 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
         | Ok 0 ->
             let! jsonString = Request.getBodyString ctx
             let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
-            let validatedResult = validateCreateUserModel registrationData |> Result.bind tempMap
-            match validatedResult with
-            | Ok user ->
-                let! userCreationResult =
-                    queries.CreateUserAsync user registrationData.Password
-                    |> TaskResult.bind (fun _ -> queries.AddToRolesAsync ["Admin"] user)
-                return! getFormCreateResponse userCreationResult ctx
-            | Error err -> return! getFormCreateResponse (Error err) ctx
+            let! validatedResult =
+                validateCreateUserModel registrationData
+                |> Result.bind tempMap
+                |> TaskResult.bindToTask (tempUserCreate queries registrationData)
+                |> TaskResult.bind (tempAddToRoles queries ["Admin"])
+            return! getFormCreateResponse (validatedResult |> replaceSuccessObject) ctx
         | Ok _ ->
             let responseModel = getGenericValidationFailure "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
             return! (Response.withStatusCode 400 >> Response.ofJson responseModel) ctx
@@ -98,12 +121,11 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
             task {
                 let! jsonString = Request.getBodyString ctx
                 let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
-                let validatedResult = validateCreateUserModel registrationData |> Result.bind tempMap
-                match validatedResult with
-                | Ok user ->
-                    let! userCreationResult = queries.CreateUserAsync user registrationData.Password
-                    return! getFormCreateResponse (userCreationResult |> replaceUnitSuccess) ctx            
-                | Error err -> return! getFormCreateResponse (Error err) ctx
+                let! validatedResult =
+                    validateCreateUserModel registrationData
+                    |> Result.bind tempMap
+                    |> TaskResult.bindToTask (tempUserCreate queries registrationData)
+                return! getFormCreateResponse (validatedResult |> replaceSuccessObject) ctx
             }
         )
 
@@ -128,7 +150,7 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                     Ok userId
                     |> TaskResult.bindToTask queries.GetUserAsync
                     |> TaskResult.bind (editUserFields queries editData)
-                return! getFormEditResponse (editResult |> replaceUnitSuccess) ctx
+                return! getFormEditResponse (editResult |> replaceSuccessObject) ctx
             }
         )
 
@@ -153,7 +175,7 @@ let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                     Ok userId
                     |> TaskResult.bindToTask queries.GetUserAsync
                     |> TaskResult.bind (updateUserRolesAsync queries roleNameSeq)
-                return! getFormEditResponse (editResult |> replaceUnitSuccess) ctx                
+                return! getFormEditResponse (editResult |> replaceSuccessObject) ctx                
             }
         )
 

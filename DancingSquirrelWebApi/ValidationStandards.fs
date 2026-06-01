@@ -9,15 +9,23 @@ let private emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
 let private unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
 let private containsLetterRegex = Regex @"[a-zA-Z]+"
 
-let validateEmail (value : string) =
+let validateEmailField (value : string) =
     match value with
     | var1 when emailRegex.IsMatch var1 -> Ok()
+    | null -> Error requiredMessage
     | "" -> Error requiredMessage
     | _ -> Error "must be an email address"
 
-let validatePhone (value : string) =
+let validatePhoneField (value : string) =
     match value with
+    | null -> Ok()
     | "" -> Ok()
     | var1 when containsLetterRegex.IsMatch var1 -> Error "must not contain letters"
     | var1 when unitedStatePhoneRegex.IsMatch var1 -> Ok()
     | _ -> Error "must either have exactly 10 digits or a '1' followed by 10 digits"
+
+let validateRequiredField (value: string) =
+    match value with
+    | null -> Error requiredMessage
+    | "" -> Error requiredMessage
+    | _ -> Ok()

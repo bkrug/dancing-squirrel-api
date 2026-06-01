@@ -41,11 +41,6 @@ let private validateLastName form =
         | { CaretakerLastName = Some("") } -> Error requiredMessage
         | _ -> Ok()        
 
-let private validateRequiredName nameValue =
-    match nameValue with
-        | "" -> Error requiredMessage
-        | _ -> Ok()
-
 let private removeNonDigits givenString =
     Seq.toList givenString
     |> Seq.filter (fun c -> Char.IsDigit c)
@@ -61,9 +56,9 @@ let private validateForm (form : TrainingRequestForm) : Result<TrainingRequestFo
             nameof form.CaretakerCompanyName,   validateCompanyName form;
             nameof form.CaretakerFirstName,     validateFirstName form;
             nameof form.CaretakerLastName,      validateLastName form;
-            nameof form.Email,                  validateEmail form.Email;
-            nameof form.Phone,                  validatePhone form.Phone;
-            nameof form.SquirrelName,           validateRequiredName form.SquirrelName;
+            nameof form.Email,                  validateEmailField form.Email;
+            nameof form.Phone,                  validatePhoneField form.Phone;
+            nameof form.SquirrelName,           validateRequiredField form.SquirrelName;
         ]
     let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
     match failureCount with
