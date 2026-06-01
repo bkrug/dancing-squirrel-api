@@ -31,7 +31,6 @@ let private flattenIdentityError (identityError: GenericModelResponse<seq<Identi
     |> Seq.map (fun vFail -> vFail.Description)
     |> String.concat ", "
 
-
 let private mapIdentityErrorResultToStringResult (result : Result<'a, GenericModelResponse<seq<IdentityError>>>) =
     match result with
     | Ok okVal -> Ok okVal
@@ -86,7 +85,7 @@ let private getEnrollmentResult (queries: IUserAuthorizationWrapper) (roles: seq
         let! rolesResult = queries.AddToRolesAsync roles user
         return 
             match rolesResult with
-            | Ok okObj -> Ok okObj
+            | Ok _ -> Ok getGenericSuccess
             | Error identityError -> mapToCreateUserFailure identityError
     }
 
@@ -102,7 +101,7 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
                 |> Result.bind (fun validData -> Ok (mapToIdentityUser validData))
                 |> TaskResult.bindToTask (getUserCreationResult queries registrationData)
                 |> TaskResult.bind (getEnrollmentResult queries ["Admin"])
-            return! getFormCreateResponse (validatedResult |> replaceSuccessObject) ctx
+            return! getFormCreateResponse validatedResult ctx
         | Ok _ ->
             let responseModel = getGenericValidationFailure "A user already exists. This endpoint can only be used to generate the first user. That user will always be an admin."
             return! (Response.withStatusCode 400 >> Response.ofJson responseModel) ctx

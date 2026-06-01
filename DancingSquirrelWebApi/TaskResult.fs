@@ -1,17 +1,20 @@
 module TaskResult
 
+open System.Threading.Tasks
+open Microsoft.FSharp.Core
+
 //Bind two methods together that both return Task<Result<>>
-let bind fRA vRA = task { 
-    let! vR = vRA
+let bind binder result = task { 
+    let! vR = result
     match vR with
-    | Ok    v -> return! fRA v
+    | Ok    v -> return! binder v
     | Error m -> return  Error m 
 }
 
 //Bind two methods together when the earlier method returns Result<> and the other returns Task<Result<>>
-let bindToTask fRA vRA = task { 
-    let vR = vRA
+let bindToTask binder result = task { 
+    let vR = result
     match vR with
-    | Ok    v -> return! fRA v
+    | Ok    v -> return! binder v
     | Error m -> return  Error m 
 }
