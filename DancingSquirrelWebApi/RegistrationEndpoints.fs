@@ -128,28 +128,50 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
         )
 
 let validateEditUserModel (userModel: EditUserModel) : Result<EditUserModel, GenericModelResponse<EditUserModel>> =
-    // let validationResults =
-    //     dict [
-    //         nameof userModel.Email,       validateEmailField userModel.Email
-    //         nameof userModel.Username,    validateRequiredField userModel.Username
-    //         nameof userModel.Password,    validateRequiredField userModel.Password
-    //         nameof userModel.PhoneNumber, validatePhoneField userModel.PhoneNumber
-    //     ]
-    // let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
-    match 0 with
+    let validationResults =
+        dict [
+            nameof userModel.Email,       validateEmailField userModel.Email
+            nameof userModel.PhoneNumber, validatePhoneField userModel.PhoneNumber
+        ]
+    let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
+    match failureCount with
     | 0 -> Ok userModel
     | _ ->
         Error (getGenericValidationFailure {
-            PhoneNumber = ""
-            Email = ""
+            PhoneNumber = getFieldValidationMessage (nameof userModel.PhoneNumber) validationResults
+            Email = getFieldValidationMessage (nameof userModel.Email) validationResults
         })
+
+let private getExistingUserRecord (queries: IUserAuthorizationWrapper) (userId:string) =
+    task {
+        let! userLookupResult = queries.GetUserAsync userId
+        return 
+            match userLookupResult with
+            | Ok identityUser -> Ok identityUser
+            | Error identityError ->
+                Error (getGenericValidationFailure {
+                    PhoneNumber = match identityError.ValidationFailures with | None -> System.String.Empty | failMsg -> failMsg.Value
+                    Email = System.String.Empty
+                })            
+    }
 
 let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditUserModel) (user: IdentityUser) =
     task {
         user.Email <- editData.Email
         user.PhoneNumber <- editData.PhoneNumber
         let! editResult = queries.EditUserAsync user        
-        return editResult |> flattenIdentityError
+        return 
+            match editResult with
+            | Ok _ -> Ok editData
+            | Error identityError ->
+                let failMsg =
+                    match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
+                    |> Seq.map (fun vFail -> vFail.Description)
+                    |> String.concat ", "
+                Error (getGenericValidationFailure {
+                    PhoneNumber = failMsg
+                    Email = System.String.Empty
+                })            
     }
 
 //TODO: This needs a more complicated authorization check.
@@ -162,10 +184,10 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
                 let! jsonString = Request.getBodyString ctx
                 let editData = JsonSerializer.Deserialize<EditUserModel>(jsonString, defaultJsonOptions)
                 let! editResult =
-                    Ok userId
-                    |> TaskResult.bindToTask queries.GetUserAsync
+                    validateEditUserModel editData
+                    |> TaskResult.bindToTask (fun _ -> getExistingUserRecord queries userId)
                     |> TaskResult.bind (editUserFields queries editData)
-                return! getFormEditResponse (editResult |> replaceSuccessObject) ctx
+                return! getFormEditResponse editResult ctx
             }
         )
 
