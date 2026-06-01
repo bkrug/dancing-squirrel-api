@@ -63,8 +63,7 @@ let validationFailureData : list<CreateUserModel * string * string> =
 [<InlineData(3)>]
 [<InlineData(4)>]
 [<InlineData(5)>]
-let ``CreateUserModel is somehow invalid. Expect a validation failure.``
-  testNumber =
+let ``CreateUserModel is somehow invalid. Expect a validation failure.`` testNumber =
   let model, validationField, validationMsg = validationFailureData[testNumber]
 
   //Act
@@ -79,3 +78,23 @@ let ``CreateUserModel is somehow invalid. Expect a validation failure.``
         .GetProperty(validationField)
         .GetValue(errResp.ValidationFailures.Value)
         .ShouldBeEquivalentTo(validationMsg)
+
+[<Fact>]
+let ``All fields on CreateUserModel are invalid. Expect validation failures on all fields.`` () =
+  let model = { Email = "notAnEmail!"; Username = null; Password = ""; PhoneNumber = "414" }
+  let expectedValidationFailures = {
+    Email = "must be an email address";
+    Username = "is required";
+    Password = "is required";
+    PhoneNumber = "must either have exactly 10 digits or a '1' followed by 10 digits"
+  }
+
+  //Act
+  let result = validateCreateUserModel model
+
+  //Assert
+  match result with
+    | Ok _ -> failwith "Expected a validation failure"
+    | Error errResp ->
+      errResp.ValidationFailures.IsSome.ShouldBeTrue()
+      errResp.ValidationFailures.Value.ShouldBeEquivalentTo(expectedValidationFailures)
