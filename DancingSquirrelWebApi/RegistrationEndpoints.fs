@@ -26,15 +26,16 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : V
 let private mapToGridUserModel (user: IdentityUser) : GridUserModel =
     { UserId = user.Id; Username = user.UserName; Email = user.Email }
 
-let private flattenIdentityError (result : Result<'a, GenericModelResponse<seq<IdentityError>>>) =
+let private flattenIdentityError (identityError: GenericModelResponse<seq<IdentityError>>) =
+    match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
+    |> Seq.map (fun vFail -> vFail.Description)
+    |> String.concat ", "
+
+
+let private mapIdentityErrorResultToStringResult (result : Result<'a, GenericModelResponse<seq<IdentityError>>>) =
     match result with
     | Ok okVal -> Ok okVal
-    | Error identityError ->
-        let failMsg =
-            match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
-            |> Seq.map (fun vFail -> vFail.Description)
-            |> String.concat ", "
-        Error (getGenericValidationFailure failMsg)
+    | Error identityError -> Error (getGenericValidationFailure (flattenIdentityError identityError))
 
 let private replaceSuccessObject (result: Result<'a, 'b>) =
     match result with
@@ -64,12 +65,8 @@ let validateCreateUserModel (userModel: CreateUserModel) =
         })
 
 let private mapToCreateUserFailure (identityError: GenericModelResponse<seq<IdentityError>>) =
-    let failMsg =
-        match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
-        |> Seq.map (fun vFail -> vFail.Description)
-        |> String.concat ", "
     Error (getGenericValidationFailure {
-        Username = failMsg
+        Username = flattenIdentityError identityError
         Password = System.String.Empty
         PhoneNumber = System.String.Empty
         Email = System.String.Empty
@@ -148,9 +145,9 @@ let private getExistingUserRecord (queries: IUserAuthorizationWrapper) (userId:s
         return 
             match userLookupResult with
             | Ok identityUser -> Ok identityUser
-            | Error identityError ->
+            | Error genericModelWithString ->
                 Error (getGenericValidationFailure {
-                    PhoneNumber = match identityError.ValidationFailures with | None -> System.String.Empty | failMsg -> failMsg.Value
+                    PhoneNumber = match genericModelWithString.ValidationFailures with | None -> System.String.Empty | failMsg -> failMsg.Value
                     Email = System.String.Empty
                 })            
     }
@@ -164,12 +161,8 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
             match editResult with
             | Ok _ -> Ok editData
             | Error identityError ->
-                let failMsg =
-                    match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
-                    |> Seq.map (fun vFail -> vFail.Description)
-                    |> String.concat ", "
                 Error (getGenericValidationFailure {
-                    PhoneNumber = failMsg
+                    PhoneNumber = flattenIdentityError identityError
                     Email = System.String.Empty
                 })            
     }
@@ -197,7 +190,7 @@ let private updateUserRolesAsync (queries: IUserAuthorizationWrapper) (requested
         let addedRoles = requestedRoles |> Seq.except existingRoles
         let deletedRoles = existingRoles |> Seq.except requestedRoles
         let! updateResult = queries.UpdateUserRolesAsyncAsync addedRoles deletedRoles user
-        return updateResult |> flattenIdentityError
+        return updateResult |> mapIdentityErrorResultToStringResult
     }
 
 let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
