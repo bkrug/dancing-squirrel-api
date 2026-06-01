@@ -112,6 +112,12 @@ let defaultJsonOptions =
     options.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase
     options
 
+let getModelFromRequestBody<'TValue> ctx =
+    task {
+        let! jsonString = Request.getBodyString ctx
+        return JsonSerializer.Deserialize<'TValue>(jsonString, defaultJsonOptions)
+    }    
+
 let AdminRole = "Admin"
 let OnboarderRole = "Onboarder"
 type Roles = AdminRole | OnboarderRole

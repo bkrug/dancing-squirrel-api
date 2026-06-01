@@ -94,8 +94,7 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
         let! countResult = queries.CountUsers
         match countResult with
         | Ok 0 ->
-            let! jsonString = Request.getBodyString ctx
-            let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
+            let! registrationData = getModelFromRequestBody<CreateUserModel> ctx
             let! validatedResult =
                 validateCreateUserModel registrationData
                 |> Result.bind (fun validData -> Ok (mapToIdentityUser validData))
@@ -113,8 +112,7 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
     Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
-                let! jsonString = Request.getBodyString ctx
-                let registrationData = JsonSerializer.Deserialize<CreateUserModel>(jsonString, defaultJsonOptions)
+                let! registrationData = getModelFromRequestBody<CreateUserModel> ctx
                 let! validatedResult =
                     validateCreateUserModel registrationData
                     |> Result.bind (fun validData -> Ok (mapToIdentityUser validData))
@@ -173,8 +171,7 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
-                let! jsonString = Request.getBodyString ctx
-                let editData = JsonSerializer.Deserialize<EditUserModel>(jsonString, defaultJsonOptions)
+                let! editData = getModelFromRequestBody<EditUserModel> ctx
                 let! editResult =
                     validateEditUserModel editData
                     |> TaskResult.bindToTask (fun _ -> getExistingUserRecord queries userId)
@@ -197,8 +194,7 @@ let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
-                let! jsonString = Request.getBodyString ctx
-                let roleSeq = JsonSerializer.Deserialize<RoleEditingModel>(jsonString, defaultJsonOptions)
+                let! roleSeq = getModelFromRequestBody<RoleEditingModel> ctx
                 let roleNameSeq = roleSeq.Roles |> Seq.map (fun role -> role.Name)
                 let! editResult =
                     Ok userId
@@ -213,8 +209,7 @@ let unlockUser (queries: IUserAuthorizationWrapper) =
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
-                let! jsonString = Request.getBodyString ctx
-                let unlockData = JsonSerializer.Deserialize<UnlockUserModel>(jsonString, defaultJsonOptions)
+                let! unlockData = getModelFromRequestBody<UnlockUserModel> ctx
                 let! unlockResult = queries.UnlockUserAsync userId unlockData.Password
                 let httpResponse = getHttpRecordResponse unlockResult
                 return! httpResponse ctx
