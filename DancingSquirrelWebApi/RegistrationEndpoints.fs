@@ -39,6 +39,15 @@ let private replaceUnitSuccess (result: Result<unit, 'a>) =
     | Ok _ -> Ok getGenericSuccess
     | Error err -> Error err
 
+let validateCreateUserModel (userModel: CreateUserModel) =
+    let validationFailures = {
+        Username = ""
+        Password = ""
+        PhoneNumber = ""
+        Email = ""
+    }
+    getGenericValidationFailure (Error validationFailures)
+
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {
         let! countResult = queries.CountUsers
