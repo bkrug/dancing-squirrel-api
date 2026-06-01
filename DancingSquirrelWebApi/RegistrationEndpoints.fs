@@ -1,11 +1,13 @@
 module Registration.Endpoints
 
+open System.Collections.Generic
 open System.Text.Json
 open Falco
 open Microsoft.AspNetCore.Identity
 open GenericModels
 open Registration.Models
 open Registration.Queries
+open ValidationStandards
 
 //When adding authentiction to an app, start with HttpOnly cookie authentication.
 //https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0
@@ -39,14 +41,32 @@ let private replaceUnitSuccess (result: Result<unit, 'a>) =
     | Ok _ -> Ok getGenericSuccess
     | Error err -> Error err
 
-let validateCreateUserModel (userModel: CreateUserModel) =
-    let validationFailures = {
-        Username = ""
-        Password = ""
-        PhoneNumber = ""
-        Email = ""
-    }
-    getGenericValidationFailure (Error validationFailures)
+let private validateRequiredField (value: string) =
+    match value with
+    | "" -> Error requiredMessage
+    | _ -> Ok()
+
+let private getFieldValidationMessage keyName (validationResults: IDictionary<string, Result<unit, string>>) =
+    match validationResults[keyName] with | Error msg -> msg | _ -> ""
+
+let validateCreateUserModel (userModel: CreateUserModel) : GenericModelResponse<Result<unit, CreateUserModelValidation>> =
+    let validationResults =
+        dict [
+            nameof userModel.Email,       validateEmail userModel.Email
+            nameof userModel.Username,    validateRequiredField userModel.Username
+            nameof userModel.Password,    validateRequiredField userModel.Password
+            nameof userModel.PhoneNumber, validatePhone userModel.PhoneNumber
+        ]
+    let failureCount = validationResults |> Seq.filter (fun kvp -> kvp.Value.IsError) |> Seq.length
+    match failureCount with
+    | 0 -> getGenericSuccess
+    | _ ->
+        getGenericValidationFailure (Error {
+            Username = getFieldValidationMessage (nameof userModel.Username) validationResults
+            Password = getFieldValidationMessage (nameof userModel.Password) validationResults
+            PhoneNumber = getFieldValidationMessage (nameof userModel.PhoneNumber) validationResults
+            Email = getFieldValidationMessage (nameof userModel.Email) validationResults
+        })
 
 let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = fun ctx ->
     task {

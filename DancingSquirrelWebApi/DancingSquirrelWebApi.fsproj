@@ -12,6 +12,7 @@
     </Compile>
     <Compile Include="ExternalDependencies.fs" />
     <Compile Include="GenericModels.fs" />
+    <Compile Include="ValidationStandards.fs" />
     <Compile Include="Auth.fs" />
     <Compile Include="RegistrationModels.fs" />
     <Compile Include="RegistrationQueries.fs" />

@@ -12,17 +12,9 @@ open TrainingRequest.Models
 open TrainingRequest.Queries
 open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
-
-[<Literal>]
-let private requiredMessage = "is required"
+open ValidationStandards
 
 let private roles = [OnboarderRole]
-
-let private emailRegex = Regex @"^[\w\-\.]+@([\w-]+\.)+[\w-]{2,}$"
-// Must have exactly 10 digits, or a 1 followed by exactly 10 digits.
-// Non-digits are accepted and ignored.
-let private unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
-let private containsLetterRegex = Regex @"[a-zA-Z]+"
 
 //***
 // Validation Methods
@@ -53,19 +45,6 @@ let private validateRequiredName nameValue =
     match nameValue with
         | "" -> Error requiredMessage
         | _ -> Ok()
-
-let private validateEmail (value : string) =
-    match value with
-    | var1 when emailRegex.IsMatch var1 -> Ok()
-    | "" -> Error requiredMessage
-    | _ -> Error "must be an email address"
-
-let private validatePhone (value : string) =
-    match value with
-    | "" -> Ok()
-    | var1 when containsLetterRegex.IsMatch var1 -> Error "must not contain letters"
-    | var1 when unitedStatePhoneRegex.IsMatch var1 -> Ok()
-    | _ -> Error "must either have exactly 10 digits or a '1' followed by 10 digits"
 
 let private removeNonDigits givenString =
     Seq.toList givenString
