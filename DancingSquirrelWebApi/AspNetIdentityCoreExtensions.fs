@@ -103,8 +103,8 @@ let ensureIdentitySeedData (serviceProvider: IServiceProvider) =
                     printfn "Added %s user to Admin role" username
         }
     let roleNames = seq {
-        "Admin"
-        "Onboarder"
+        GenericModels.AdminRole
+        GenericModels.OnboarderRole
     }
     for roleName in roleNames do
         ensureRoleExists roleName |> ignore
