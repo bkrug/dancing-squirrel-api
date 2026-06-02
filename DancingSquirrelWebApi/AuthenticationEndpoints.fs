@@ -79,13 +79,5 @@ let loginCheck : HttpHandler =
             getHttpRecordResponse transformedResult ctx
         )
 
-let adminCheck : HttpHandler =
-    let handleAuthInRole : HttpHandler =
-        Response.ofPlainText "hello admin"
-
-    let rolesAllowed = [ "Admin" ]
-
-    Request.ifAuthenticatedInRole authScheme rolesAllowed handleAuthInRole
-
 let notAuthorized : HttpHandler =
     Response.withStatusCode 401 >> Response.ofPlainText "you are not authorized"

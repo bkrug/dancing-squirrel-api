@@ -83,7 +83,6 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.acceptsType typeof<LoginModel>
             delete "/api/authentication" (logoutUser identityWrap.LogoutUserAsync)
             get "/api/authentication" loginCheck
-            get "/api/authorization/admin" adminCheck
             get "/api/notauthorized" notAuthorized
         ]
     endpoints
