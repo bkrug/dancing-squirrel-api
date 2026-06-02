@@ -1,7 +1,6 @@
 module Registration.Endpoints
 
 open System.Collections.Generic
-open System.Text.Json
 open Falco
 open Microsoft.AspNetCore.Identity
 open GenericModels
@@ -236,21 +235,30 @@ let deleteUser (queries: IUserAuthorizationWrapper) =
             }
         )
 
+let getUserInternal (queries: IUserAuthorizationWrapper) (userId: string) ctx =
+    task {
+        let! viewModelResult =
+            queries.GetUserAsync userId
+            |> TaskResult.bind (fun user -> task {
+                let! roleNames = queries.GetRoleAsync user
+                return Ok (mapToViewUserModel user roleNames)
+            })
+        let httpResponse = getHttpRecordResponse viewModelResult
+        return! httpResponse ctx
+    } 
+
 let getUserHandler (queries: IUserAuthorizationWrapper) =
     Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
-                let! viewModelResult =
-                    queries.GetUserAsync userId
-                    |> TaskResult.bind (fun user -> task {
-                        let! roleNames = queries.GetRoleAsync user
-                        return Ok (mapToViewUserModel user roleNames)
-                    })
-                let httpResponse = getHttpRecordResponse viewModelResult
-                return! httpResponse ctx
+                return! getUserInternal queries userId ctx
             }
         )
+
+let getSelfHandler (queries: IUserAuthorizationWrapper) =
+    Auth.getCurrentUserId
+        (fun userId ctx -> getUserInternal queries userId ctx)
 
 let getUsers (queries: IUserAuthorizationWrapper) =
     Auth.processAuthorizedRequest roles

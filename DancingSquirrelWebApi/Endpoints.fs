@@ -58,8 +58,14 @@ let getEndpoints (wApp : WebApplication) =
             put "/api/user/self" (editSelfHandler identityWrap)
                 |> OpenApi.acceptsType typeof<EditUserModel>
             put "/api/user/{userId}" (editUserHandler identityWrap)
+                |> OpenApi.route [
+                    { Name = "userId"; Type = typeof<string>; Required = true }
+                ]
                 |> OpenApi.acceptsType typeof<EditUserModel>
             put "/api/user/{userId}/role" (editUserRolesHandler identityWrap)
+                |> OpenApi.route [
+                    { Name = "userId"; Type = typeof<string>; Required = true }
+                ]
                 |> OpenApi.acceptsType typeof<seq<RoleModel>>
             post "/api/user/{userId}/unlock" (unlockUser identityWrap)
                 |> OpenApi.route [
@@ -69,6 +75,7 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }
                 ]
+            get "/api/user/self" (getSelfHandler identityWrap)
             get "/api/user/{userId}" (getUserHandler identityWrap)
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }
