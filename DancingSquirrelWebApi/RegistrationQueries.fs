@@ -125,7 +125,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
         member _.GetRoleAsync user =
             task { return! userManager.GetRolesAsync(user) }
 
-        member _.LoginUserAsync (username: string) (password: string) (_isPersistent: bool) (_lockoutOnFailure: bool) =
+        member _.LoginUserAsync (username: string) (password: string) (isPersistent: bool) (lockoutOnFailure: bool) =
             task {
                 let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
                 let! user = signInManager.UserManager.FindByNameAsync(username)
@@ -134,9 +134,13 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     let roles: IList<string> = List<string> []
                     return false, user, roles
                 else
-                    let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
-                    let! roles = signInManager.UserManager.GetRolesAsync(user)
-                    return isCorrectPassword, user, roles
+                    //let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
+                    let! signinResult = signInManager.PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure)
+                    let! roles =
+                        match signinResult.Succeeded with
+                        | true -> signInManager.UserManager.GetRolesAsync(user)
+                        | false -> Task.FromResult(new List<string>())
+                    return signinResult.Succeeded, user, roles
             }
 
         member _.LogoutUserAsync = fun () ->

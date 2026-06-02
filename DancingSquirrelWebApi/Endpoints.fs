@@ -79,10 +79,10 @@ let getEndpoints (wApp : WebApplication) =
             get "api/role" (getRoles identityWrap)
 
             //Authentication
-            post "/api/authentication" (loginUserWithClaimsHandler identityWrap.LoginUserAsync)
+            post "/api/authentication" (loginUserWithClaimsHandler identityWrap)
                 |> OpenApi.acceptsType typeof<LoginModel>
             delete "/api/authentication" (logoutUser identityWrap.LogoutUserAsync)
-            get "/api/authentication" loginCheck
+            get "/api/authentication" getCurrentUserRoles
             get "/api/notauthorized" notAuthorized
         ]
     endpoints

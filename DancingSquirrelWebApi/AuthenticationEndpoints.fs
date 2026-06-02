@@ -36,12 +36,14 @@ let private getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>
 
     new ClaimsPrincipal(claimsIdentity)
 
-let loginUserWithClaimsHandler (loginUserAsync : string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>): HttpHandler = fun ctx ->
+let loginUserWithClaimsHandler (queries: IUserAuthorizationWrapper): HttpHandler = fun ctx ->
     task {
         let! jsonString = Request.getBodyString ctx
         let loginData = JsonSerializer.Deserialize<LoginModel>(jsonString, defaultJsonOptions)
 
-        let! isCorrectPassword, user, roles = loginUserAsync loginData.Username loginData.Password false false
+        let rememberMe = false
+        let lockoutOnFailure = true
+        let! isCorrectPassword, user, roles = queries.LoginUserAsync loginData.Username loginData.Password rememberMe lockoutOnFailure
 
         let httpResponse =
             match isCorrectPassword with
@@ -69,7 +71,7 @@ let logoutUser (logoutUserAsync : unit -> Task<unit>) =
             }
         )
 
-let loginCheck : HttpHandler =
+let getCurrentUserRoles : HttpHandler =
     Auth.getCurrentUserRoles
         (fun roleNameResult ctx ->
             let transformedResult =
