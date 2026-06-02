@@ -48,3 +48,19 @@ let processAuthorizedRequest (rolesAllowed : list<string>) (requestLogic : HttpH
     task {
         do! ifAuthenticatedInRole authScheme rolesAllowed requestLogic ctx
     }
+
+let getCurrentUserRoles (handleOk : Result<seq<string>, unit> -> HttpHandler) : HttpHandler =
+    Request.authenticate authScheme (fun authenticateResult ctx ->
+        match authenticateResult.Succeeded with
+        | true ->
+            let roles =
+                if isNull authenticateResult.Principal = false then
+                    authenticateResult.Principal.Claims
+                    |> Seq.filter (fun c -> c.Type = System.Security.Claims.ClaimTypes.Role)
+                    |> Seq.map (fun c -> c.Value)
+                else
+                    Seq.empty
+            handleOk (Ok roles) ctx
+        | false ->
+            handleOk (Error()) ctx
+    )

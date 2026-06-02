@@ -9,6 +9,8 @@ open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Identity
 open GenericModels
+open Registration.Queries
+open Registration.Models
 
 type LoginModel =
     {
@@ -67,11 +69,15 @@ let logoutUser (logoutUserAsync : unit -> Task<unit>) =
             }
         )
 
-let loginCheck =
-    Auth.processAuthenticatedRequest
-        (
-            Response.ofPlainText "hello authenticated user"
-        ) : HttpHandler
+let loginCheck : HttpHandler =
+    Auth.getCurrentUserRoles
+        (fun roleNameResult ctx ->
+            let transformedResult =
+                match roleNameResult with
+                | Ok roleNames -> Ok ({ Roles = roleNames |> Seq.map (fun rn -> { Name = rn }) } : RoleEditingModel)
+                | Error _ -> Error(getGenericValidationFailure "not authenticated")
+            getHttpRecordResponse transformedResult ctx
+        )
 
 let adminCheck : HttpHandler =
     let handleAuthInRole : HttpHandler =
