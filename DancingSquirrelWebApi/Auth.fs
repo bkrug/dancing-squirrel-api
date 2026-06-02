@@ -49,7 +49,7 @@ let processAuthorizedRequest (rolesAllowed : list<string>) (requestLogic : HttpH
         do! ifAuthenticatedInRole authScheme rolesAllowed requestLogic ctx
     }
 
-let getCurrentUserRoles (handleOk : Result<seq<string>, unit> -> HttpHandler) : HttpHandler =
+let getCurrentUserRoles (requestLogic : Result<seq<string>, unit> -> HttpHandler) : HttpHandler =
     Request.authenticate authScheme (fun authenticateResult ctx ->
         match authenticateResult.Succeeded with
         | true ->
@@ -60,7 +60,7 @@ let getCurrentUserRoles (handleOk : Result<seq<string>, unit> -> HttpHandler) : 
                     |> Seq.map (fun c -> c.Value)
                 else
                     Seq.empty
-            handleOk (Ok roles) ctx
+            requestLogic (Ok roles) ctx
         | false ->
-            handleOk (Error()) ctx
+            requestLogic (Error()) ctx
     )
