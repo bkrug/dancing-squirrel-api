@@ -30,8 +30,8 @@ let ifAuthenticatedInRole
     (handleOk : HttpHandler) : HttpHandler =
     Request.authenticate authScheme (fun authenticateResult ctx ->
         let isInRole = authenticateResult.Succeeded && isNull authenticateResult.Principal = false && Seq.exists authenticateResult.Principal.IsInRole roles
-        match authenticateResult.Succeeded, isInRole with
-        | true, true ->
+        match isInRole with
+        | true ->
             handleOk ctx
         | _ ->
             ctx.ForbidAsync())
