@@ -64,3 +64,22 @@ let getCurrentUserRoles (requestLogic : Result<seq<string>, unit> -> HttpHandler
         | false ->
             requestLogic (Error()) ctx
     )
+
+let getCurrentUserId (requestLogic : string -> HttpHandler) : HttpHandler =
+    Request.authenticate authScheme (fun authenticateResult ctx ->
+        let foundUserId =
+            if authenticateResult.Succeeded && isNull authenticateResult.Principal = false then
+                authenticateResult.Principal.Claims
+                |> Seq.filter (fun c -> c.Type = System.Security.Claims.ClaimTypes.NameIdentifier)
+                |> Seq.map (fun c -> c.Value)
+                |> Seq.tryHead
+            else
+                None
+        match foundUserId with
+        | None ->
+            ctx.ForbidAsync()
+        | Some null ->
+            ctx.ForbidAsync()
+        | Some userId ->
+            requestLogic userId ctx
+    )

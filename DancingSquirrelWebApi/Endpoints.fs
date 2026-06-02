@@ -55,6 +55,8 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.acceptsType typeof<CreateUserModel>
             post "/api/user" (registerNewUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<CreateUserModel>
+            put "/api/user/self" (editSelfHandler identityWrap)
+                |> OpenApi.acceptsType typeof<EditUserModel>
             put "/api/user/{userId}" (editUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<EditUserModel>
             put "/api/user/{userId}/role" (editUserRolesHandler identityWrap)

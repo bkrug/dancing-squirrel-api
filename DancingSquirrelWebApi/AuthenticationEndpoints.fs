@@ -28,6 +28,7 @@ let private getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>
         seq {
             new Claim(ClaimTypes.Name, identityUser.UserName);
             new Claim(ClaimTypes.Email, identityUser.Email);
+            new Claim(ClaimTypes.NameIdentifier, identityUser.Id)
         }
         |> Seq.append roleClaims
 

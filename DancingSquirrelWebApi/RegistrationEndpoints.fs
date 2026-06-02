@@ -164,6 +164,16 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
                 })            
     }
 
+let private editUserInternal (queries: IUserAuthorizationWrapper) (userId: string) ctx =
+    task {
+        let! editData = getModelFromRequestBody<EditUserModel> ctx
+        let! editResult =
+            validateEditUserModel editData
+            |> TaskResult.bindToTask (fun _ -> getExistingUserRecord queries userId)
+            |> TaskResult.bind (editUserFields queries editData)
+        return! getFormEditResponse editResult ctx
+    }
+
 //TODO: This needs a more complicated authorization check.
 //In order to call this, the user must either be an Admin, or the user must be editing their own data
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
@@ -171,14 +181,13 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
-                let! editData = getModelFromRequestBody<EditUserModel> ctx
-                let! editResult =
-                    validateEditUserModel editData
-                    |> TaskResult.bindToTask (fun _ -> getExistingUserRecord queries userId)
-                    |> TaskResult.bind (editUserFields queries editData)
-                return! getFormEditResponse editResult ctx
+                return! editUserInternal queries userId ctx
             }
         )
+
+let editSelfHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
+    Auth.getCurrentUserId
+        (fun userId ctx -> editUserInternal queries userId ctx)
 
 let private updateUserRolesAsync (queries: IUserAuthorizationWrapper) (requestedRoles: seq<string>) (user: IdentityUser) =
     task {

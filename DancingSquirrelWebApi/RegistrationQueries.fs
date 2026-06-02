@@ -134,7 +134,6 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     let roles: IList<string> = List<string> []
                     return false, user, roles
                 else
-                    //let! isCorrectPassword = signInManager.UserManager.CheckPasswordAsync(user, password)
                     let! signinResult = signInManager.PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure)
                     let! roles =
                         match signinResult.Succeeded with
