@@ -76,7 +76,7 @@ let getEndpoints (wApp : WebApplication) =
                     { Name = "page"; Type = typeof<int64>; Required = false }
                     { Name = "length"; Type = typeof<int64>; Required = false }
                 ]
-            get "api/role" (getRoles identityWrap)
+            get "api/role" (getAllRoles identityWrap)
 
             //Authentication
             post "/api/authentication" (loginUserWithClaimsHandler identityWrap)

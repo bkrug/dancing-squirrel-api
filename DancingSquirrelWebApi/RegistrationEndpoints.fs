@@ -258,7 +258,7 @@ let getUsers (queries: IUserAuthorizationWrapper) =
             }
         )
 
-let getRoles (queries: IUserAuthorizationWrapper) =
+let getAllRoles (queries: IUserAuthorizationWrapper) =
     Auth.processAuthorizedRequest roles
         (fun ctx ->
             let roleNames = queries.SelectAllRoles |> Seq.map (fun r -> r.Name) |> Seq.toList
