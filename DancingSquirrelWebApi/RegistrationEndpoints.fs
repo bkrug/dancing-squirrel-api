@@ -220,13 +220,13 @@ let resetUserPassword (queries: IUserAuthorizationWrapper) =
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
                 let! passwordResetData = getModelFromRequestBody<PasswordResetModel> ctx
-                let! unlockResult = queries.UnlockUserAsync userId passwordResetData.Password
+                let! unlockResult = queries.UnlockUserAsync userId passwordResetData.NewPassword
                 let formResult =
                     match unlockResult with
                     | Ok _ -> Ok getGenericSuccess
                     | Error failureModel -> Error (getGenericValidationFailure
                         {
-                            Password = failureModel.ValidationFailures |?? lazy ""
+                            NewPassword = failureModel.ValidationFailures |?? lazy ""
                         })
                 let httpResponse = getFormEditResponse formResult
                 return! httpResponse ctx

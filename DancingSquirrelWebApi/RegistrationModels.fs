@@ -9,15 +9,15 @@ type CreateUserModel =
         PhoneNumber: string
     }
 
+type PasswordResetModel =
+    {
+        NewPassword: string
+    }
+
 type OwnPasswordResetModel =
     {
         OldPassword: string
         NewPassword: string
-    }
-
-type PasswordResetModel =
-    {
-        Password: string
     }
 
 type EditUserModel =
