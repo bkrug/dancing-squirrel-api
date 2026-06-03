@@ -51,6 +51,18 @@ let getEndpoints (wApp : WebApplication) =
                 ]
 
             //User Management
+            get "api/user" (getUsers identityWrap)
+                |> OpenApi.query [
+                    { Name = "page"; Type = typeof<int64>; Required = false }
+                    { Name = "length"; Type = typeof<int64>; Required = false }
+                ]
+            get "/api/user/self" (getSelfHandler identityWrap)
+            get "/api/user/{userId}" (getUserHandler identityWrap)
+                |> OpenApi.route [
+                    { Name = "userId"; Type = typeof<string>; Required = true }
+                ]
+                |> OpenApi.acceptsType typeof<EditUserModel>
+            get "api/role" (getAllRoles identityWrap)
             post "/api/firstuser" (registerFirstUserHandler identityWrap)
                 |> OpenApi.acceptsType typeof<CreateUserModel>
             post "/api/user" (registerNewUserHandler identityWrap)
@@ -67,25 +79,17 @@ let getEndpoints (wApp : WebApplication) =
                     { Name = "userId"; Type = typeof<string>; Required = true }
                 ]
                 |> OpenApi.acceptsType typeof<seq<RoleModel>>
-            post "/api/user/{userId}/unlock" (unlockUser identityWrap)
+            post "/api/user/self/password" (resetOwnPassword identityWrap)
+                |> OpenApi.acceptsType typeof<OwnPasswordResetModel>
+            post "/api/user/{userId}/password" (resetUserPassword identityWrap)
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }
                 ]
+                |> OpenApi.acceptsType typeof<PasswordResetModel>
             delete "/api/user/{userId}" (deleteUser identityWrap)
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }
                 ]
-            get "/api/user/self" (getSelfHandler identityWrap)
-            get "/api/user/{userId}" (getUserHandler identityWrap)
-                |> OpenApi.route [
-                    { Name = "userId"; Type = typeof<string>; Required = true }
-                ]
-            get "api/user" (getUsers identityWrap)
-                |> OpenApi.query [
-                    { Name = "page"; Type = typeof<int64>; Required = false }
-                    { Name = "length"; Type = typeof<int64>; Required = false }
-                ]
-            get "api/role" (getAllRoles identityWrap)
 
             //Authentication
             post "/api/authentication" (loginUserWithClaimsHandler identityWrap)

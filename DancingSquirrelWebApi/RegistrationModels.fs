@@ -9,7 +9,13 @@ type CreateUserModel =
         PhoneNumber: string
     }
 
-type UnlockUserModel =
+type OwnPasswordResetModel =
+    {
+        OldPassword: string
+        NewPassword: string
+    }
+
+type PasswordResetModel =
     {
         Password: string
     }

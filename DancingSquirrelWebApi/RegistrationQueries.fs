@@ -23,6 +23,7 @@ type IUserAuthorizationWrapper =
 
     abstract member LoginUserAsync: string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>
     abstract member LogoutUserAsync: (unit -> Task<unit>)
+    abstract member CheckPasswordAsync: string -> string -> Task<bool>
     abstract member UnlockUserAsync: string -> string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
 
 type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
@@ -147,6 +148,16 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
                 return! signInManager.SignOutAsync()
             }
+
+        member _.CheckPasswordAsync (userId: string) (password: string) =
+            task {
+                let signInManager = scope.ServiceProvider.GetService<SignInManager<IdentityUser>>()
+                let! user = signInManager.UserManager.FindByIdAsync(userId)
+                if user = null then
+                    return false
+                else
+                    return! signInManager.UserManager.CheckPasswordAsync(user, password)
+            }            
 
         member _.UnlockUserAsync (userId: string) (newPassword: string) =
             task {

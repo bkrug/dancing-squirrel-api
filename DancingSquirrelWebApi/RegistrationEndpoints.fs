@@ -1,10 +1,11 @@
 module Registration.Endpoints
 
 open System.Collections.Generic
+open System.Threading.Tasks
 open Falco
-open Microsoft.AspNetCore.Identity
 open GenericModels
 open Global
+open Microsoft.AspNetCore.Identity
 open Registration.Models
 open Registration.Queries
 open ValidationStandards
@@ -213,13 +214,28 @@ let editUserRolesHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
             }
         )
 
-let unlockUser (queries: IUserAuthorizationWrapper) =
+let resetUserPassword (queries: IUserAuthorizationWrapper) =
     Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
                 let userId = (Request.getRoute ctx).GetString "userId"
-                let! unlockData = getModelFromRequestBody<UnlockUserModel> ctx
-                let! unlockResult = queries.UnlockUserAsync userId unlockData.Password
+                let! passwordResetData = getModelFromRequestBody<PasswordResetModel> ctx
+                let! unlockResult = queries.UnlockUserAsync userId passwordResetData.Password
+                let httpResponse = getHttpRecordResponse unlockResult
+                return! httpResponse ctx
+            }
+        )
+
+let resetOwnPassword (queries: IUserAuthorizationWrapper) =
+    Auth.getCurrentUserId
+        (fun userId ctx ->
+            task {
+                let! passwordResetData = getModelFromRequestBody<OwnPasswordResetModel> ctx
+                let! isOldPasswordCorrect = queries.CheckPasswordAsync userId passwordResetData.OldPassword
+                let! unlockResult =
+                    if isOldPasswordCorrect
+                    then queries.UnlockUserAsync userId passwordResetData.NewPassword
+                    else Task.FromResult(Error notFoundResponse)
                 let httpResponse = getHttpRecordResponse unlockResult
                 return! httpResponse ctx
             }
