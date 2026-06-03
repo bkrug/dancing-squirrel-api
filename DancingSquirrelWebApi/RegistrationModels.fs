@@ -1,31 +1,5 @@
 module Registration.Models
 
-type CreateUserModel = 
-    {
-        Username: string
-        //TODO: Better practice is to generate a one-time password upon creation. Not accept one from the user.
-        Password : string
-        Email : string
-        PhoneNumber: string
-    }
-
-type PasswordResetModel =
-    {
-        NewPassword: string
-    }
-
-type OwnPasswordResetModel =
-    {
-        OldPassword: string
-        NewPassword: string
-    }
-
-type EditUserModel =
-    {
-        Email: string
-        PhoneNumber: string
-    }
-
 type RoleModel =
     {
         Name: string
@@ -47,7 +21,34 @@ type GridUserModel =
         Email: string
     }
 
+type CreateUserModel = 
+    {
+        Username: string
+        //TODO: Better practice is to generate a one-time password upon creation. Not accept one from the user.
+        Password : string
+        Email : string
+        PhoneNumber: string
+    }
+
+type EditUserModel =
+    {
+        Email: string
+        PhoneNumber: string
+    }
+
 type RoleEditingModel =
     {
         Roles: seq<RoleModel>
     }
+
+type PasswordResetModel =
+    {
+        NewPassword: string
+    }
+
+type OwnPasswordResetModel =
+    {
+        OldPassword: string
+        NewPassword: string
+    }
+
