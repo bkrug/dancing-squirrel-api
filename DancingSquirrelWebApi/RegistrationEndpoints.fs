@@ -4,6 +4,7 @@ open System.Collections.Generic
 open Falco
 open Microsoft.AspNetCore.Identity
 open GenericModels
+open Global
 open Registration.Models
 open Registration.Queries
 open ValidationStandards
@@ -26,7 +27,7 @@ let private mapToGridUserModel (user: IdentityUser) : GridUserModel =
     { UserId = user.Id; Username = user.UserName; Email = user.Email }
 
 let private flattenIdentityError (identityError: GenericModelResponse<seq<IdentityError>>) =
-    match identityError.ValidationFailures with | None -> Seq.empty | Some s -> s
+    identityError.ValidationFailures |?? lazy Seq.empty
     |> Seq.map (fun vFail -> vFail.Description)
     |> String.concat ", "
 
@@ -143,7 +144,7 @@ let private getExistingUserRecord (queries: IUserAuthorizationWrapper) (userId:s
             | Ok identityUser -> Ok identityUser
             | Error genericModelWithString ->
                 Error (getGenericValidationFailure {
-                    PhoneNumber = match genericModelWithString.ValidationFailures with | None -> System.String.Empty | failMsg -> failMsg.Value
+                    PhoneNumber = genericModelWithString.ValidationFailures |?? lazy System.String.Empty
                     Email = System.String.Empty
                 })            
     }

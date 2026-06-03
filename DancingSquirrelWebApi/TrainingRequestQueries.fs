@@ -2,6 +2,7 @@ module TrainingRequest.Queries
 
 open DbLayer
 open GenericModels
+open Global
 open SqlHydra.Query
 open TrainingRequest.Models
 
@@ -56,8 +57,8 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                                 for p in Database.main.Person do
                                 entity {
                                     PersonId = 0;
-                                    FirstName = match trainingRequest.OwnerFirstName with | None -> "" | Some s -> s;
-                                    LastName = match trainingRequest.OwnerLastName with | None -> "" | Some s -> s;
+                                    FirstName = trainingRequest.OwnerFirstName |?? lazy "";
+                                    LastName = trainingRequest.OwnerLastName |?? lazy "";
                                 }
                                 getId p.PersonId
                             }
@@ -66,7 +67,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                                 for o in Database.main.Organization do
                                 entity {
                                     OrganizationId = 0;
-                                    Name = match trainingRequest.OrganizationName with | None -> "" | Some s -> s;
+                                    Name = trainingRequest.OrganizationName |?? lazy "";
                                 }
                                 getId o.OrganizationId
                             }

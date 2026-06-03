@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Debugging.fs" />
+    <Compile Include="Global.fs" />
     <Compile Include="TaskResult.fs" />
     <Compile Include="GlobalExceptionHandler.fs" />
     <Compile Include="SecurityDbContext.fs" />
