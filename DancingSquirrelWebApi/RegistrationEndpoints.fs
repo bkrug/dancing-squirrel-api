@@ -221,7 +221,14 @@ let resetUserPassword (queries: IUserAuthorizationWrapper) =
                 let userId = (Request.getRoute ctx).GetString "userId"
                 let! passwordResetData = getModelFromRequestBody<PasswordResetModel> ctx
                 let! unlockResult = queries.UnlockUserAsync userId passwordResetData.Password
-                let httpResponse = getHttpRecordResponse unlockResult
+                let formResult =
+                    match unlockResult with
+                    | Ok _ -> Ok getGenericSuccess
+                    | Error failureModel -> Error (getGenericValidationFailure
+                        {
+                            Password = failureModel.ValidationFailures |?? lazy ""
+                        })
+                let httpResponse = getFormEditResponse formResult
                 return! httpResponse ctx
             }
         )
@@ -233,10 +240,27 @@ let resetOwnPassword (queries: IUserAuthorizationWrapper) =
                 let! passwordResetData = getModelFromRequestBody<OwnPasswordResetModel> ctx
                 let! isOldPasswordCorrect = queries.CheckPasswordAsync userId passwordResetData.OldPassword
                 let! unlockResult =
-                    if isOldPasswordCorrect
-                    then queries.UnlockUserAsync userId passwordResetData.NewPassword
-                    else Task.FromResult(Error notFoundResponse)
-                let httpResponse = getHttpRecordResponse unlockResult
+                    task {
+                        if isOldPasswordCorrect
+                        then
+                            let! unlockResult = queries.UnlockUserAsync userId passwordResetData.NewPassword
+                            return
+                                match unlockResult with
+                                | Ok _ -> Ok getGenericSuccess
+                                | Error failureModel -> Error (getGenericValidationFailure
+                                    {
+                                        OldPassword = ""
+                                        NewPassword = failureModel.ValidationFailures |?? lazy ""
+                                    })
+                        else
+                            return
+                                Error (getGenericValidationFailure
+                                    {
+                                        OldPassword = "Password incorrect"
+                                        NewPassword = ""
+                                    })
+                    }
+                let httpResponse = getFormEditResponse unlockResult
                 return! httpResponse ctx
             }
         )

@@ -169,7 +169,8 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                         let! resetToken = userManager.GeneratePasswordResetTokenAsync(user)
                         let! resetResult = userManager.ResetPasswordAsync(user, resetToken, newPassword)
                         if not resetResult.Succeeded then
-                            return Error internalErrorResponse
+                            let failMsg = resetResult.Errors |> Seq.map (fun err -> err.Description) |> String.concat System.Environment.NewLine
+                            return Error (getGenericValidationFailure failMsg)
                         else
                             let! _ = userManager.ResetAccessFailedCountAsync(user)
                             let! _ = userManager.SetLockoutEndDateAsync(user, System.Nullable<System.DateTimeOffset>())
