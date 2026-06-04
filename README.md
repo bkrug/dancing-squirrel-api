@@ -18,15 +18,9 @@ The databases are not stored in the repo, so create the database using the DDL i
 (https://www.codegenes.net/blog/how-to-create-a-db-file-in-sqlite3-using-a-schema-file/)
 
 ```
-sqlite3 ./Database/DancingSquirrel.db
-(This takes you into the sqlite3 program)
-.read ./Database/schemaDancingSquirrel.sql
-.read ./Database/insertTestData.sql
-^Z
-
-sqlite3 ./Database/Security.db
-.read ./Database/schemaSecurity.sql
-^Z
+sqlite3 ./Database/DancingSquirrel.db < ./Database/schemaDancingSquirrel.sql
+sqlite3 ./Database/DancingSquirrel.db < ./Database/insertTestData.sql
+sqlite3 ./Database/Security.db < ./Database/schemaSecurity.sql
 
 dotnet run --project DancingSquirrelWebApi
 ```

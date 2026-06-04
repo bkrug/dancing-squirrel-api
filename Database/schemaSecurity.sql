@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS "AspNetRoleClaims" (
     "ClaimValue" TEXT NULL,
     CONSTRAINT "FK_AspNetRoleClaims_AspNetRoles_RoleId" FOREIGN KEY ("RoleId") REFERENCES "AspNetRoles" ("Id") ON DELETE CASCADE
 );
-CREATE TABLE sqlite_sequence(name,seq);
 CREATE TABLE IF NOT EXISTS "AspNetUserClaims" (
     "Id" INTEGER NOT NULL CONSTRAINT "PK_AspNetUserClaims" PRIMARY KEY AUTOINCREMENT,
     "UserId" TEXT NOT NULL,
