@@ -11,6 +11,28 @@ docker pull krugee/dancing-squirrel-api
 docker compose up
 ```
 
+The Security database will initialy have no users in it.
+The 'firstuser' endpoint will only work when the database is in that initial state, and will create an admin user.
+```
+curl -X 'POST' \
+  'http://localhost:5626/api/firstuser' \
+  -H 'accept: */*' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "username": "some-username",
+  "password": "some-password",
+  "email": "example@example.com",
+  "phoneNumber": "212-555-1234"
+}'
+```
+
+After that you should be able to log in to the user interface.
+
+Backend:   http://localhost:5626
+Frontend:  http://localhost:3626
+
+After logging in as that Admin user, consider adding a user with the "Onboarder" role. Then Log out and log back in.
+
 # Initial Setup without Docker
 
 This repo expects SQLite databases at path /Database/*.db
