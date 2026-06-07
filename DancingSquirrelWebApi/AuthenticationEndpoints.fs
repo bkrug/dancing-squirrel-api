@@ -58,7 +58,8 @@ let loginUserWithClaimsHandler (queries: IUserAuthorizationWrapper): HttpHandler
                     )
                     Response.signInOptions authScheme claimsPrincipal authProperties
                 | false ->
-                    Response.withStatusCode 401 >> Response.ofJson "TODO - failure to authenticate"
+                    let loginValidationFailures = { Username = ""; Password = "Incorrect Password" }
+                    Response.withStatusCode 401 >> getFormEditResponse (Error (getGenericValidationFailure loginValidationFailures))
         
         return! httpResponse ctx
     }
