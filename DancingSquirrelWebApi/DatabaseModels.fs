@@ -23,6 +23,26 @@ module main =
     let DanceTypeTeacher = table<DanceTypeTeacher>
 
     [<CLIMutable>]
+    type DefaultAvailability =
+        { DefaultAvailabilityId: int64
+          TeacherId: int64
+          DayOfWeek: int64
+          StartTimeUnix: int64
+          EndTimeUnix: int64 }
+
+    let DefaultAvailability = table<DefaultAvailability>
+
+    [<CLIMutable>]
+    type EventInstance =
+        { EventInstanceId: int64
+          RecurringEventId: int64
+          Canceled: bool
+          StartDateTimeUnix: int64
+          EndDateTimeUnix: int64 }
+
+    let EventInstance = table<EventInstance>
+
+    [<CLIMutable>]
     type Organization = { OrganizationId: int64; Name: string }
 
     let Organization = table<Organization>
@@ -34,6 +54,33 @@ module main =
           FirstName: string }
 
     let Person = table<Person>
+
+    [<CLIMutable>]
+    type RecurringEvent =
+        { RecurringEventId: int64
+          RecurrenceType: int64
+          Description: string
+          DaysOfWeek: Option<int64>
+          StartDateUnix: int64
+          EndDateUnix: Option<int64>
+          StartTimeUnix: int64
+          EndTimeUnix: int64 }
+
+    let RecurringEvent = table<RecurringEvent>
+
+    [<CLIMutable>]
+    type RecurringEventSquirrel =
+        { RecurringEventId: int64
+          SquirrelId: int64 }
+
+    let RecurringEventSquirrel = table<RecurringEventSquirrel>
+
+    [<CLIMutable>]
+    type RecurringEventTeacher =
+        { RecurringEventId: int64
+          TeacherId: int64 }
+
+    let RecurringEventTeacher = table<RecurringEventTeacher>
 
     [<CLIMutable>]
     type Squirrel =

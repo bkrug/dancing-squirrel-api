@@ -68,3 +68,50 @@ CREATE TABLE SquirrelTeacher (
 	CONSTRAINT FK_SquirrelTeacher_Squirrel FOREIGN KEY (SquirrelId) REFERENCES Squirrel(SquirrelId),
 	CONSTRAINT FK_SquirrelTeacher_Teacher FOREIGN KEY (TeacherId) REFERENCES Teacher(TeacherId)
 );
+CREATE TABLE DefaultAvailability (
+	DefaultAvailabilityId INTEGER NOT NULL,
+	TeacherId INTEGER NOT NULL,
+	DayOfWeek INTEGER NOT NULL,
+	StartTimeUnix INTEGER NOT NULL,
+	EndTimeUnix INTEGER NOT NULL,
+	CONSTRAINT PK_DefaultAvailability PRIMARY KEY (DefaultAvailabilityId),
+	CONSTRAINT FK_DefaultAvailability_Teacher FOREIGN KEY (TeacherId) REFERENCES Teacher(TeacherId)
+);
+CREATE INDEX DefaultAvailability_TeacherId_IDX ON DefaultAvailability (TeacherId);
+CREATE TABLE RecurringEvent (
+	RecurringEventId INTEGER NOT NULL,
+	RecurrenceType INTEGER NOT NULL, -- 0 = None (single lesson), 1 = Weekly, etc.
+	Description TEXT NOT NULL,
+	DaysOfWeek INTEGER, -- NULL when RecurrenceType = None
+	StartDateUnix INTEGER NOT NULL, -- Date of event if non-recurring, or first date of a recurring class
+	EndDateUnix INTEGER,  -- Last date of a recurring class
+	StartTimeUnix INTEGER NOT NULL, -- default start time for a lesson
+	EndTimeUnix INTEGER NOT NULL, -- default end time for a lesson
+	CONSTRAINT PK_RecurringEvent PRIMARY KEY (RecurringEventId)
+);
+CREATE TABLE EventInstance (
+    EventInstanceId INTEGER NOT NULL,
+	RecurringEventId INTEGER NOT NULL,
+	Canceled BIT NOT NULL,
+	StartDateTimeUnix INTEGER NOT NULL,
+	EndDateTimeUnix INTEGER NOT NULL,
+	CONSTRAINT PK_EventInstance PRIMARY KEY (EventInstanceId),
+	CONSTRAINT FK_EventInstance_RecurringEvent FOREIGN KEY (RecurringEventId) REFERENCES RecurringEvent(RecurringEventId)
+);
+CREATE INDEX EventInstance_RecurringEventId_IDX ON EventInstance (RecurringEventId);
+CREATE TABLE RecurringEventTeacher (
+	RecurringEventId INTEGER NOT NULL,
+	TeacherId INTEGER NOT NULL,
+	CONSTRAINT PK_RecurringEventTeacher PRIMARY KEY (RecurringEventId, TeacherId),
+	CONSTRAINT FK_RecurringEventTeacher_RecurringEvent FOREIGN KEY (RecurringEventId) REFERENCES RecurringEvent(RecurringEventId),
+	CONSTRAINT FK_RecurringEventTeacher_Teacher FOREIGN KEY (TeacherId) REFERENCES Teacher(TeacherId)
+);
+CREATE INDEX RecurringEventTeacher_TeacherId_IDX ON RecurringEventTeacher (TeacherId);
+CREATE TABLE RecurringEventSquirrel (
+	RecurringEventId INTEGER NOT NULL,
+	SquirrelId INTEGER NOT NULL,
+	CONSTRAINT PK_RecurringEventSquirrel PRIMARY KEY (RecurringEventId, SquirrelId),
+	CONSTRAINT FK_RecurringEventSquirrel_RecurringEvent FOREIGN KEY (RecurringEventId) REFERENCES RecurringEvent(RecurringEventId),
+	CONSTRAINT FK_RecurringEventSquirrel_Squirrel FOREIGN KEY (SquirrelId) REFERENCES Squirrel(SquirrelId)
+);
+CREATE INDEX RecurringEventSquirrel_SquirrelId_IDX ON RecurringEventSquirrel (SquirrelId);
