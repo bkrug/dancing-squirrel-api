@@ -91,6 +91,8 @@ let getEndpoints (wApp : WebApplication) =
                     { Name = "userId"; Type = typeof<string>; Required = true }
                 ]
 
+            //Calendar
+
             //Authentication
             post "/api/authentication" (loginUserWithClaimsHandler identityWrap)
                 |> OpenApi.acceptsType typeof<LoginModel>

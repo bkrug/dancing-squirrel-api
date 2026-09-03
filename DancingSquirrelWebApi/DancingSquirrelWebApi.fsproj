@@ -24,7 +24,7 @@
     <Compile Include="TrainingRequestEndpoints.fs" />
     <Compile Include="DanceTypeModels.fs" />
     <Compile Include="DanceTypeQueries.fs" />
-    <Compile Include="DanceTypeEndpoints.fs" />
+    <Compile Include="DanceTypeEndpoints.fs" /><Compile Include="CalendarModels.fs" />
     <Compile Include="AspNetIdentityCoreExtensions.fs" />
     <Compile Include="Endpoints.fs" />
     <Compile Include="Program.fs" />
