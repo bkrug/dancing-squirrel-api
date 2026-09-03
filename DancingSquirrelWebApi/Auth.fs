@@ -5,6 +5,8 @@ open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Authentication
 
 #region CopyOfFalcoCode
+/// TODO: When a Falco version > 5.2.0 is released, we can probably delete this region.
+/// 
 /// This code is slightly altered from the Falco source in order to avoid a null-reference error.
 /// The original code checked "authenticateResult.Prinicipal.IsInRole" when users were not authenticated at all.
 /// 
