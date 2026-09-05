@@ -1,4 +1,4 @@
-module DanceType.Models
+module DanceCategories.Models
 
 open System.Threading.Tasks
 open GenericModels

@@ -2,8 +2,8 @@ module ValidateOnboardingRequestTests
 
 open GenericModels
 open Shouldly
-open TrainingRequest.Endpoints
-open TrainingRequest.Models
+open Onboarding.Endpoints
+open Onboarding.Models
 open Xunit
 open DbLayer.Database
 

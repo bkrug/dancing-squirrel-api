@@ -1,8 +1,8 @@
-module DanceType.Endpoints
+module DanceCategories.Endpoints
 
 open Falco
 open GenericModels
-open DanceType.Queries
+open DanceCategories.Queries
 
 let private roles = [OnboarderRole]
 

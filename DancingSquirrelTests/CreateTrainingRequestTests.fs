@@ -4,8 +4,8 @@ open System.Threading.Tasks
 open Falco
 open GenericModels
 open Shouldly
-open TrainingRequest.Endpoints
-open TrainingRequest.Models
+open Onboarding.Endpoints
+open Onboarding.Models
 open Xunit
 
 [<Fact>]

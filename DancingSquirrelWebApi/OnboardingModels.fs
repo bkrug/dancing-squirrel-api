@@ -1,4 +1,4 @@
-module TrainingRequest.Models
+module Onboarding.Models
 
 open System.Threading.Tasks
 open GenericModels

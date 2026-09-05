@@ -1,27 +1,28 @@
-module TrainingRequest.Queries
+module Onboarding.Queries
 
-open DbLayer
+open DbLayer.Database
+open DbLayer.Database.main
 open GenericModels
 open Global
 open SqlHydra.Query
 open System.Threading.Tasks
-open TrainingRequest.Models
+open Onboarding.Models
 
 type ITrainingRequestQueries =
     abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<TrainingRequestValidation>>>
-    abstract member InsertOnboardedClient: string -> OnboardingRequest -> Database.main.TrainingRequest -> Task<Result<Database.main.TrainingRequest, GenericModelResponse<string>>>
-    abstract member SelectSingleTrainingRequest: int64 -> Task<Result<Database.main.TrainingRequest, GenericModelResponse<string>>>
-    abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<Database.main.TrainingRequest>, GenericModelResponse<string>>>
+    abstract member InsertOnboardedClient: string -> OnboardingRequest -> TrainingRequest -> Task<Result<TrainingRequest, GenericModelResponse<string>>>
+    abstract member SelectSingleTrainingRequest: int64 -> Task<Result<TrainingRequest, GenericModelResponse<string>>>
+    abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<TrainingRequest>, GenericModelResponse<string>>>
     abstract member CountTrainingRequests: Task<Result<int, GenericModelResponse<string>>>
 
-type TrainingRequestQueries(db: Database.QueryContextFactory) =
+type TrainingRequestQueries(db: QueryContextFactory) =
     interface ITrainingRequestQueries with
         member _.InsertTrainingRequest(form: TrainingRequestForm) =
             task {
                 use! context = db.OpenContextAsync()
                 try
                     insertTask context {
-                        for s in Database.main.TrainingRequest do
+                        for s in TrainingRequest do
                         entity {
                             TrainingRequestId = 1;
                             SquirrelName = form.SquirrelName;
@@ -45,7 +46,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                     return Error internalErrorResponse
             }
 
-        member _.InsertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest: Database.main.TrainingRequest) =
+        member _.InsertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest: TrainingRequest) =
             task {
                 use! shared = db.OpenContextAsync()
                 try
@@ -55,7 +56,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                         match caretakerType with
                         | CaretakerType.Person ->
                             insertTask shared {
-                                for p in Database.main.Person do
+                                for p in Person do
                                 entity {
                                     PersonId = 0;
                                     FirstName = trainingRequest.OwnerFirstName |?? lazy "";
@@ -65,7 +66,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                             }
                         | _ ->
                             insertTask shared {
-                                for o in Database.main.Organization do
+                                for o in Organization do
                                 entity {
                                     OrganizationId = 0;
                                     Name = trainingRequest.OrganizationName |?? lazy "";
@@ -74,7 +75,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                             }
                     let! ownerId =
                         insertTask shared {
-                            for so in Database.main.SquirrelOwner do
+                            for so in SquirrelOwner do
                             entity {
                                 SquirrelOwnerId = 0;
                                 PersonId = if caretakerType = CaretakerType.Person then Some personOrOrganizationId else None;
@@ -85,7 +86,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                             getId so.SquirrelOwnerId
                         }
                     let! squirrelId = insertTask shared {
-                        for s in Database.main.Squirrel do
+                        for s in Squirrel do
                         entity {
                             SquirrelId = 0;
                             Name = trainingRequest.SquirrelName;
@@ -96,18 +97,18 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                     let squirrelTeacherEntitites =
                         onboardingRequest.DanceTeachers
                         |> Array.map (fun teacherId ->
-                            let newEntity:Database.main.SquirrelTeacher = {
+                            let newEntity:SquirrelTeacher = {
                                 SquirrelId = squirrelId;
                                 TeacherId = teacherId;
                             }
                             newEntity)
                     insertTask shared {
-                        into Database.main.SquirrelTeacher
+                        into SquirrelTeacher
                         entities squirrelTeacherEntitites
                     } |> ignore
                     let nowUnix = System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeSeconds()
                     let! updateSuccess = updateTask shared {
-                        for tr in Database.main.TrainingRequest do
+                        for tr in TrainingRequest do
                         set tr.SquirrelId (Some squirrelId)
                         set tr.OnboardUsername (Some onboardingUsername)
                         set tr.OnboardingDateTimeUnix (Some nowUnix)
@@ -116,7 +117,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                     match updateSuccess with
                         | 1 ->
                             shared.CommitTransaction()
-                            let updatedRecord : Database.main.TrainingRequest = {
+                            let updatedRecord : TrainingRequest = {
                                 TrainingRequestId = trainingRequest.TrainingRequestId;
                                 SquirrelName = trainingRequest.SquirrelName;
                                 CaretakerType = trainingRequest.CaretakerType;
@@ -147,7 +148,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                 try
                     let! request =
                         selectTask db {
-                            for s in Database.main.TrainingRequest do
+                            for s in TrainingRequest do
                             where (s.TrainingRequestId = recordId)
                             take 2
                         }
@@ -169,7 +170,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                 try
                     let! requests =
                         selectTask db {
-                            for s in Database.main.TrainingRequest do
+                            for s in TrainingRequest do
                             where (s.SquirrelId = None)
                             skip skipNumber
                             take length
@@ -186,7 +187,7 @@ type TrainingRequestQueries(db: Database.QueryContextFactory) =
                 try
                     let! requests =
                         selectTask db {
-                            for s in Database.main.TrainingRequest do
+                            for s in TrainingRequest do
                             where (s.SquirrelId = None)
                             count
                         }

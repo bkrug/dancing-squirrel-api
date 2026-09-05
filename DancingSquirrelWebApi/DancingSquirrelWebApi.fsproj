@@ -19,12 +19,12 @@
     <Compile Include="RegistrationQueries.fs" />
     <Compile Include="RegistrationEndpoints.fs" />
     <Compile Include="AuthenticationEndpoints.fs" />
-    <Compile Include="TrainingRequestModels.fs" />
-    <Compile Include="TrainingRequestQueries.fs" />
-    <Compile Include="TrainingRequestEndpoints.fs" />
-    <Compile Include="DanceTypeModels.fs" />
-    <Compile Include="DanceTypeQueries.fs" />
-    <Compile Include="DanceTypeEndpoints.fs" /><Compile Include="CalendarModels.fs" /><Compile Include="CalendarQueries.f.fs" /><Compile Include="CalendarEndpoints.fs" />
+    <Compile Include="OnboardingModels.fs" />
+    <Compile Include="OnboardingQueries.fs" />
+    <Compile Include="OnboardingEndpoints.fs" />
+    <Compile Include="DanceCategoriesModels.fs" />
+    <Compile Include="DanceCategoriesQueries.fs" />
+    <Compile Include="DanceCategoriesEndpoints.fs" /><Compile Include="CalendarModels.fs" /><Compile Include="CalendarQueries.f.fs" /><Compile Include="CalendarEndpoints.fs" />
     <Compile Include="AspNetIdentityCoreExtensions.fs" />
     <Compile Include="Endpoints.fs" />
     <Compile Include="Program.fs" />

@@ -1,4 +1,4 @@
-module TrainingRequest.Endpoints
+module Onboarding.Endpoints
 
 open DbLayer.Database
 open Falco
@@ -8,8 +8,8 @@ open System.Collections.Generic
 open System.Text.Json
 open System.Text.RegularExpressions
 open System.Threading.Tasks
-open TrainingRequest.Models
-open TrainingRequest.Queries
+open Onboarding.Models
+open Onboarding.Queries
 open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 open ValidationStandards

@@ -1,22 +1,23 @@
-module DanceType.Queries
+module DanceCategories.Queries
 
-open DbLayer
+open DbLayer.Database
+open DbLayer.Database.main
 open GenericModels
 open SqlHydra.Query
 open System.Threading.Tasks
 
 type IDanceTypeQueries =
-    abstract member SelectDanceTypes: Task<Result<seq<Database.main.DanceType>, GenericModelResponse<string>>>
-    abstract member SelectTeachersByDanceType: int64 -> Task<Result<seq<Database.main.Teacher>, GenericModelResponse<string>>>
+    abstract member SelectDanceTypes: Task<Result<seq<DanceType>, GenericModelResponse<string>>>
+    abstract member SelectTeachersByDanceType: int64 -> Task<Result<seq<Teacher>, GenericModelResponse<string>>>
 
-type DanceTypeQueries(db: Database.QueryContextFactory) =
+type DanceTypeQueries(db: QueryContextFactory) =
     interface IDanceTypeQueries with
         member _.SelectDanceTypes =
             task {
                 try
                     let! danceTypes =
                         selectTask db {
-                            for dt in Database.main.DanceType do
+                            for dt in DanceType do
                             select dt
                         }
                     return Ok danceTypes
@@ -31,8 +32,8 @@ type DanceTypeQueries(db: Database.QueryContextFactory) =
                 try
                     let! teachers =
                         selectTask db {
-                            for dtt in Database.main.DanceTypeTeacher do
-                            join t in Database.main.Teacher on (dtt.TeacherId = t.TeacherId)
+                            for dtt in DanceTypeTeacher do
+                            join t in Teacher on (dtt.TeacherId = t.TeacherId)
                             where (dtt.DanceTypeId = danceTypeId)
                             select t
                         }
