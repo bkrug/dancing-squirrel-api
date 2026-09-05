@@ -47,7 +47,3 @@ let getOnboardClientInsertErrorResponse insertError =
     | OnboardClientInsertError.UpdateFailed -> internalErrorResponse
 
 type TrainingRequestFormInserter = TrainingRequestForm -> Task<Result<int64, RecordInsertError>>
-type OnboardedClientInserter<'a> = string -> OnboardingRequest -> main.TrainingRequest -> Task<Result<main.TrainingRequest, GenericModelResponse<'a>>>
-type SingleTrainingRequestSelector = int64 -> Task<Result<main.TrainingRequest, GenericModelResponse<string>>>
-type MultiTrainingRequestSelector<'a> = int -> int -> Task<Result<seq<main.TrainingRequest>, GenericModelResponse<'a>>>
-type TrainingRequestCounter<'a> = Task<Result<int, GenericModelResponse<'a>>>

@@ -22,7 +22,7 @@
     <Compile Include="OnboardingModels.fs" />
     <Compile Include="OnboardingQueries.fs" />
     <Compile Include="OnboardingEndpoints.fs" />
-    <Compile Include="DanceCategoriesModels.fs" />
+    
     <Compile Include="DanceCategoriesQueries.fs" />
     <Compile Include="DanceCategoriesEndpoints.fs" /><Compile Include="CalendarModels.fs" /><Compile Include="CalendarQueries.f.fs" /><Compile Include="CalendarEndpoints.fs" />
     <Compile Include="AspNetIdentityCoreExtensions.fs" />
