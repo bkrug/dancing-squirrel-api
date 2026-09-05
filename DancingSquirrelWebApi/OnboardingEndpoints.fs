@@ -140,7 +140,10 @@ let getSingleTrainingRequest (queries: ITrainingRequestQueries) =
             task {
                 let trainingRequestId = Math.Max(0, (Request.getRoute ctx).GetInt("trainingRequestId"))
                 let! existingTrainingRequest = queries.SelectSingleTrainingRequest trainingRequestId
-                let httpRecordResponse = getHttpRecordResponse existingTrainingRequest
+                let httpRecordResponse =
+                    existingTrainingRequest
+                    |> Result.mapError getRecordRetrievalErrorResponse
+                    |> getHttpRecordResponse
                 return! httpRecordResponse ctx
             }
         )
@@ -164,6 +167,7 @@ let onboardClient (queries: ITrainingRequestQueries) =
                 let onboardingRequestObject = JsonSerializer.Deserialize<OnboardingRequest>(onboardingRequestJson, defaultJsonOptions)
                 let! onboardingResult =
                     queries.SelectSingleTrainingRequest trainingRequestId
+                    |> TaskResult.mapError getRecordRetrievalErrorResponse
                     |> TaskResult.bind validatedOnboardingRequest
                     |> TaskResult.bind (queries.InsertOnboardedClient username onboardingRequestObject)
                 let httpFormResponse = getFormCreateResponse onboardingResult

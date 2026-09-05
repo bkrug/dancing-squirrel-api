@@ -11,7 +11,7 @@ open Onboarding.Models
 type ITrainingRequestQueries =
     abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<TrainingRequestValidation>>>
     abstract member InsertOnboardedClient: string -> OnboardingRequest -> TrainingRequest -> Task<Result<TrainingRequest, GenericModelResponse<string>>>
-    abstract member SelectSingleTrainingRequest: int64 -> Task<Result<TrainingRequest, GenericModelResponse<string>>>
+    abstract member SelectSingleTrainingRequest: int64 -> Task<Result<TrainingRequest, RecordRetrievalErrors>>
     abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<TrainingRequest>, GenericModelResponse<string>>>
     abstract member CountTrainingRequests: Task<Result<int, GenericModelResponse<string>>>
 
@@ -155,14 +155,14 @@ type TrainingRequestQueries(db: QueryContextFactory) =
                     let recordCount = request |> Seq.length
                     let response =
                         match recordCount with
-                        | 0 -> Error notFoundResponse
+                        | 0 -> Error RecordRetrievalErrors.NotFound
                         | 1 -> Ok (request |> Seq.head)
-                        | _ -> Error foundMultipleRecordsResponse
+                        | _ -> Error RecordRetrievalErrors.ExpectedSingleFoundMultiple
                     return response
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error internalErrorResponse
+                    return Error RecordRetrievalErrors.DbAccessError
             }
 
         member _.SelectMultiTrainingRequests (skipNumber: int) (length: int) =
