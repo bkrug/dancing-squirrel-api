@@ -1,5 +1,9 @@
 module Calendar.Models
 
+open System.Threading.Tasks
+open GenericModels
+open DbLayer.Database
+
 type CreateEditDefaultDayAvailability =
     { 
         TeacherId: int64
@@ -12,6 +16,19 @@ type CreateEditDefaultAvailability =
     {
         Availabilities: CreateEditDefaultDayAvailability[]
     }
+
+type DefaultDayAvailabilityValidation =
+    { 
+        TeacherId: string
+        DayOfWeek: string
+        StartTime: string
+        EndTime: string
+    }    
+
+type DefaultAvailabilityValidation =
+    {
+        Availabilities: DefaultDayAvailabilityValidation[]
+    }    
 
 type CreateEditRecurringEvent =
     {
@@ -29,3 +46,7 @@ type CreateEditSingleEvent =
         StartDateTime: string
         EndDateTeim: string
     }
+
+type DefaultActivityUpserter<'a> = CreateEditDefaultAvailability -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<DefaultAvailabilityValidation>>>
+type RecurringEventUpserter<'a> = CreateEditRecurringEvent -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<CreateEditRecurringEvent>>>
+type SingleEventUpserter<'a> = CreateEditSingleEvent -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<CreateEditSingleEvent>>>

@@ -21,12 +21,16 @@ open Registration.Queries
 open Registration.Endpoints
 open TrainingRequest.Endpoints
 open TrainingRequest.Queries
+open Calendar.Models
+open Calendar.Queries
+open Calendar.Endpoints
 
 let getEndpoints (wApp : WebApplication) =
     let connStr = wApp.Configuration.GetConnectionString("DancingSquirrelDb")
     let ctxtFactory = ExternalDependencies.getDbContextFactory connStr
     let trQueries: ITrainingRequestQueries = TrainingRequestQueries(ctxtFactory)
     let dtQueries: IDanceTypeQueries = DanceTypeQueries(ctxtFactory)
+    let crQueries: ICalendarQueries = CalendarQueries(ctxtFactory)
     let identityWrap: IUserAuthorizationWrapper = new UserAuthorizationWrapper(wApp.Services.CreateScope)
 
     //This list of endpoints available in our application
@@ -49,6 +53,10 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.route [
                     { Name = "danceTypeId"; Type = typeof<int64>; Required = true }
                 ]
+
+            //Calendar
+            post "/api/teacher/{teacherId}/availability" (createDefaultAvailabilityFromForm crQueries)
+            put "/api/teacher/{teacherId}/availability/{availabilityId}" (editDefaultAvailabilityFromForm crQueries)
 
             //User Management
             get "api/user" (getUsers identityWrap)
@@ -90,8 +98,6 @@ let getEndpoints (wApp : WebApplication) =
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }
                 ]
-
-            //Calendar
 
             //Authentication
             post "/api/authentication" (loginUserWithClaimsHandler identityWrap)
