@@ -9,7 +9,7 @@ open System.Threading.Tasks
 open Onboarding.Models
 
 type ITrainingRequestQueries =
-    abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<TrainingRequestValidation>>>
+    abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<int64, RecordInsertError>>
     abstract member InsertOnboardedClient: string -> OnboardingRequest -> TrainingRequest -> Task<Result<TrainingRequest, OnboardClientInsertError>>
     abstract member SelectSingleTrainingRequest: int64 -> Task<Result<TrainingRequest, RecordRetrievalErrors>>
     abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<TrainingRequest>, RecordRetrievalErrors>>
@@ -21,29 +21,30 @@ type TrainingRequestQueries(db: QueryContextFactory) =
             task {
                 use! context = db.OpenContextAsync()
                 try
-                    insertTask context {
-                        for s in TrainingRequest do
-                        entity {
-                            TrainingRequestId = 1;
-                            SquirrelName = form.SquirrelName;
-                            CaretakerType = int64 form.CaretakerType;
-                            OrganizationName = form.CaretakerCompanyName;
-                            OwnerFirstName = form.CaretakerFirstName;
-                            OwnerLastName = form.CaretakerLastName;
-                            Email = form.Email;
-                            Phone = Some form.Phone;
-                            DescriptionOfNeeds = Some form.DescriptionOfNeeds;
-                            SquirrelId = None;
-                            OnboardUsername = None;
-                            OnboardingDateTimeUnix = None;
+                    let! recordId =
+                        insertTask context {
+                            for s in TrainingRequest do
+                            entity {
+                                TrainingRequestId = 1;
+                                SquirrelName = form.SquirrelName;
+                                CaretakerType = int64 form.CaretakerType;
+                                OrganizationName = form.CaretakerCompanyName;
+                                OwnerFirstName = form.CaretakerFirstName;
+                                OwnerLastName = form.CaretakerLastName;
+                                Email = form.Email;
+                                Phone = Some form.Phone;
+                                DescriptionOfNeeds = Some form.DescriptionOfNeeds;
+                                SquirrelId = None;
+                                OnboardUsername = None;
+                                OnboardingDateTimeUnix = None;
+                            }
+                            getId s.TrainingRequestId
                         }
-                        getId s.TrainingRequestId
-                    } |> ignore
-                    return Ok getGenericSuccess
+                    return Ok recordId
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error internalErrorResponse
+                    return Error RecordInsertError.DbAccessError
             }
 
         member _.InsertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest: TrainingRequest) =

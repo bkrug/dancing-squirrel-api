@@ -23,6 +23,9 @@ type RecordRetrievalErrors =
     | NotFound
     | ExpectedSingleFoundMultiple
 
+type RecordInsertError =
+    | DbAccessError
+
 let internalErrorResponse =
     {
         IsSuccess = false
@@ -70,6 +73,10 @@ let getRecordRetrievalErrorResponse retrievalError =
     | RecordRetrievalErrors.NotFound -> notFoundResponse
     | RecordRetrievalErrors.ExpectedSingleFoundMultiple -> foundMultipleRecordsResponse
     | RecordRetrievalErrors.DbAccessError -> internalErrorResponse
+
+let getRecordInsertErrorResponse insertError =
+    match insertError with
+    | RecordInsertError.DbAccessError -> internalErrorResponse
 
 let getFormResponse successCode formSubmissionResult =
     match formSubmissionResult with

@@ -115,9 +115,12 @@ let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestFor
 let createTrainingRequest (queries: ITrainingRequestQueries) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
-        let! submissionResult = createTrainingRequestFromForm form queries.InsertTrainingRequest
-        let httpFormResponse = getFormCreateResponse submissionResult
-        return! httpFormResponse ctx
+        let! submissionResult =
+            createTrainingRequestFromForm form (fun validatedForm ->
+                queries.InsertTrainingRequest validatedForm
+                |> TaskResult.map (fun _ -> getGenericSuccess)
+                |> TaskResult.mapError getRecordInsertErrorResponse)
+        return! getFormCreateResponse submissionResult ctx
     }
 
 let getTrainingRequests (queries: ITrainingRequestQueries) =

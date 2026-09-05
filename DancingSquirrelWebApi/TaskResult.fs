@@ -24,3 +24,9 @@ let mapError mapper result = task {
     let! vR = result
     return vR |> Result.mapError mapper
 }
+
+//Map the success component of a Task<Result<>>
+let map mapper result = task {
+    let! vR = result
+    return vR |> Result.map mapper
+}
