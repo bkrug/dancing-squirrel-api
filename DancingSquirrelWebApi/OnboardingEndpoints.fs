@@ -139,12 +139,10 @@ let getSingleTrainingRequest (queries: ITrainingRequestQueries) =
         (fun ctx ->
             task {
                 let trainingRequestId = Math.Max(0, (Request.getRoute ctx).GetInt("trainingRequestId"))
-                let! existingTrainingRequest = queries.SelectSingleTrainingRequest trainingRequestId
-                let httpRecordResponse =
-                    existingTrainingRequest
-                    |> Result.mapError getRecordRetrievalErrorResponse
-                    |> getHttpRecordResponse
-                return! httpRecordResponse ctx
+                let! existingTrainingRequest =
+                    queries.SelectSingleTrainingRequest trainingRequestId
+                    |> TaskResult.mapError getRecordRetrievalErrorResponse
+                return! getHttpRecordResponse existingTrainingRequest ctx
             }
         )
 
