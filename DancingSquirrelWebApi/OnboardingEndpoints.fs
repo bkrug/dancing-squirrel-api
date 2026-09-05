@@ -162,6 +162,8 @@ let onboardClient (queries: ITrainingRequestQueries) =
                 let username = authenticateResult.Principal.Identity.Name
                 let trainingRequestId = (Request.getRoute ctx).GetInt "trainingRequestId"
                 let! onboardingRequestJson = Request.getBodyString ctx
+                //TODO: Handle errors: 1) json is empty, 2) array in the deserialized object is null.
+                //Migrate to Thoth.Json.Net
                 let onboardingRequestObject = JsonSerializer.Deserialize<OnboardingRequest>(onboardingRequestJson, defaultJsonOptions)
                 let! onboardingResult =
                     queries.SelectSingleTrainingRequest trainingRequestId
