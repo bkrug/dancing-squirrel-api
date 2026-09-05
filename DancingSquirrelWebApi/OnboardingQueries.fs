@@ -12,8 +12,8 @@ type ITrainingRequestQueries =
     abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<TrainingRequestValidation>>>
     abstract member InsertOnboardedClient: string -> OnboardingRequest -> TrainingRequest -> Task<Result<TrainingRequest, GenericModelResponse<string>>>
     abstract member SelectSingleTrainingRequest: int64 -> Task<Result<TrainingRequest, RecordRetrievalErrors>>
-    abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<TrainingRequest>, GenericModelResponse<string>>>
-    abstract member CountTrainingRequests: Task<Result<int, GenericModelResponse<string>>>
+    abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<TrainingRequest>, RecordRetrievalErrors>>
+    abstract member CountTrainingRequests: Task<Result<int, RecordRetrievalErrors>>
 
 type TrainingRequestQueries(db: QueryContextFactory) =
     interface ITrainingRequestQueries with
@@ -179,7 +179,7 @@ type TrainingRequestQueries(db: QueryContextFactory) =
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error internalErrorResponse
+                    return Error RecordRetrievalErrors.DbAccessError
             }
 
         member _.CountTrainingRequests =
@@ -195,5 +195,5 @@ type TrainingRequestQueries(db: QueryContextFactory) =
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error internalErrorResponse
+                    return Error RecordRetrievalErrors.DbAccessError
             }
