@@ -8,6 +8,8 @@ open Onboarding.Endpoints
 open Onboarding.Models
 open Xunit
 
+let insertedRecordNumber = 1L
+
 [<Fact>]
 let ``Training Request for Company is valid. Expect a success response.`` () =
    task {
@@ -24,9 +26,9 @@ let ``Training Request for Company is valid. Expect a success response.`` () =
       let formData = new FormData(RObject formValues, None)
 
       let mutable actualRecievedForm : Option<TrainingRequestForm> = None
-      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+      let (insertRec:TrainingRequestFormInserter) = fun form ->
          actualRecievedForm <- Some form
-         Task.FromResult( Ok getGenericSuccess)
+         Task.FromResult(Ok insertedRecordNumber)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec
@@ -63,9 +65,9 @@ let ``Training Request for Person is valid. Expect a success response.`` () =
       let formData = new FormData(RObject formValues, None)
 
       let mutable actualRecievedForm : Option<TrainingRequestForm> = None
-      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+      let (insertRec:TrainingRequestFormInserter) = fun form ->
          actualRecievedForm <- Some form
-         Task.FromResult( Ok getGenericSuccess)
+         Task.FromResult(Ok insertedRecordNumber)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec
@@ -108,9 +110,9 @@ let ``Phone numbers may omit or not omit the international code. Expect a succes
       let formData = new FormData(RObject formValues, None)
 
       let mutable actualRecievedForm : Option<TrainingRequestForm> = None
-      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+      let (insertRec:TrainingRequestFormInserter) = fun form ->
          actualRecievedForm <- Some form
-         Task.FromResult( Ok getGenericSuccess)
+         Task.FromResult(Ok insertedRecordNumber)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec
@@ -147,9 +149,9 @@ let ``Training Request is valid, but there was some DB Error. Expect a failure r
       let formData = new FormData(RObject formValues, None)
 
       let mutable actualRecievedForm : Option<TrainingRequestForm> = None
-      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
+      let (insertRec:TrainingRequestFormInserter) = fun form ->
          actualRecievedForm <- Some form
-         Task.FromResult(Error internalErrorResponse)
+         Task.FromResult(Error RecordInsertError.DbAccessError)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec
@@ -265,8 +267,8 @@ let ``Training Request is somehow invalid. Expect a validation failure.``
 
       let formData = new FormData(RObject formValues, None)
 
-      let (insertRec:TrainingRequestFormInserter<'a>) = fun form ->
-         Task.FromResult( Ok getGenericSuccess)
+      let (insertRec:TrainingRequestFormInserter) = fun form ->
+         Task.FromResult(Ok insertedRecordNumber)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec

@@ -6,7 +6,6 @@ open GenericModels
 open System
 open System.Collections.Generic
 open System.Text.Json
-open System.Text.RegularExpressions
 open System.Threading.Tasks
 open Onboarding.Models
 open Onboarding.Queries
@@ -92,7 +91,7 @@ let private validateForm (form : TrainingRequestForm) : Result<TrainingRequestFo
 // Endpoint methods
 //***
 
-let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestFormInserter<'a>) =
+let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestFormInserter) =
     let caretakerTypeInt = form.GetInt("caretakertype", 0)
     let caretakerTypeEnum = enum<CaretakerType> caretakerTypeInt
     let dataToValidate : TrainingRequestForm =
@@ -109,17 +108,16 @@ let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestFor
     let! submissionResult =
         Ok dataToValidate
         |> Result.bind validateForm
-        |> TaskResult.bindToTask insertRec
+        |> TaskResult.bindToTask (fun validatedForm ->
+            insertRec validatedForm
+            |> TaskResult.map (fun _ -> getGenericSuccess)
+            |> TaskResult.mapError getRecordInsertErrorResponse)
     submissionResult
 
 let createTrainingRequest (queries: ITrainingRequestQueries) : HttpHandler = fun ctx ->
     task {
         let! form = Request.getForm ctx
-        let! submissionResult =
-            createTrainingRequestFromForm form (fun validatedForm ->
-                queries.InsertTrainingRequest validatedForm
-                |> TaskResult.map (fun _ -> getGenericSuccess)
-                |> TaskResult.mapError getRecordInsertErrorResponse)
+        let! submissionResult = createTrainingRequestFromForm form queries.InsertTrainingRequest
         return! getFormCreateResponse submissionResult ctx
     }
 
