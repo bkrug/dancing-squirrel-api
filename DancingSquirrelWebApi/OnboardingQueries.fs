@@ -10,7 +10,7 @@ open Onboarding.Models
 
 type ITrainingRequestQueries =
     abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<TrainingRequestValidation>>>
-    abstract member InsertOnboardedClient: string -> OnboardingRequest -> TrainingRequest -> Task<Result<TrainingRequest, GenericModelResponse<string>>>
+    abstract member InsertOnboardedClient: string -> OnboardingRequest -> TrainingRequest -> Task<Result<TrainingRequest, OnboardClientInsertError>>
     abstract member SelectSingleTrainingRequest: int64 -> Task<Result<TrainingRequest, RecordRetrievalErrors>>
     abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<TrainingRequest>, RecordRetrievalErrors>>
     abstract member CountTrainingRequests: Task<Result<int, RecordRetrievalErrors>>
@@ -135,12 +135,12 @@ type TrainingRequestQueries(db: QueryContextFactory) =
                         | _ ->
                             shared.RollbackTransaction()
                             printfn "Update statement failed when onboarding the client"
-                            return Error internalErrorResponse
+                            return Error OnboardClientInsertError.UpdateFailed
                 with
                 | ex ->
                     shared.RollbackTransaction()
                     printfn "SQL: %O" ex
-                    return Error internalErrorResponse
+                    return Error OnboardClientInsertError.DbAccessError
             }
 
         member _.SelectSingleTrainingRequest(recordId: int64) =

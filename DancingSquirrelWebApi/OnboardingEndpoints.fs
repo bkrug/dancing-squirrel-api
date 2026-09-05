@@ -167,7 +167,9 @@ let onboardClient (queries: ITrainingRequestQueries) =
                     queries.SelectSingleTrainingRequest trainingRequestId
                     |> TaskResult.mapError getRecordRetrievalErrorResponse
                     |> TaskResult.bind validatedOnboardingRequest
-                    |> TaskResult.bind (queries.InsertOnboardedClient username onboardingRequestObject)
+                    |> TaskResult.bind (fun trainingRequest ->
+                        queries.InsertOnboardedClient username onboardingRequestObject trainingRequest
+                        |> TaskResult.mapError getOnboardClientInsertErrorResponse)
                 let httpFormResponse = getFormCreateResponse onboardingResult
                 return! httpFormResponse ctx
             }

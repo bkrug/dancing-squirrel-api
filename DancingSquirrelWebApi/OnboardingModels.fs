@@ -37,6 +37,15 @@ type OnboardingRequest =
         DanceTeachers: int64[];
     }
 
+type OnboardClientInsertError =
+    | DbAccessError
+    | UpdateFailed
+
+let getOnboardClientInsertErrorResponse insertError =
+    match insertError with
+    | OnboardClientInsertError.DbAccessError -> internalErrorResponse
+    | OnboardClientInsertError.UpdateFailed -> internalErrorResponse
+
 type TrainingRequestFormInserter<'a> = TrainingRequestForm -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<TrainingRequestValidation>>>
 type OnboardedClientInserter<'a> = string -> OnboardingRequest -> main.TrainingRequest -> Task<Result<main.TrainingRequest, GenericModelResponse<'a>>>
 type SingleTrainingRequestSelector = int64 -> Task<Result<main.TrainingRequest, GenericModelResponse<string>>>
