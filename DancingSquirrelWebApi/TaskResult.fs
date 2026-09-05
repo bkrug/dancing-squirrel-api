@@ -12,9 +12,15 @@ let bind binder result = task {
 }
 
 //Bind two methods together when the earlier method returns Result<> and the other returns Task<Result<>>
-let bindToTask binder result = task { 
+let bindToTask binder result = task {
     let vR = result
     match vR with
     | Ok    v -> return! binder v
-    | Error m -> return  Error m 
+    | Error m -> return  Error m
+}
+
+//Map the error component of a Task<Result<>>
+let mapError mapper result = task {
+    let! vR = result
+    return vR |> Result.mapError mapper
 }
