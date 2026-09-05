@@ -4,14 +4,15 @@ open DbLayer
 open GenericModels
 open Global
 open SqlHydra.Query
+open System.Threading.Tasks
 open TrainingRequest.Models
 
 type ITrainingRequestQueries =
-    abstract member InsertTrainingRequest: TrainingRequestForm -> System.Threading.Tasks.Task<Result<GenericModelResponse<bool>, GenericModelResponse<TrainingRequestValidation>>>
-    abstract member InsertOnboardedClient: string -> OnboardingRequest -> Database.main.TrainingRequest -> System.Threading.Tasks.Task<Result<Database.main.TrainingRequest, GenericModelResponse<string>>>
-    abstract member SelectSingleTrainingRequest: int64 -> System.Threading.Tasks.Task<Result<Database.main.TrainingRequest, GenericModelResponse<string>>>
-    abstract member SelectMultiTrainingRequests: int -> int -> System.Threading.Tasks.Task<Result<seq<Database.main.TrainingRequest>, GenericModelResponse<string>>>
-    abstract member CountTrainingRequests: System.Threading.Tasks.Task<Result<int, GenericModelResponse<string>>>
+    abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<TrainingRequestValidation>>>
+    abstract member InsertOnboardedClient: string -> OnboardingRequest -> Database.main.TrainingRequest -> Task<Result<Database.main.TrainingRequest, GenericModelResponse<string>>>
+    abstract member SelectSingleTrainingRequest: int64 -> Task<Result<Database.main.TrainingRequest, GenericModelResponse<string>>>
+    abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<Database.main.TrainingRequest>, GenericModelResponse<string>>>
+    abstract member CountTrainingRequests: Task<Result<int, GenericModelResponse<string>>>
 
 type TrainingRequestQueries(db: Database.QueryContextFactory) =
     interface ITrainingRequestQueries with

@@ -3,10 +3,11 @@ module DanceType.Queries
 open DbLayer
 open GenericModels
 open SqlHydra.Query
+open System.Threading.Tasks
 
 type IDanceTypeQueries =
-    abstract member SelectDanceTypes: System.Threading.Tasks.Task<Result<seq<Database.main.DanceType>, GenericModelResponse<string>>>
-    abstract member SelectTeachersByDanceType: int64 -> System.Threading.Tasks.Task<Result<seq<Database.main.Teacher>, GenericModelResponse<string>>>
+    abstract member SelectDanceTypes: Task<Result<seq<Database.main.DanceType>, GenericModelResponse<string>>>
+    abstract member SelectTeachersByDanceType: int64 -> Task<Result<seq<Database.main.Teacher>, GenericModelResponse<string>>>
 
 type DanceTypeQueries(db: Database.QueryContextFactory) =
     interface IDanceTypeQueries with
