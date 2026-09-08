@@ -55,8 +55,8 @@ let getEndpoints (wApp : WebApplication) =
                 ]
 
             //Calendar
-            post "/api/teacher/{teacherId}/availability" (createDefaultAvailabilityFromForm crQueries)
-            put "/api/teacher/{teacherId}/availability/{availabilityId}" (editDefaultAvailabilityFromForm crQueries)
+            post "/api/teacher/{teacherId}/availability" (createDefaultAvailability crQueries)
+            put "/api/teacher/{teacherId}/availability/{availabilityId}" (editDefaultAvailability crQueries)
 
             //User Management
             get "api/user" (getUsers identityWrap)

@@ -5,8 +5,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup><Compile Include="ValidateOnboardingRequestTests.fs" /><Compile Include="CreateTrainingRequestTests.fs" /><Compile Include="UserTests.fs" />
-    
+  <ItemGroup><Compile Include="ValidateOnboardingRequestTests.fs" /><Compile Include="CreateTrainingRequestTests.fs" /><Compile Include="CreateDefaultAvailabilityTests.fs" /><Compile Include="UserTests.fs" />
+
   </ItemGroup>
 
   <ItemGroup>

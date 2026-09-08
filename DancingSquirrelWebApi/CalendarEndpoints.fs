@@ -1,6 +1,7 @@
 module Calendar.Endpoints
 
 open DbLayer.Database
+open DbLayer.Database.main
 open Falco
 open GenericModels
 open System
@@ -17,37 +18,31 @@ open ValidationStandards
 //Todo: Move into named constant
 let roles = ["TeacherRole"]
 
-let createDefaultAvailabilityFromForm (queries: ICalendarQueries) : HttpHandler =
+let createDefaultAvailabilityFromForm
+    (form: CreateEditDefaultAvailability)
+    (upsertRecord: DefaultAvailability[] -> Task<Result<DefaultAvailability, RecordInsertError>>)
+    : Task<Result<bool, GenericModelResponse<DefaultAvailabilityValidation>>> =
+    task {
+        return Ok true
+    }
+
+let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
     Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
-                let submissionResult = Ok getGenericSuccess
-                let httpFormResponse = getFormCreateResponse submissionResult
-                return! httpFormResponse ctx
+                let! json = Request.getJson<CreateEditDefaultAvailability> ctx
+                let! submissionResult = createDefaultAvailabilityFromForm json queries.UpsertDefaultAvailability
+                return! getFormCreateResponse submissionResult ctx
             }
         )
 
-let editDefaultAvailabilityFromForm (queries: ICalendarQueries) : HttpHandler =
-    Auth.processAuthorizedRequest roles
-        (fun ctx ->
-            task {
-                let submissionResult = Ok getGenericSuccess
-                let httpFormResponse = getFormEditResponse submissionResult
-                return! httpFormResponse ctx
-            }
-        )
+let editDefaultAvailabilityFromForm
+    (form: CreateEditDefaultAvailability)
+    (upsertRecord: DefaultAvailability -> Task<Result<DefaultAvailability, RecordInsertError>>):
+    CreateEditDefaultAvailability -> (DefaultAvailability -> Task<Result<DefaultAvailability, RecordInsertError>>) -> Result<bool, GenericModelResponse<DefaultAvailabilityValidation>> =
+    failwith "Not implemented"
 
-let createRecurringEventFromForm (queries: ICalendarQueries) : HttpHandler =
-    Auth.processAuthorizedRequest roles
-        (fun ctx ->
-            task {
-                let submissionResult = Ok getGenericSuccess
-                let httpFormResponse = getFormCreateResponse submissionResult
-                return! httpFormResponse ctx
-            }
-        )
-
-let editRecurringEventFromForm (queries: ICalendarQueries) : HttpHandler =
+let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
     Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
@@ -57,7 +52,7 @@ let editRecurringEventFromForm (queries: ICalendarQueries) : HttpHandler =
             }
         )
 
-let createSingleEventFromForm (queries: ICalendarQueries) : HttpHandler =
+let createRecurringEvent (queries: ICalendarQueries) : HttpHandler =
     Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
@@ -67,7 +62,27 @@ let createSingleEventFromForm (queries: ICalendarQueries) : HttpHandler =
             }
         )
 
-let editSingleEventFromForm (queries: ICalendarQueries) : HttpHandler =
+let editRecurringEvent (queries: ICalendarQueries) : HttpHandler =
+    Auth.processAuthorizedRequest roles
+        (fun ctx ->
+            task {
+                let submissionResult = Ok getGenericSuccess
+                let httpFormResponse = getFormEditResponse submissionResult
+                return! httpFormResponse ctx
+            }
+        )
+
+let createSingleEvent (queries: ICalendarQueries) : HttpHandler =
+    Auth.processAuthorizedRequest roles
+        (fun ctx ->
+            task {
+                let submissionResult = Ok getGenericSuccess
+                let httpFormResponse = getFormCreateResponse submissionResult
+                return! httpFormResponse ctx
+            }
+        )
+
+let editSingleEvent (queries: ICalendarQueries) : HttpHandler =
     Auth.processAuthorizedRequest roles
         (fun ctx ->
             task {
