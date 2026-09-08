@@ -1,22 +1,18 @@
 module Calendar.Queries
 
 open System.Threading.Tasks
-open Calendar.Models
 open DbLayer
+open DbLayer.Database.main
 open GenericModels
 
 type ICalendarQueries =
-    abstract member UpsertDefaultAvailability : CreateEditDefaultAvailability -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<DefaultAvailabilityValidation>>>
-    abstract member UpsertRecurringEvent : CreateEditRecurringEvent -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<CreateEditRecurringEvent>>>
-    abstract member UpsertSingleEvent : CreateEditSingleEvent -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<CreateEditSingleEvent>>>
+    abstract member UpsertDefaultAvailability : DefaultAvailability -> Task<Result<DefaultAvailability, RecordInsertError>>
+    abstract member UpsertRecurringEvent : RecurringEvent -> Task<Result<RecurringEvent, RecordInsertError>>
 
 type CalendarQueries(db: Database.QueryContextFactory) =
     interface ICalendarQueries with
-        member _.UpsertDefaultAvailability (availability: CreateEditDefaultAvailability) : Task<Result<GenericModelResponse<bool>, GenericModelResponse<DefaultAvailabilityValidation>>> =
+        member _.UpsertDefaultAvailability (availability: DefaultAvailability) : Task<Result<DefaultAvailability, RecordInsertError>> =
             failwith "Not implemented"
 
-        member _.UpsertRecurringEvent (recurringEvent: CreateEditRecurringEvent) : Task<Result<GenericModelResponse<bool>, GenericModelResponse<CreateEditRecurringEvent>>> =
-            failwith "Not implemented"
-
-        member _.UpsertSingleEvent (singleEvent: CreateEditSingleEvent) : Task<Result<GenericModelResponse<bool>, GenericModelResponse<CreateEditSingleEvent>>> =
+        member _.UpsertRecurringEvent (recurringEvent: RecurringEvent) : Task<Result<RecurringEvent, RecordInsertError>> =
             failwith "Not implemented"
