@@ -251,20 +251,20 @@ let validationFailureData =
    ]
 
 [<Theory>]
-//[<MemberData(nameof(validationFailureData))>]
-[<InlineData(0)>]
-[<InlineData(1)>]
-[<InlineData(2)>]
-[<InlineData(3)>]
-[<InlineData(4)>]
-[<InlineData(5)>]
+[<MemberData(nameof(validationFailureData))>]
+// [<InlineData(0)>]
+// [<InlineData(1)>]
+// [<InlineData(2)>]
+// [<InlineData(3)>]
+// [<InlineData(4)>]
+// [<InlineData(5)>]
 let ``Training Request is somehow invalid. Expect a validation failure.`` 
-   // (formValues:list<string*RequestValue>)
-   // (validationField:string)
-   // (validationMsg:string) =
-   testNumber =
+   (formValues:list<string*RequestValue>)
+   (validationField:string)
+   (validationMsg:string) =
+   // testNumber =
    task {
-      let formValues, validationField, validationMsg = validationFailureData[testNumber]
+      //let formValues, validationField, validationMsg = validationFailureData[testNumber]
 
       let formData = new FormData(RObject formValues, None)
 
