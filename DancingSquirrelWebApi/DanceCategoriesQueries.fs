@@ -7,8 +7,8 @@ open SqlHydra.Query
 open System.Threading.Tasks
 
 type IDanceTypeQueries =
-    abstract member SelectDanceTypes: Task<Result<seq<DanceType>, GenericModelResponse<string>>>
-    abstract member SelectTeachersByDanceType: int64 -> Task<Result<seq<Teacher>, GenericModelResponse<string>>>
+    abstract member SelectDanceTypes: Task<Result<seq<DanceType>, RecordRetrievalErrors>>
+    abstract member SelectTeachersByDanceType: int64 -> Task<Result<seq<Teacher>, RecordRetrievalErrors>>
 
 type DanceTypeQueries(db: QueryContextFactory) =
     interface IDanceTypeQueries with
@@ -24,7 +24,7 @@ type DanceTypeQueries(db: QueryContextFactory) =
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error internalErrorResponse
+                    return Error RecordRetrievalErrors.DbAccessError
             }
 
         member _.SelectTeachersByDanceType(danceTypeId: int64) =
@@ -41,5 +41,5 @@ type DanceTypeQueries(db: QueryContextFactory) =
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error internalErrorResponse
+                    return Error RecordRetrievalErrors.DbAccessError
             }
