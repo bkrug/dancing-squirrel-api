@@ -91,7 +91,7 @@ let private validateForm (form : TrainingRequestForm) : Result<TrainingRequestFo
 // Endpoint methods
 //***
 
-let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestFormInserter) =
+let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestForm -> Task<Result<int64, RecordInsertError>>) =
     let caretakerTypeInt = form.GetInt("caretakertype", 0)
     let caretakerTypeEnum = enum<CaretakerType> caretakerTypeInt
     let dataToValidate : TrainingRequestForm =

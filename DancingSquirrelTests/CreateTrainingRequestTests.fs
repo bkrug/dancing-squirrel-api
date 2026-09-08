@@ -9,6 +9,7 @@ open Onboarding.Models
 open Xunit
 
 let insertedRecordNumber = 1L
+type TrainingRequestFormInserter = TrainingRequestForm -> Task<Result<int64, RecordInsertError>>
 
 [<Fact>]
 let ``Training Request for Company is valid. Expect a success response.`` () =

@@ -45,5 +45,3 @@ let getOnboardClientInsertErrorResponse insertError =
     match insertError with
     | OnboardClientInsertError.DbAccessError -> internalErrorResponse
     | OnboardClientInsertError.UpdateFailed -> internalErrorResponse
-
-type TrainingRequestFormInserter = TrainingRequestForm -> Task<Result<int64, RecordInsertError>>
