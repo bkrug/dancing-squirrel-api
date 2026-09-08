@@ -22,11 +22,11 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [|
-                    { TeacherId = teacherId; DayOfWeek = "Monday"; StartTime = "09:00:00"; EndTime = "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = "Tuesday"; StartTime = "09:00:00"; EndTime = "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = "Wednesday"; StartTime = "09:00:00"; EndTime = "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = "Thursday"; StartTime = "09:00:00"; EndTime = "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = "Saturday"; StartTime = "10:00:00"; EndTime = "14:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Monday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Thursday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Saturday"; StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
                 |]
             }
         let expectedRecords : DefaultAvailability[] =
