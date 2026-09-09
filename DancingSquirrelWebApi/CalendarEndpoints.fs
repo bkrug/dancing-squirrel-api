@@ -56,6 +56,33 @@ let private parseRow (row: CreateEditDefaultDayAvailability) : Result<DefaultAva
             EndTime = match endTimeR with Error msg -> msg | _ -> ""
         }
 
+let private rowsOverlap (a: DefaultAvailability) (b: DefaultAvailability) : bool =
+    a.TeacherId = b.TeacherId
+    && a.DayOfWeek = b.DayOfWeek
+    && a.StartTimeUnix < b.EndTimeUnix
+    && b.StartTimeUnix < a.EndTimeUnix
+
+// Only successfully parsed rows can be validated further; a row already Error stays untouched.
+// A row is checked against the rows accepted so far (in input order), so when two rows overlap
+// it is the later row that is reported as the failure.
+let private validateAvailability (rows: seq<Result<DefaultAvailability, DefaultDayAvailabilityValidation>>) : seq<Result<DefaultAvailability, DefaultDayAvailabilityValidation>> =
+    let addRow (accepted, results) (row: Result<DefaultAvailability, DefaultDayAvailabilityValidation>) =
+        match row with
+        | Error _ -> (accepted, row :: results)
+        | Ok parsedRow when parsedRow.StartTimeUnix >= parsedRow.EndTimeUnix ->
+            let orderError = Error { emptyRowValidation with EndTime = "StartTime must precede EndTime" }
+            (accepted, orderError :: results)
+        | Ok parsedRow when accepted |> List.exists (rowsOverlap parsedRow) ->
+            let overlapError = Error { emptyRowValidation with StartTime = "overlaps another availability period" }
+            (accepted, overlapError :: results)
+        | Ok parsedRow ->
+            (parsedRow :: accepted, row :: results)
+    rows
+    |> Seq.fold addRow ([], [])
+    |> snd
+    |> List.rev
+    |> List.toSeq
+
 // Every row is validated independently, so a single invalid row must not hide the others: on
 // failure we return one validation entry per input row (index-aligned), padding the valid rows
 // with an empty placeholder rather than collapsing the list down to just the failures.
@@ -76,7 +103,7 @@ let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>) =
     task {
-        match form.Availabilities |> Seq.map parseRow |> combineRowResults with
+        match form.Availabilities |> Seq.map parseRow |> validateAvailability |> combineRowResults with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
