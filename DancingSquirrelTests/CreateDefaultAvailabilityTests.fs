@@ -53,45 +53,70 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         actualReceivedRecords.Value.ShouldBeEquivalentTo(expectedRecords)
     }
 
-let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailability[] * string * string> =
+let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailability * string * string> =
     [
         (
-            [|
-                { TeacherId = 42L; DayOfWeek = Some "Monday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                { TeacherId = 42L; DayOfWeek = Some "Frunsday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-            |],
+            { TeacherId = 42L; DayOfWeek = Some "Frunsday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
             "DayOfWeek",
             "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
         )
         (
-            [|
-                { TeacherId = 42L; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00";  EndTime = Some "17:00:00" }
-                { TeacherId = 42L; DayOfWeek = Some "Tuesday";   StartTime = Some "not-a-time"; EndTime = Some "17:00:00" }
-                { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00";   EndTime = Some "17:00:00" }
-            |],
+            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "not-a-time"; EndTime = Some "17:00:00" },
             "StartTime",
             "Must be in the format 'hh:mm'"
         )
         (
-            [|
-                { TeacherId = 42L; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                { TeacherId = 42L; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "not-a-time" }
-                { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-            |],
+            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "not-a-time" },
             "EndTime",
             "Must be in the format 'hh:mm'"
+        )
+        (
+            { TeacherId = 42L; DayOfWeek = Some ""; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
+            "DayOfWeek",
+            "is required"
+        )
+        (
+            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some ""; EndTime = Some "17:00:00" },
+            "StartTime",
+            "is required"
+        )
+        (
+            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "" },
+            "EndTime",
+            "is required"
+        )
+        (
+            { TeacherId = 42L; DayOfWeek = None; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
+            "DayOfWeek",
+            "is required"
+        )
+        (
+            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = None; EndTime = Some "17:00:00" },
+            "StartTime",
+            "is required"
+        )
+        (
+            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = None },
+            "EndTime",
+            "is required"
         )
     ]
 
 [<Theory>]
 [<MemberData(nameof(defaultAvailabilityValidationFailureData))>]
 let ``Default availability entry is somehow invalid. Expect a validation failure.``
-    (availabilities: CreateEditDefaultDayAvailability[])
+    (invalidEntry: CreateEditDefaultDayAvailability)
     (validationField: string)
     (validationMsg: string) =
     task {
-        let callerInput : CreateEditDefaultAvailability = { Availabilities = availabilities }
+        let callerInput : CreateEditDefaultAvailability =
+            {
+                Availabilities = [|
+                    { TeacherId = 42L; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    invalidEntry
+                    { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                |]
+            }
 
         let (upsertRecord: DefaultAvailabilityUpserter) = fun records ->
             Task.FromResult(Ok records)
