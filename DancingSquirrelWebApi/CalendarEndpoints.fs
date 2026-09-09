@@ -65,7 +65,7 @@ let private rowsOverlap (a: DefaultAvailability) (b: DefaultAvailability) : bool
 // Only successfully parsed rows can be validated further; a row already Error stays untouched.
 // A row is checked against the rows accepted so far (in input order), so when two rows overlap
 // it is the later row that is reported as the failure.
-let private validateAvailability (rows: list<Result<DefaultAvailability, DefaultDayAvailabilityValidation>>) : list<Result<DefaultAvailability, DefaultDayAvailabilityValidation>> =
+let private validateRow (rows: list<Result<DefaultAvailability, DefaultDayAvailabilityValidation>>) : list<Result<DefaultAvailability, DefaultDayAvailabilityValidation>> =
     let addRow (validRows, results) (row: Result<DefaultAvailability, DefaultDayAvailabilityValidation>) =
         match row with
         | Error _ -> (validRows, row :: results)
@@ -101,7 +101,7 @@ let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>) =
     task {
-        match form.Availabilities |> Array.toList |> List.map parseRow |> validateAvailability |> combineRowResults with
+        match form.Availabilities |> Array.toList |> List.map parseRow |> validateRow |> combineRowResults with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
