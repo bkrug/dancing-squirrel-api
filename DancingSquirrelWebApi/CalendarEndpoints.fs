@@ -4,9 +4,6 @@ open DbLayer.Database.main
 open Falco
 open GenericModels
 open System
-open System.Collections.Generic
-open System.Text.Json
-open System.Text.RegularExpressions
 open System.Threading.Tasks
 open Calendar.Models
 open Calendar.Queries
@@ -35,62 +32,51 @@ let getParsedTimeOfDay (timeOfDayOption: Option<string>) =
         | _ ->
             Error "Must be in the format 'hh:mm'"
 
+let private emptyRowValidation : DefaultDayAvailabilityValidation =
+    { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = "" }
+
+let private parseRow (row: CreateEditDefaultDayAvailability) : Result<DefaultAvailability, DefaultDayAvailabilityValidation> =
+    let dayOfWeekR = getParsedDayOfWeek row.DayOfWeek
+    let startTimeR = getParsedTimeOfDay row.StartTime
+    let endTimeR = getParsedTimeOfDay row.EndTime
+    match dayOfWeekR, startTimeR, endTimeR with
+    | Ok dayOfWeek, Ok startTime, Ok endTime ->
+        Ok {
+            TeacherId = row.TeacherId
+            DayOfWeek = dayOfWeek
+            StartTimeUnix = startTime
+            EndTimeUnix = endTime
+            DefaultAvailabilityId = 0
+        }
+    | _ ->
+        Error {
+            TeacherId = ""
+            DayOfWeek = match dayOfWeekR with Error msg -> msg | _ -> ""
+            StartTime = match startTimeR with Error msg -> msg | _ -> ""
+            EndTime = match endTimeR with Error msg -> msg | _ -> ""
+        }
+
+// Every row is validated independently, so a single invalid row must not hide the others: on
+// failure we return one validation entry per input row (index-aligned), padding the valid rows
+// with an empty placeholder rather than collapsing the list down to just the failures.
+let private combineRowResults (rows: seq<Result<DefaultAvailability, DefaultDayAvailabilityValidation>>) : Result<list<DefaultAvailability>, DefaultAvailabilityValidation> =
+    let hasErrors = rows |> Seq.exists (function Error _ -> true | Ok _ -> false)
+    if hasErrors then
+        rows
+        |> Seq.map (function Error validation -> validation | Ok _ -> emptyRowValidation)
+        |> Seq.toArray
+        |> fun validations -> Error { Availabilities = validations }
+    else
+        rows
+        |> Seq.choose (function Ok row -> Some row | Error _ -> None)
+        |> Seq.toList
+        |> Ok
+
 let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>) =
     task {
-        let validatedRows = 
-            form.Availabilities
-            |> Seq.map (fun a ->
-                let dayOfWeekR = getParsedDayOfWeek a.DayOfWeek
-                let startTimeR = getParsedTimeOfDay a.StartTime
-                let endTimeR = getParsedTimeOfDay a.EndTime
-                let dbA =
-                    match dayOfWeekR, startTimeR, endTimeR with
-                    | Ok dayOfWeek, Ok startTime, Ok endTime ->
-                        Ok {
-                            TeacherId = a.TeacherId;
-                            DayOfWeek = dayOfWeek;
-                            StartTimeUnix = startTime;
-                            EndTimeUnix = endTime;
-                            DefaultAvailabilityId = 0;
-                        }
-                    | _ ->
-                        let validations: DefaultDayAvailabilityValidation =
-                            {
-                                TeacherId = "";
-                                DayOfWeek = match dayOfWeekR with | Error msg -> msg | _ -> "";
-                                StartTime = match startTimeR with | Error msg -> msg | _ -> "";
-                                EndTime = match endTimeR with | Error msg -> msg | _ -> "";
-                            }
-                        Error validations
-                dbA
-            )
-        let emptySeq : seq<DefaultAvailability> = []
-        let successOrFail =
-            (Ok emptySeq, validatedRows)
-            ||> Seq.fold (fun acc rowParseResult ->
-                match acc, rowParseResult with
-                | Error prevErrors, Error newError ->
-                    Error (Seq.append prevErrors [newError])
-                | Error prevErrors, Ok _ ->
-                    Error (Seq.append prevErrors [ { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = ""; } ])
-                | Ok prevSuccess, Error newError ->
-                    Error (
-                        seq {
-                            for i in 1..Seq.length prevSuccess do
-                                yield { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = ""; }
-                            yield newError
-                        }
-                    )
-                | Ok prevSuccess, Ok newSuccess ->
-                    Ok (Seq.append prevSuccess [newSuccess])
-            )
-        let listVal = 
-            match successOrFail with
-            | Ok success -> Ok (Seq.toList success)
-            | Error err -> Error { Availabilities = Seq.toArray err }        
-        match listVal with
+        match form.Availabilities |> Seq.map parseRow |> combineRowResults with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
