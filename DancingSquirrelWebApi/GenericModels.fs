@@ -133,4 +133,5 @@ let getModelFromRequestBody<'TValue> ctx =
 
 let AdminRole = "Admin"
 let OnboarderRole = "Onboarder"
-type Roles = AdminRole | OnboarderRole
+let TeacherRole = "Teacher"
+type Roles = AdminRole | OnboarderRole | TeacherRole

@@ -11,7 +11,7 @@ open Calendar.Endpoints
 open Calendar.Models
 open Xunit
 
-type DefaultAvailabilityUpserter = DefaultAvailability[] -> Task<Result<DefaultAvailability, RecordInsertError>>
+type DefaultAvailabilityUpserter = DefaultAvailability[] -> Task<Result<DefaultAvailability[], RecordInsertError>>
 
 let getUnixSeconds hour minute = hour*60*60 + minute*60
 
@@ -22,11 +22,11 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [|
-                    { TeacherId = teacherId; DayOfWeek = Some "Monday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { TeacherId = teacherId; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "Thursday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "Saturday"; StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "Saturday";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
                 |]
             }
         let expectedRecords : DefaultAvailability[] =
@@ -41,7 +41,7 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         let mutable actualReceivedRecords : DefaultAvailability[] option = None
         let (upsertRecord: DefaultAvailabilityUpserter) = fun records ->
             actualReceivedRecords <- Some records
-            Task.FromResult(Ok records[0])
+            Task.FromResult(Ok records)
 
         //Act
         let! submissionResult = createDefaultAvailabilityFromForm callerInput upsertRecord
@@ -50,5 +50,5 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         submissionResult.IsOk.ShouldBeTrue()
         actualReceivedRecords.IsSome.ShouldBeTrue()
         actualReceivedRecords.Value.Length.ShouldBe(expectedRecords.Length)
-        actualReceivedRecords.ShouldBeEquivalentTo(expectedRecords)
+        actualReceivedRecords.Value.ShouldBeEquivalentTo(expectedRecords)
     }

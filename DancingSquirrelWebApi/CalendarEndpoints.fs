@@ -20,10 +20,53 @@ let roles = ["TeacherRole"]
 
 let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
-    (upsertRecord: DefaultAvailability[] -> Task<Result<DefaultAvailability, RecordInsertError>>)
-    : Task<Result<bool, GenericModelResponse<DefaultAvailabilityValidation>>> =
+    (upsertRecords: DefaultAvailability[] -> Task<Result<DefaultAvailability[], RecordInsertError>>) =
+    //: Task<Result<bool, GenericModelResponse<DefaultAvailabilityValidation>>> =
     task {
-        return Ok true
+        let parsedData : DefaultAvailability[] =
+            form.Availabilities
+            |> Seq.map (fun a ->
+                let dayOfWeek = 
+                    match a.DayOfWeek with
+                    | Some dayOfWeekString -> 
+                        match Enum.TryParse<DayOfWeek> dayOfWeekString with
+                        | true, dayValue -> int64 dayValue
+                        | _ -> int64 -1
+                    | None -> int64 -1
+                let startTime = 
+                    match a.StartTime with
+                    | Some timeString ->
+                        match TimeOnly.TryParse timeString with
+                        | true, parsedTime ->
+                            int64 (parsedTime.Hour * 60 * 60 + parsedTime.Minute * 60 * 60)
+                        | _ ->
+                            int64 -1
+                    | None -> int64 -1
+                let endTime = 
+                    match a.EndTime with
+                    | Some timeString ->
+                        match TimeOnly.TryParse timeString with
+                        | true, parsedTime ->
+                            int64 (parsedTime.Hour * 60 * 60 + parsedTime.Minute * 60 * 60)
+                        | _ ->
+                            int64 -1
+                    | None -> int64 -1                
+                let dbA : DefaultAvailability =
+                    {
+                        TeacherId = a.TeacherId;
+                        DayOfWeek = dayOfWeek;
+                        StartTimeUnix = startTime;
+                        EndTimeUnix = endTime;
+                        DefaultAvailabilityId = 0;
+                    }
+                dbA
+            )
+            |> Seq.filter (fun x -> x.DefaultAvailabilityId = -10)
+            |> Seq.toArray
+        let! dbResult =
+            upsertRecords parsedData
+            |> TaskResult.mapError getRecordInsertErrorResponse
+        return dbResult
     }
 
 let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
