@@ -116,7 +116,7 @@ let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
         (fun ctx ->
             task {
                 let! json = Request.getJson<CreateEditDefaultAvailability> ctx
-                let! submissionResult = createDefaultAvailabilityFromForm json queries.UpsertDefaultAvailability
+                let! submissionResult = createDefaultAvailabilityFromForm json queries.UpdateDefaultAvailability
                 return! getFormCreateResponse submissionResult ctx
             }
         )
