@@ -9,11 +9,11 @@ open System.Threading.Tasks
 open Onboarding.Models
 
 type ITrainingRequestQueries =
-    abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<int64, RecordInsertError>>
+    abstract member InsertTrainingRequest: TrainingRequestForm -> Task<Result<int64, DbErrors>>
     abstract member InsertOnboardedClient: string -> OnboardingRequest -> TrainingRequest -> Task<Result<TrainingRequest, OnboardClientInsertError>>
-    abstract member SelectSingleTrainingRequest: int64 -> Task<Result<TrainingRequest, RecordRetrievalErrors>>
-    abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<TrainingRequest>, RecordRetrievalErrors>>
-    abstract member CountTrainingRequests: Task<Result<int, RecordRetrievalErrors>>
+    abstract member SelectSingleTrainingRequest: int64 -> Task<Result<TrainingRequest, DbErrors>>
+    abstract member SelectMultiTrainingRequests: int -> int -> Task<Result<seq<TrainingRequest>, DbErrors>>
+    abstract member CountTrainingRequests: Task<Result<int, DbErrors>>
 
 type TrainingRequestQueries(db: QueryContextFactory) =
     interface ITrainingRequestQueries with
@@ -44,7 +44,7 @@ type TrainingRequestQueries(db: QueryContextFactory) =
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error RecordInsertError.DbAccessError
+                    return Error DbErrors.AccessError
             }
 
         member _.InsertOnboardedClient (onboardingUsername: string) (onboardingRequest: OnboardingRequest) (trainingRequest: TrainingRequest) =
@@ -156,14 +156,14 @@ type TrainingRequestQueries(db: QueryContextFactory) =
                     let recordCount = request |> Seq.length
                     let response =
                         match recordCount with
-                        | 0 -> Error RecordRetrievalErrors.NotFound
+                        | 0 -> Error DbErrors.NotFound
                         | 1 -> Ok (request |> Seq.head)
-                        | _ -> Error RecordRetrievalErrors.ExpectedSingleFoundMultiple
+                        | _ -> Error DbErrors.ExpectedSingleFoundMultiple
                     return response
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error RecordRetrievalErrors.DbAccessError
+                    return Error DbErrors.AccessError
             }
 
         member _.SelectMultiTrainingRequests (skipNumber: int) (length: int) =
@@ -180,7 +180,7 @@ type TrainingRequestQueries(db: QueryContextFactory) =
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error RecordRetrievalErrors.DbAccessError
+                    return Error DbErrors.AccessError
             }
 
         member _.CountTrainingRequests =
@@ -196,5 +196,5 @@ type TrainingRequestQueries(db: QueryContextFactory) =
                 with
                 | ex ->
                     printfn "SQL: %O" ex
-                    return Error RecordRetrievalErrors.DbAccessError
+                    return Error DbErrors.AccessError
             }

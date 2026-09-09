@@ -9,7 +9,7 @@ open Onboarding.Models
 open Xunit
 
 let insertedRecordNumber = 1L
-type TrainingRequestFormInserter = TrainingRequestForm -> Task<Result<int64, RecordInsertError>>
+type TrainingRequestFormInserter = TrainingRequestForm -> Task<Result<int64, DbErrors>>
 
 [<Fact>]
 let ``Training Request for Company is valid. Expect a success response.`` () =
@@ -152,7 +152,7 @@ let ``Training Request is valid, but there was some DB Error. Expect a failure r
       let mutable actualRecievedForm : Option<TrainingRequestForm> = None
       let (insertRec:TrainingRequestFormInserter) = fun form ->
          actualRecievedForm <- Some form
-         Task.FromResult(Error RecordInsertError.DbAccessError)
+         Task.FromResult(Error DbErrors.AccessError)
 
       //Act
       let! submissionResult = createTrainingRequestFromForm formData insertRec

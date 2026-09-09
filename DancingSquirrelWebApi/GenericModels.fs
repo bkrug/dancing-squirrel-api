@@ -18,13 +18,10 @@ type GenericModelResponse<'TValue> =
         ValidationFailures: Option<'TValue>;
     }
 
-type RecordRetrievalErrors =
-    | DbAccessError
+type DbErrors =
+    | AccessError
     | NotFound
     | ExpectedSingleFoundMultiple
-
-type RecordInsertError =
-    | DbAccessError
 
 let internalErrorResponse =
     {
@@ -70,13 +67,13 @@ let getGenericValidationFailure vFailure =
 
 let getRecordRetrievalErrorResponse retrievalError =
     match retrievalError with
-    | RecordRetrievalErrors.NotFound -> notFoundResponse
-    | RecordRetrievalErrors.ExpectedSingleFoundMultiple -> foundMultipleRecordsResponse
-    | RecordRetrievalErrors.DbAccessError -> internalErrorResponse
+    | DbErrors.NotFound -> notFoundResponse
+    | DbErrors.ExpectedSingleFoundMultiple -> foundMultipleRecordsResponse
+    | DbErrors.AccessError -> internalErrorResponse
 
-let getRecordInsertErrorResponse insertError =
+let getDbErrorsResponse insertError =
     match insertError with
-    | RecordInsertError.DbAccessError -> internalErrorResponse
+    | DbErrors.AccessError -> internalErrorResponse
 
 let getFormResponse successCode formSubmissionResult =
     match formSubmissionResult with

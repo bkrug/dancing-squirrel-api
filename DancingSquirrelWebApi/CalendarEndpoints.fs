@@ -99,7 +99,7 @@ let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDay
 
 let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
-    (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>) =
+    (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>) =
     task {
         match form.Availabilities |> Array.toList |> List.map parseRow |> validateRow |> combineRowResults with
         | Error validation ->
@@ -107,7 +107,7 @@ let createDefaultAvailabilityFromForm
         | Ok parsedData ->
             let! dbResult =
                 upsertRecords parsedData
-                |> TaskResult.mapError getRecordInsertErrorResponse
+                |> TaskResult.mapError getDbErrorsResponse
             return dbResult
     }
 
@@ -123,8 +123,8 @@ let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
 
 let editDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
-    (upsertRecord: DefaultAvailability -> Task<Result<DefaultAvailability, RecordInsertError>>):
-    CreateEditDefaultAvailability -> (DefaultAvailability -> Task<Result<DefaultAvailability, RecordInsertError>>) -> Result<bool, GenericModelResponse<DefaultAvailabilityValidation>> =
+    (upsertRecord: DefaultAvailability -> Task<Result<DefaultAvailability, DbErrors>>):
+    CreateEditDefaultAvailability -> (DefaultAvailability -> Task<Result<DefaultAvailability, DbErrors>>) -> Result<bool, GenericModelResponse<DefaultAvailabilityValidation>> =
     failwith "Not implemented"
 
 let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =

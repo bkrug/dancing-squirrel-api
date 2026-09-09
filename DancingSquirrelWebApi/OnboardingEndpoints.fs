@@ -91,7 +91,7 @@ let private validateForm (form : TrainingRequestForm) : Result<TrainingRequestFo
 // Endpoint methods
 //***
 
-let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestForm -> Task<Result<int64, RecordInsertError>>) =
+let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestForm -> Task<Result<int64, DbErrors>>) =
     let caretakerTypeInt = form.GetInt("caretakertype", 0)
     let caretakerTypeEnum = enum<CaretakerType> caretakerTypeInt
     let dataToValidate : TrainingRequestForm =
@@ -111,7 +111,7 @@ let createTrainingRequestFromForm (form: FormData) (insertRec:TrainingRequestFor
         |> TaskResult.bindToTask (fun validatedForm ->
             insertRec validatedForm
             |> TaskResult.map (fun _ -> getGenericSuccess)
-            |> TaskResult.mapError getRecordInsertErrorResponse)
+            |> TaskResult.mapError getDbErrorsResponse)
     submissionResult
 
 let createTrainingRequest (queries: ITrainingRequestQueries) : HttpHandler = fun ctx ->

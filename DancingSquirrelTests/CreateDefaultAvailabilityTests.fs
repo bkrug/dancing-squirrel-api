@@ -11,7 +11,7 @@ open Calendar.Endpoints
 open Calendar.Models
 open Xunit
 
-type DefaultAvailabilityUpserter = list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>
+type DefaultAvailabilityUpserter = list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>
 
 let getUnixSeconds hour minute = hour*60*60 + minute*60
 
