@@ -65,45 +65,43 @@ let private rowsOverlap (a: DefaultAvailability) (b: DefaultAvailability) : bool
 // Only successfully parsed rows can be validated further; a row already Error stays untouched.
 // A row is checked against the rows accepted so far (in input order), so when two rows overlap
 // it is the later row that is reported as the failure.
-let private validateAvailability (rows: seq<Result<DefaultAvailability, DefaultDayAvailabilityValidation>>) : seq<Result<DefaultAvailability, DefaultDayAvailabilityValidation>> =
-    let addRow (accepted, results) (row: Result<DefaultAvailability, DefaultDayAvailabilityValidation>) =
+let private validateAvailability (rows: list<Result<DefaultAvailability, DefaultDayAvailabilityValidation>>) : list<Result<DefaultAvailability, DefaultDayAvailabilityValidation>> =
+    let addRow (validRows, results) (row: Result<DefaultAvailability, DefaultDayAvailabilityValidation>) =
         match row with
-        | Error _ -> (accepted, row :: results)
+        | Error _ -> (validRows, row :: results)
         | Ok parsedRow when parsedRow.StartTimeUnix >= parsedRow.EndTimeUnix ->
             let orderError = Error { emptyRowValidation with EndTime = "StartTime must precede EndTime" }
-            (accepted, orderError :: results)
-        | Ok parsedRow when accepted |> List.exists (rowsOverlap parsedRow) ->
+            (validRows, orderError :: results)
+        | Ok parsedRow when validRows |> List.exists (rowsOverlap parsedRow) ->
             let overlapError = Error { emptyRowValidation with StartTime = "overlaps another availability period" }
-            (accepted, overlapError :: results)
+            (validRows, overlapError :: results)
         | Ok parsedRow ->
-            (parsedRow :: accepted, row :: results)
+            (parsedRow :: validRows, row :: results)
     rows
-    |> Seq.fold addRow ([], [])
+    |> List.fold addRow ([], [])
     |> snd
     |> List.rev
-    |> List.toSeq
 
 // Every row is validated independently, so a single invalid row must not hide the others: on
 // failure we return one validation entry per input row (index-aligned), padding the valid rows
 // with an empty placeholder rather than collapsing the list down to just the failures.
-let private combineRowResults (rows: seq<Result<DefaultAvailability, DefaultDayAvailabilityValidation>>) : Result<list<DefaultAvailability>, DefaultAvailabilityValidation> =
-    let hasErrors = rows |> Seq.exists (function Error _ -> true | Ok _ -> false)
+let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDayAvailabilityValidation>>) : Result<list<DefaultAvailability>, DefaultAvailabilityValidation> =
+    let hasErrors = rows |> List.exists (function Error _ -> true | Ok _ -> false)
     if hasErrors then
         rows
-        |> Seq.map (function Error validation -> validation | Ok _ -> emptyRowValidation)
-        |> Seq.toArray
+        |> List.map (function Error validation -> validation | Ok _ -> emptyRowValidation)
+        |> List.toArray
         |> fun validations -> Error { Availabilities = validations }
     else
         rows
-        |> Seq.choose (function Ok row -> Some row | Error _ -> None)
-        |> Seq.toList
+        |> List.choose (function Ok row -> Some row | Error _ -> None)
         |> Ok
 
 let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>) =
     task {
-        match form.Availabilities |> Seq.map parseRow |> validateAvailability |> combineRowResults with
+        match form.Availabilities |> Array.toList |> List.map parseRow |> validateAvailability |> combineRowResults with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
