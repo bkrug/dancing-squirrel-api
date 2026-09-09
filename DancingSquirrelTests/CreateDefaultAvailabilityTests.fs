@@ -52,3 +52,60 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         actualReceivedRecords.IsSome.ShouldBeTrue()
         actualReceivedRecords.Value.ShouldBeEquivalentTo(expectedRecords)
     }
+
+let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailability[] * string * string> =
+    [
+        (
+            [|
+                { TeacherId = 42L; DayOfWeek = Some "Monday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                { TeacherId = 42L; DayOfWeek = Some "Frunsday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+            |],
+            "DayOfWeek",
+            "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
+        )
+        (
+            [|
+                { TeacherId = 42L; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00";  EndTime = Some "17:00:00" }
+                { TeacherId = 42L; DayOfWeek = Some "Tuesday";   StartTime = Some "not-a-time"; EndTime = Some "17:00:00" }
+                { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00";   EndTime = Some "17:00:00" }
+            |],
+            "StartTime",
+            "Must be in the format 'hh:mm'"
+        )
+        (
+            [|
+                { TeacherId = 42L; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                { TeacherId = 42L; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "not-a-time" }
+                { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+            |],
+            "EndTime",
+            "Must be in the format 'hh:mm'"
+        )
+    ]
+
+[<Theory>]
+[<MemberData(nameof(defaultAvailabilityValidationFailureData))>]
+let ``Default availability entry is somehow invalid. Expect a validation failure.``
+    (availabilities: CreateEditDefaultDayAvailability[])
+    (validationField: string)
+    (validationMsg: string) =
+    task {
+        let callerInput : CreateEditDefaultAvailability = { Availabilities = availabilities }
+
+        let (upsertRecord: DefaultAvailabilityUpserter) = fun records ->
+            Task.FromResult(Ok records)
+
+        //Act
+        let! submissionResult = createDefaultAvailabilityFromForm callerInput upsertRecord
+
+        //Assert
+        match submissionResult with
+        | Ok _ -> Assert.Fail "Expected a validation failure"
+        | Error errResp ->
+            let dayValidation = errResp.ValidationFailures.Value.Availabilities.[1]
+            dayValidation.GetType()
+                .GetProperty(validationField)
+                .GetValue(dayValidation)
+                .ShouldBeEquivalentTo(validationMsg)
+    }

@@ -276,7 +276,7 @@ let ``Training Request is somehow invalid. Expect a validation failure.``
 
       //Assert
       match submissionResult with
-         | Ok _ -> failwith "Expected a validation failure"
+         | Ok _ -> Assert.Fail "Expected a validation failure"
          | Error errResp ->
             errResp.ValidationFailures.IsSome.ShouldBeTrue()
             errResp.ValidationFailures.Value.GetType()
