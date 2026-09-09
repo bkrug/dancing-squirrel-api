@@ -24,9 +24,9 @@ let ``Default availability form has entries for Monday through Thursday and Satu
                 Availabilities = [|
                     { TeacherId = teacherId; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { TeacherId = teacherId; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "Thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "Saturday";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = teacherId; DayOfWeek = Some "SaturDay";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
                 |]
             }
         let expectedRecords =

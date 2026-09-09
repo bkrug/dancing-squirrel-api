@@ -29,7 +29,7 @@ let createDefaultAvailabilityFromForm
                 let dayOfWeek = 
                     match a.DayOfWeek with
                     | Some dayOfWeekString -> 
-                        match Enum.TryParse<DayOfWeek> dayOfWeekString with
+                        match Enum.TryParse<DayOfWeek> (dayOfWeekString, true) with
                         | true, dayValue -> int64 dayValue
                         | _ -> int64 -1
                     | None -> int64 -1
