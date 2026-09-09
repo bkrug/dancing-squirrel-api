@@ -100,6 +100,11 @@ let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailabi
             "EndTime",
             "is required"
         )
+        (
+            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "08:00:00" },
+            "EndTime",
+            "StartTime must precede EndTime"
+        )        
     ]
 
 [<Theory>]
@@ -133,4 +138,31 @@ let ``Default availability entry is somehow invalid. Expect a validation failure
                 .GetProperty(validationField)
                 .GetValue(dayValidation)
                 .ShouldBeEquivalentTo(validationMsg)
+    }
+
+[<Fact>]
+let ``Default availability form has a Wednesday entry that overlaps another Wednesday entry. Expect a validation failure on the overlapping row's StartTime.`` () =
+    task {
+        let callerInput : CreateEditDefaultAvailability =
+            {
+                Availabilities = [|
+                    { TeacherId = 42L; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "18:00:00" }
+                    { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "14:00:00" }
+                    { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "13:00:00"; EndTime = Some "17:00:00" }
+                    { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "20:00:00"; EndTime = Some "21:00:00" }
+                |]
+            }
+
+        let (upsertRecord: DefaultAvailabilityUpserter) = fun records ->
+            Task.FromResult(Ok records)
+
+        //Act
+        let! submissionResult = createDefaultAvailabilityFromForm callerInput upsertRecord
+
+        //Assert
+        match submissionResult with
+        | Ok _ -> Assert.Fail "Expected a validation failure"
+        | Error errResp ->
+            let dayValidation = errResp.ValidationFailures.Value.Availabilities.[2]
+            dayValidation.StartTime.ShouldBeEquivalentTo("overlaps another availability period")
     }
