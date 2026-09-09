@@ -20,10 +20,10 @@ let roles = ["TeacherRole"]
 
 let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
-    (upsertRecords: DefaultAvailability[] -> Task<Result<DefaultAvailability[], RecordInsertError>>) =
+    (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>) =
     //: Task<Result<bool, GenericModelResponse<DefaultAvailabilityValidation>>> =
     task {
-        let parsedData : DefaultAvailability[] =
+        let parsedData =
             form.Availabilities
             |> Seq.map (fun a ->
                 let dayOfWeek = 
@@ -61,8 +61,7 @@ let createDefaultAvailabilityFromForm
                     }
                 dbA
             )
-            |> Seq.filter (fun x -> x.DefaultAvailabilityId = -10)
-            |> Seq.toArray
+            |> Seq.toList
         let! dbResult =
             upsertRecords parsedData
             |> TaskResult.mapError getRecordInsertErrorResponse

@@ -11,7 +11,7 @@ open Calendar.Endpoints
 open Calendar.Models
 open Xunit
 
-type DefaultAvailabilityUpserter = DefaultAvailability[] -> Task<Result<DefaultAvailability[], RecordInsertError>>
+type DefaultAvailabilityUpserter = list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>
 
 let getUnixSeconds hour minute = hour*60*60 + minute*60
 
@@ -29,7 +29,7 @@ let ``Default availability form has entries for Monday through Thursday and Satu
                     { TeacherId = teacherId; DayOfWeek = Some "Saturday";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
                 |]
             }
-        let expectedRecords : DefaultAvailability[] =
+        let expectedRecords =
             [|
                 { TeacherId = teacherId; DayOfWeek = int64 DayOfWeek.Monday;    StartTimeUnix = getUnixSeconds  9 0; EndTimeUnix = getUnixSeconds 17 0; DefaultAvailabilityId = 0; }
                 { TeacherId = teacherId; DayOfWeek = int64 DayOfWeek.Tuesday;   StartTimeUnix = getUnixSeconds  9 0; EndTimeUnix = getUnixSeconds 17 0; DefaultAvailabilityId = 0; }
@@ -37,8 +37,9 @@ let ``Default availability form has entries for Monday through Thursday and Satu
                 { TeacherId = teacherId; DayOfWeek = int64 DayOfWeek.Thursday;  StartTimeUnix = getUnixSeconds  9 0; EndTimeUnix = getUnixSeconds 17 0; DefaultAvailabilityId = 0; }
                 { TeacherId = teacherId; DayOfWeek = int64 DayOfWeek.Saturday;  StartTimeUnix = getUnixSeconds 10 0; EndTimeUnix = getUnixSeconds 14 0; DefaultAvailabilityId = 0; }
             |]
+            |> Seq.toList
 
-        let mutable actualReceivedRecords : DefaultAvailability[] option = None
+        let mutable actualReceivedRecords : list<DefaultAvailability> option = None
         let (upsertRecord: DefaultAvailabilityUpserter) = fun records ->
             actualReceivedRecords <- Some records
             Task.FromResult(Ok records)
@@ -49,6 +50,5 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         //Assert
         submissionResult.IsOk.ShouldBeTrue()
         actualReceivedRecords.IsSome.ShouldBeTrue()
-        actualReceivedRecords.Value.Length.ShouldBe(expectedRecords.Length)
         actualReceivedRecords.Value.ShouldBeEquivalentTo(expectedRecords)
     }
