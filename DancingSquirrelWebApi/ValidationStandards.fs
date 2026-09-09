@@ -1,5 +1,6 @@
 module ValidationStandards
 
+open System
 open System.Text.RegularExpressions
 
 [<Literal>]

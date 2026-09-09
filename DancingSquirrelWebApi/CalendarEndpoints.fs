@@ -16,56 +16,92 @@ open Microsoft.AspNetCore.Authentication.Cookies
 open ValidationStandards
 
 //Todo: Move into named constant
-let roles = ["TeacherRole"]
+let roles = [TeacherRole]
 
-let createDefaultAvailabilityFromForm
-    (form: CreateEditDefaultAvailability)
-    (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>) =
-    //: Task<Result<bool, GenericModelResponse<DefaultAvailabilityValidation>>> =
-    task {
-        let parsedData =
-            form.Availabilities
-            |> Seq.map (fun a ->
-                let dayOfWeek = 
-                    match a.DayOfWeek with
-                    | Some dayOfWeekString -> 
-                        match Enum.TryParse<DayOfWeek> (dayOfWeekString, true) with
-                        | true, dayValue -> int64 dayValue
-                        | _ -> int64 -1
-                    | None -> int64 -1
-                let startTime = 
-                    match a.StartTime with
-                    | Some timeString ->
-                        match TimeOnly.TryParse timeString with
-                        | true, parsedTime ->
-                            int64 (parsedTime.Hour * 60 * 60 + parsedTime.Minute * 60 * 60)
-                        | _ ->
-                            int64 -1
-                    | None -> int64 -1
-                let endTime = 
-                    match a.EndTime with
-                    | Some timeString ->
-                        match TimeOnly.TryParse timeString with
-                        | true, parsedTime ->
-                            int64 (parsedTime.Hour * 60 * 60 + parsedTime.Minute * 60 * 60)
-                        | _ ->
-                            int64 -1
-                    | None -> int64 -1                
-                let dbA : DefaultAvailability =
-                    {
+let getParsedDayOfWeek (dayOfWeekOption: Option<string>) =
+    match dayOfWeekOption with
+    | None -> Error requiredMessage
+    | Some "" -> Error requiredMessage
+    | Some dayOfWeekString ->
+        match Enum.TryParse<DayOfWeek> (dayOfWeekString, true) with
+        | true, dayValue -> Ok(int64 dayValue)
+        | _ -> Error "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
+
+let getParsedTimeOfDay (timeOfDayOption: Option<string>) =
+    match timeOfDayOption with
+    | None -> Error requiredMessage
+    | Some "" -> Error requiredMessage
+    | Some timeString ->
+        match TimeOnly.TryParse timeString with
+        | true, parsedTime ->
+            Ok (int64(parsedTime.ToTimeSpan().TotalSeconds))
+        | _ ->
+            Error "Must be in the format 'hh:mm'"
+
+let parseToDefaultAvailability (form: CreateEditDefaultAvailability) : Result<list<DefaultAvailability>, DefaultAvailabilityValidation> =
+    let validatedRows = 
+        form.Availabilities
+        |> Seq.map (fun a ->
+            let dayOfWeekR = getParsedDayOfWeek a.DayOfWeek
+            let startTimeR = getParsedTimeOfDay a.StartTime
+            let endTimeR = getParsedTimeOfDay a.EndTime
+            let dbA =
+                match dayOfWeekR, startTimeR, endTimeR with
+                | Ok dayOfWeek, Ok startTime, Ok endTime ->
+                    Ok {
                         TeacherId = a.TeacherId;
                         DayOfWeek = dayOfWeek;
                         StartTimeUnix = startTime;
                         EndTimeUnix = endTime;
                         DefaultAvailabilityId = 0;
                     }
-                dbA
-            )
-            |> Seq.toList
-        let! dbResult =
-            upsertRecords parsedData
-            |> TaskResult.mapError getRecordInsertErrorResponse
-        return dbResult
+                | _ ->
+                    let validations: DefaultDayAvailabilityValidation =
+                        {
+                            TeacherId = "";
+                            DayOfWeek = match dayOfWeekR with | Error msg -> msg | _ -> "";
+                            StartTime = match startTimeR with | Error msg -> msg | _ -> "";
+                            EndTime = match endTimeR with | Error msg -> msg | _ -> "";
+                        }
+                    Error validations
+            dbA
+        )
+    let emptySeq : seq<DefaultAvailability> = []
+    let successOrFail =
+        (Ok emptySeq, validatedRows)
+        ||> Seq.fold (fun acc rowParseResult ->
+            match acc, rowParseResult with
+            | Error prevErrors, Error newError ->
+                Error (Seq.append prevErrors [newError])
+            | Error prevErrors, Ok _ ->
+                Error (Seq.append prevErrors [ { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = ""; } ])
+            | Ok prevSuccess, Error newError ->
+                Error (
+                    seq {
+                        for i in 1..Seq.length prevSuccess do
+                            yield { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = ""; }
+                        yield newError
+                    }
+                )
+            | Ok prevSuccess, Ok newSuccess ->
+                Ok (Seq.append prevSuccess [newSuccess])
+        )
+    match successOrFail with
+        | Ok success -> Ok (Seq.toList success)
+        | Error err -> Error { Availabilities = Seq.toArray err }
+
+let createDefaultAvailabilityFromForm
+    (form: CreateEditDefaultAvailability)
+    (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, RecordInsertError>>) =
+    task {
+        match parseToDefaultAvailability form with
+        | Error validation ->
+            return Error (getGenericValidationFailure validation)
+        | Ok parsedData ->
+            let! dbResult =
+                upsertRecords parsedData
+                |> TaskResult.mapError getRecordInsertErrorResponse
+            return dbResult
     }
 
 let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
