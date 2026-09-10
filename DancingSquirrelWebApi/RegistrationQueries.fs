@@ -14,7 +14,7 @@ type IUserAuthorizationWrapper =
     abstract member EditUserAsync: IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
     abstract member EditUserClaimAsync: Claim -> IdentityUser -> Task<unit>
     abstract member GetUserAsync: string -> Task<Result<IdentityUser, GenericModelResponse<string>>>
-    abstract member GetUserClaimsAsync: IdentityUser -> Task<Result<IList<Claim>, GenericModelResponse<string>>>
+    abstract member GetUserClaimsAsync: IdentityUser -> Task<IList<Claim>>
     abstract member SelectMultiUsers: int -> int -> Task<Result<seq<IdentityUser>, GenericModelResponse<string>>>
     abstract member CountUsers: Task<Result<int, GenericModelResponse<string>>>
     abstract member DeleteUserAsync: string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
@@ -78,13 +78,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
 
         member _.GetUserClaimsAsync (identityUser: IdentityUser) =
             task {
-                try
-                    let! claims = userManager.GetClaimsAsync(identityUser)
-                    return Ok claims
-                with
-                | ex ->
-                    printfn "AspNetCore Identity: %O" ex
-                    return Error internalErrorResponse
+                return! userManager.GetClaimsAsync identityUser
             }
 
         member _.SelectMultiUsers (skip: int) (length: int) =

@@ -12,6 +12,7 @@ type ViewUserModel =
         Email: string
         PhoneNumber: string
         Roles: seq<RoleModel>
+        TeacherId: Option<int>
     }
 
 type GridUserModel =

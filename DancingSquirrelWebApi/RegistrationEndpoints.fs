@@ -20,9 +20,24 @@ let private roles = [AdminRole]
 let private mapToIdentityUser (data: CreateUserModel) =
     IdentityUser(Email = data.Email, UserName = data.Username, PhoneNumber = data.PhoneNumber)
 
-let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) : ViewUserModel =
+let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) (claims: IList<Claim>) : ViewUserModel =
     let roles = roleNames |> Seq.map (fun name -> { Name = name })
-    { UserId = user.Id; Username = user.UserName; Email = user.Email; PhoneNumber = user.PhoneNumber; Roles = roles }
+    let teacherClaimOption = claims |> Seq.filter (fun c -> c.Type = "TeacherId") |> Seq.tryHead
+    let teacherIdOption =
+        match teacherClaimOption with
+        | Some teacherClaim ->
+            match System.Int32.TryParse teacherClaim.Value with
+            | true, teacherId -> Some teacherId
+            | _ -> None
+        | _ -> None
+    {
+        UserId = user.Id;
+        Username = user.UserName;
+        Email = user.Email;
+        PhoneNumber = user.PhoneNumber;
+        Roles = roles;
+        TeacherId = teacherIdOption;
+    }
 
 let private mapToGridUserModel (user: IdentityUser) : GridUserModel =
     { UserId = user.Id; Username = user.UserName; Email = user.Email }
@@ -289,7 +304,8 @@ let getUserInternal (queries: IUserAuthorizationWrapper) (userId: string) ctx =
             queries.GetUserAsync userId
             |> TaskResult.bind (fun user -> task {
                 let! roleNames = queries.GetRoleAsync user
-                return Ok (mapToViewUserModel user roleNames)
+                let! claims = queries.GetUserClaimsAsync user
+                return Ok (mapToViewUserModel user roleNames claims)
             })
         let httpResponse = getHttpRecordResponse viewModelResult
         return! httpResponse ctx
