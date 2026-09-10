@@ -109,6 +109,7 @@ let registerFirstUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler 
             return! (Response.withStatusCode 500 >> Response.ofJson internalErrorResponse) ctx
     }
 
+//TODO: Why can't I assign roles when I first create the user?
 let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler = 
     Auth.processAuthorizedRequest roles
         (fun ctx ->
@@ -122,7 +123,7 @@ let registerNewUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
             }
         )
 
-let validateEditUserModel (userModel: EditUserModel) : Result<EditUserModel, GenericModelResponse<EditUserModel>> =
+let validateEditUserModel (userModel: EditUserModel) : Result<EditUserModel, GenericModelResponse<EditUserValidation>> =
     let validationResults =
         dict [
             nameof userModel.Email,       validateEmailField userModel.Email
@@ -135,6 +136,7 @@ let validateEditUserModel (userModel: EditUserModel) : Result<EditUserModel, Gen
         Error (getGenericValidationFailure {
             PhoneNumber = getFieldValidationMessage (nameof userModel.PhoneNumber) validationResults
             Email = getFieldValidationMessage (nameof userModel.Email) validationResults
+            TeacherId = System.String.Empty
         })
 
 let private getExistingUserRecord (queries: IUserAuthorizationWrapper) (userId:string) =
@@ -147,6 +149,7 @@ let private getExistingUserRecord (queries: IUserAuthorizationWrapper) (userId:s
                 Error (getGenericValidationFailure {
                     PhoneNumber = genericModelWithString.ValidationFailures |?? lazy System.String.Empty
                     Email = System.String.Empty
+                    TeacherId = System.String.Empty
                 })            
     }
 
@@ -162,6 +165,7 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
                 Error (getGenericValidationFailure {
                     PhoneNumber = flattenIdentityError identityError
                     Email = System.String.Empty
+                    TeacherId = System.String.Empty
                 })            
     }
 
