@@ -22,14 +22,14 @@ let private mapToIdentityUser (data: CreateUserModel) =
 
 let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) (claims: IList<Claim>) : ViewUserModel =
     let roles = roleNames |> Seq.map (fun name -> { Name = name })
-    let teacherClaimOption = claims |> Seq.filter (fun c -> c.Type = "TeacherId") |> Seq.tryHead
     let teacherIdOption =
-        match teacherClaimOption with
-        | Some teacherClaim ->
+        claims
+        |> Seq.filter (fun c -> c.Type = "TeacherId")
+        |> Seq.tryHead
+        |> Option.bind (fun teacherClaim ->
             match System.Int32.TryParse teacherClaim.Value with
             | true, teacherId -> Some teacherId
-            | _ -> None
-        | _ -> None
+            | _ -> None)
     {
         UserId = user.Id;
         Username = user.UserName;
