@@ -1,7 +1,7 @@
 module Registration.Endpoints
 
 open System.Collections.Generic
-open System.Threading.Tasks
+open System.Security.Claims
 open Falco
 open GenericModels
 open Global
@@ -157,16 +157,19 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
     task {
         user.Email <- editData.Email
         user.PhoneNumber <- editData.PhoneNumber
-        let! editResult = queries.EditUserAsync user        
-        return 
-            match editResult with
-            | Ok _ -> Ok getGenericSuccess
-            | Error identityError ->
-                Error (getGenericValidationFailure {
-                    PhoneNumber = flattenIdentityError identityError
-                    Email = System.String.Empty
-                    TeacherId = System.String.Empty
-                })            
+        let! editResult = queries.EditUserAsync user
+        match editResult with
+        | Ok _ ->
+            if editData.TeacherId.IsSome then
+                let newClaim = new Claim("TeacherId", editData.TeacherId.Value.ToString())
+                do! queries.EditUserClaimAsync newClaim user
+            return Ok getGenericSuccess
+        | Error identityError ->
+            return Error (getGenericValidationFailure {
+                PhoneNumber = flattenIdentityError identityError
+                Email = System.String.Empty
+                TeacherId = System.String.Empty
+            })
     }
 
 let private editUserInternal (queries: IUserAuthorizationWrapper) (userId: string) ctx =

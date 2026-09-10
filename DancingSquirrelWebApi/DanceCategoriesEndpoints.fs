@@ -28,3 +28,12 @@ let getTeachersByDanceType (queries: IDanceTypeQueries) =
                 return! getHttpRecordResponse teachers ctx
             }
         )
+
+let getTeachers (queries: IDanceTypeQueries) =
+    Auth.processAuthorizedRequest [AdminRole]
+        (fun ctx ->
+            task {
+                let! teachers = queries.SelectMultipleTeachers
+                return! getHttpRecordResponse (Ok teachers) ctx
+            }
+        )

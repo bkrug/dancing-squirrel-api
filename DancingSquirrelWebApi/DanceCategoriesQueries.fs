@@ -9,6 +9,7 @@ open System.Threading.Tasks
 type IDanceTypeQueries =
     abstract member SelectDanceTypes: Task<Result<seq<DanceType>, DbErrors>>
     abstract member SelectTeachersByDanceType: int64 -> Task<Result<seq<Teacher>, DbErrors>>
+    abstract member SelectMultipleTeachers: Task<seq<Teacher>>
 
 type DanceTypeQueries(db: QueryContextFactory) =
     interface IDanceTypeQueries with
@@ -42,4 +43,12 @@ type DanceTypeQueries(db: QueryContextFactory) =
                 | ex ->
                     printfn "SQL: %O" ex
                     return Error DbErrors.AccessError
+            }
+
+        member _.SelectMultipleTeachers =
+            task {
+                return! selectTask db {
+                    for t in Teacher do
+                    select t
+                }
             }
