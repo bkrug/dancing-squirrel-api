@@ -24,7 +24,7 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) (cl
     let roles = roleNames |> Seq.map (fun name -> { Name = name })
     let teacherIdOption =
         claims
-        |> Seq.filter (fun c -> c.Type = "TeacherId")
+        |> Seq.filter (fun c -> c.Type = TeacherIdClaim)
         |> Seq.tryHead
         |> Option.bind (fun teacherClaim ->
             match System.Int32.TryParse teacherClaim.Value with
@@ -176,7 +176,7 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
         match editResult with
         | Ok _ ->
             if editData.TeacherId.IsSome then
-                let newClaim = new Claim("TeacherId", editData.TeacherId.Value.ToString())
+                let newClaim = new Claim(TeacherIdClaim, editData.TeacherId.Value.ToString())
                 do! queries.EditUserClaimAsync newClaim user
             return Ok getGenericSuccess
         | Error identityError ->

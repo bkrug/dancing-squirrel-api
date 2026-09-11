@@ -132,3 +132,5 @@ let AdminRole = "Admin"
 let OnboarderRole = "Onboarder"
 let TeacherRole = "Teacher"
 type Roles = AdminRole | OnboarderRole | TeacherRole
+
+let TeacherIdClaim = "TeacherId"

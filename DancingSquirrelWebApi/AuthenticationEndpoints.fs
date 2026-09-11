@@ -77,23 +77,17 @@ let logoutUser (logoutUserAsync : unit -> Task<unit>) =
 let getCurrentUserRoles : HttpHandler =
     Auth.getCurrentClaims
         (fun claimResult ctx ->
-            let transformedResult =
-                match claimResult with
-                | Ok claims -> Ok (
-                    {
-                        Claims =
-                            claims
-                            |> Seq.map 
-                                (fun claim -> 
-                                    match claim.Type with
-                                    | ClaimTypes.Role -> { Type = "Role"; Value = claim.Value }
-                                    | _ -> { Type = claim.Type; Value = claim.Value }
-                                )
-                            |> Seq.toArray
-                    })
-                | Error _ -> Error(getGenericValidationFailure "not authenticated")
-            getHttpRecordResponse transformedResult ctx
+            let isRelevantClaim (claim: Claim) = [ ClaimTypes.Role; TeacherIdClaim ] |> Seq.contains claim.Type
+            let toClaimDto (claim: Claim) =
+                { Type = (if claim.Type = ClaimTypes.Role then "Role" else claim.Type)
+                  Value = claim.Value }
+
+            claimResult
+            |> Result.map (fun claims -> { Claims = claims |> Seq.filter isRelevantClaim |> Seq.map toClaimDto |> Seq.toArray })
+            |> Result.mapError (fun _ -> getGenericValidationFailure "not authenticated")
+            |> fun result -> getHttpRecordResponse result ctx
         )
+
 
 let notAuthorized : HttpHandler =
     Response.withStatusCode 401 >> Response.ofPlainText "you are not authorized"
