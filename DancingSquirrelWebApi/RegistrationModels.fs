@@ -61,3 +61,13 @@ type OwnPasswordResetModel =
         NewPassword: string
     }
 
+type ClaimViewModel =
+    {
+        Type: string
+        Value: string
+    }
+
+type ClaimResponse =
+    {
+        Claims: ClaimViewModel[]
+    }

@@ -20,7 +20,7 @@ type LoginModel =
 
 let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
-let private getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>) =
+let private getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>, prebuiltClaims: IList<Claim>) =
     let roleClaims = 
         roles
         |> Seq.map (fun role -> new Claim(ClaimTypes.Role, role))
@@ -30,6 +30,7 @@ let private getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>
             new Claim(ClaimTypes.Email, identityUser.Email);
             new Claim(ClaimTypes.NameIdentifier, identityUser.Id)
         }
+        |> Seq.append prebuiltClaims
         |> Seq.append roleClaims
 
     let claimsIdentity = new ClaimsIdentity(
@@ -44,12 +45,12 @@ let loginUserWithClaimsHandler (queries: IUserAuthorizationWrapper): HttpHandler
 
         let rememberMe = false
         let lockoutOnFailure = true
-        let! isCorrectPassword, user, roles = queries.LoginUserAsync loginData.Username loginData.Password rememberMe lockoutOnFailure
+        let! isCorrectPassword, user, roles, claims = queries.LoginUserAsync loginData.Username loginData.Password rememberMe lockoutOnFailure
 
         let httpResponse =
             match isCorrectPassword with
                 | true ->
-                    let claimsPrincipal = getClaimsPrincipal(user, roles)
+                    let claimsPrincipal = getClaimsPrincipal(user, roles, claims)
                     let authProperties = new AuthenticationProperties (
                         AllowRefresh = true,
                         ExpiresUtc = System.DateTimeOffset.UtcNow.AddHours(2),
@@ -74,11 +75,22 @@ let logoutUser (logoutUserAsync : unit -> Task<unit>) =
         )
 
 let getCurrentUserRoles : HttpHandler =
-    Auth.getCurrentUserRoles
-        (fun roleNameResult ctx ->
+    Auth.getCurrentClaims
+        (fun claimResult ctx ->
             let transformedResult =
-                match roleNameResult with
-                | Ok roleNames -> Ok ({ Roles = roleNames |> Seq.map (fun rn -> { Name = rn }) } : RoleEditingModel)
+                match claimResult with
+                | Ok claims -> Ok (
+                    {
+                        Claims =
+                            claims
+                            |> Seq.map 
+                                (fun claim -> 
+                                    match claim.Type with
+                                    | ClaimTypes.Role -> { Type = "Role"; Value = claim.Value }
+                                    | _ -> { Type = claim.Type; Value = claim.Value }
+                                )
+                            |> Seq.toArray
+                    })
                 | Error _ -> Error(getGenericValidationFailure "not authenticated")
             getHttpRecordResponse transformedResult ctx
         )

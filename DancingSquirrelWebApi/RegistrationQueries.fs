@@ -24,7 +24,7 @@ type IUserAuthorizationWrapper =
     abstract member UpdateUserRolesAsyncAsync: seq<string> -> seq<string> -> IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
     abstract member GetRoleAsync: IdentityUser -> Task<IList<string>>
 
-    abstract member LoginUserAsync: string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string>>
+    abstract member LoginUserAsync: string -> string -> bool -> bool -> Task<bool * IdentityUser * IList<string> * IList<Claim>>
     abstract member LogoutUserAsync: (unit -> Task<unit>)
     abstract member CheckPasswordAsync: string -> string -> Task<bool>
     abstract member UnlockUserAsync: string -> string -> Task<Result<GenericModelResponse<bool>, GenericModelResponse<string>>>
@@ -152,14 +152,19 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 if user = null then
                     let user: IdentityUser = null
                     let roles: IList<string> = List<string> []
-                    return false, user, roles
+                    let dbClaims: IList<Claim> = List<Claim> []
+                    return false, user, roles, dbClaims
                 else
                     let! signinResult = signInManager.PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure)
                     let! roles =
                         match signinResult.Succeeded with
                         | true -> signInManager.UserManager.GetRolesAsync(user)
                         | false -> Task.FromResult(new List<string>())
-                    return signinResult.Succeeded, user, roles
+                    let! dbClaims =
+                        match signinResult.Succeeded with
+                        | true -> userManager.GetClaimsAsync user
+                        | false -> Task.FromResult(new List<Claim>())
+                    return signinResult.Succeeded, user, roles, dbClaims
             }
 
         member _.LogoutUserAsync = fun () ->

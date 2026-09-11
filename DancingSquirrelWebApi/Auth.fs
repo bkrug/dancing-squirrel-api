@@ -67,6 +67,19 @@ let getCurrentUserRoles (requestLogic : Result<seq<string>, unit> -> HttpHandler
             requestLogic (Error()) ctx
     )
 
+let getCurrentClaims (requestLogic : Result<seq<System.Security.Claims.Claim>, unit> -> HttpHandler) : HttpHandler =
+    Request.authenticate authScheme (fun authenticateResult ctx ->
+        match authenticateResult.Succeeded with
+        | true ->
+            let claims =
+                match authenticateResult.Principal with
+                | null -> Seq.empty
+                | principal -> principal.Claims
+            requestLogic (Ok claims) ctx
+        | false ->
+            requestLogic (Error()) ctx
+    )
+
 let getCurrentUserId (requestLogic : string -> HttpHandler) : HttpHandler =
     Request.authenticate authScheme (fun authenticateResult ctx ->
         let foundUserId =
