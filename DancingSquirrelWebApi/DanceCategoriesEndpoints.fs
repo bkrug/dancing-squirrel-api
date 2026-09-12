@@ -12,7 +12,7 @@ let getDanceTypes (queries: IDanceTypeQueries) =
             task {
                 let! danceTypes =
                     queries.SelectDanceTypes
-                    |> TaskResult.mapError getRecordRetrievalErrorResponse
+                    |> TaskResult.mapError getDbErrorsMessageResponse
                 return! getHttpRecordResponse danceTypes ctx
             }
         )
@@ -24,7 +24,7 @@ let getTeachersByDanceType (queries: IDanceTypeQueries) =
                 let danceTypeId = (Request.getRoute ctx).GetInt64("danceTypeId")
                 let! teachers =
                     queries.SelectTeachersByDanceType danceTypeId
-                    |> TaskResult.mapError getRecordRetrievalErrorResponse
+                    |> TaskResult.mapError getDbErrorsMessageResponse
                 return! getHttpRecordResponse teachers ctx
             }
         )

@@ -41,12 +41,28 @@ let foundMultipleRecordsResponse =
     }
 
 //This is not considered an internal error. The caller probably just supplied an invalid key.
-let notFoundResponse =
+let notFoundMsgResponse =
     {
         IsSuccess = false
         IsInternalError = false
         IsNotFoundError = true
         ValidationFailures = Some "Not found"
+    }
+
+let notFoundResponse =
+    {
+        IsSuccess = false
+        IsInternalError = true
+        IsNotFoundError = false
+        ValidationFailures = None
+    }
+
+let getGenericFailure =
+    {
+        IsSuccess = false
+        IsInternalError = false
+        IsNotFoundError = false
+        ValidationFailures = None
     }
 
 let getGenericSuccess =
@@ -65,14 +81,16 @@ let getGenericValidationFailure vFailure =
         ValidationFailures = Some vFailure
     }
 
-let getRecordRetrievalErrorResponse retrievalError =
+let getDbErrorsMessageResponse retrievalError =
     match retrievalError with
-    | DbErrors.NotFound -> notFoundResponse
+    | DbErrors.NotFound -> notFoundMsgResponse
     | DbErrors.ExpectedSingleFoundMultiple -> foundMultipleRecordsResponse
     | DbErrors.AccessError -> internalErrorResponse
 
 let getDbErrorsResponse insertError =
     match insertError with
+    | DbErrors.NotFound -> notFoundResponse
+    | DbErrors.ExpectedSingleFoundMultiple -> getGenericFailure
     | DbErrors.AccessError -> internalErrorResponse
 
 let getFormResponse successCode formSubmissionResult =

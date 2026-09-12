@@ -68,7 +68,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     let! user = userManager.FindByIdAsync(userId)
                     return
                         match user with
-                        | null -> Error notFoundResponse
+                        | null -> Error notFoundMsgResponse
                         | _ -> Ok user
                 with
                 | ex ->
@@ -108,7 +108,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 try
                     let! user = userManager.FindByIdAsync(userId)
                     match user with
-                    | null -> return Error notFoundResponse
+                    | null -> return Error notFoundMsgResponse
                     | _ ->
                         let! result = userManager.DeleteAsync(user)
                         match result.Succeeded with
@@ -188,7 +188,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 try
                     let! user = userManager.FindByIdAsync(userId)
                     match user with
-                    | null -> return Error notFoundResponse
+                    | null -> return Error notFoundMsgResponse
                     | _ ->
                         let! resetToken = userManager.GeneratePasswordResetTokenAsync(user)
                         let! resetResult = userManager.ResetPasswordAsync(user, resetToken, newPassword)
