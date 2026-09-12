@@ -3,6 +3,7 @@ module Auth
 open Falco
 open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Authentication
+open System.Security.Claims
 
 #region CopyOfFalcoCode
 /// TODO: When a Falco version > 5.2.0 is released, we can probably delete this region.
@@ -26,7 +27,7 @@ open Microsoft.AspNetCore.Authentication
 /// - `authScheme`: The authentication scheme to use when authenticating the request. This should match the scheme used in your authentication configuration.
 /// - `roles`: A sequence of roles to check against the authenticated user's claims. If the user is in any of the specified roles, they will be allowed to proceed.
 /// - `handleOk`: The `HttpHandler` to invoke if the user is authenticated and in one of the specified roles. If the user is not authenticated or not in any of the roles, a 403 Forbidden response will be returned.
-let ifAuthenticatedInRole
+let private ifAuthenticatedInRole
     (authScheme : string)
     (roles : string seq)
     (handleOk : HttpHandler) : HttpHandler =
@@ -39,7 +40,7 @@ let ifAuthenticatedInRole
             ctx.ForbidAsync())
 #endregion
 
-let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
+let private authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
 let processAuthenticatedRequest (requestLogic : HttpHandler) : HttpHandler = fun ctx ->
     task {
@@ -51,26 +52,10 @@ let processAuthorizedRequest (rolesAllowed : list<string>) (requestLogic : HttpH
         do! ifAuthenticatedInRole authScheme rolesAllowed requestLogic ctx
     }
 
-let getCurrentUserRoles (requestLogic : Result<seq<string>, unit> -> HttpHandler) : HttpHandler =
-    Request.authenticate authScheme (fun authenticateResult ctx ->
-        match authenticateResult.Succeeded with
-        | true ->
-            let roles =
-                if isNull authenticateResult.Principal = false then
-                    authenticateResult.Principal.Claims
-                    |> Seq.filter (fun c -> c.Type = System.Security.Claims.ClaimTypes.Role)
-                    |> Seq.map (fun c -> c.Value)
-                else
-                    Seq.empty
-            requestLogic (Ok roles) ctx
-        | false ->
-            requestLogic (Error()) ctx
-    )
-
 //TODO: Consider returning empty lists instead of errors when the user can't authenticate
 //The endpoints that are supposed to use this are just supposed to report details of what the user is allowed to do,
 //not actually do anything.
-let getCurrentClaims (requestLogic : Result<seq<System.Security.Claims.Claim>, unit> -> HttpHandler) : HttpHandler =
+let getCurrentClaims (requestLogic : Result<seq<Claim>, unit> -> HttpHandler) : HttpHandler =
     Request.authenticate authScheme (fun authenticateResult ctx ->
         match authenticateResult.Succeeded with
         | true ->
@@ -83,39 +68,35 @@ let getCurrentClaims (requestLogic : Result<seq<System.Security.Claims.Claim>, u
             requestLogic (Error()) ctx
     )
 
-let getCurrentUserId (requestLogic : string -> HttpHandler) : HttpHandler =
+let private processRequestWithMatchingClaim
+    (claimType : string)
+    (claimValueParser : string -> 'a option)
+    (requestLogic : 'a -> HttpHandler) : HttpHandler =
     Request.authenticate authScheme (fun authenticateResult ctx ->
-        let foundUserId =
+        let foundValue =
             if authenticateResult.Succeeded && isNull authenticateResult.Principal = false then
                 authenticateResult.Principal.Claims
-                |> Seq.filter (fun c -> c.Type = System.Security.Claims.ClaimTypes.NameIdentifier)
+                |> Seq.filter (fun c -> c.Type = claimType)
                 |> Seq.map (fun c -> c.Value)
                 |> Seq.tryHead
+                |> Option.bind claimValueParser
             else
                 None
-        match foundUserId with
+        match foundValue with
         | None ->
             ctx.ForbidAsync()
-        | Some null ->
-            ctx.ForbidAsync()
-        | Some userId ->
-            requestLogic userId ctx
+        | Some value ->
+            requestLogic value ctx
     )
 
+let getCurrentUserId (requestLogic : string -> HttpHandler) : HttpHandler =
+    processRequestWithMatchingClaim
+        ClaimTypes.NameIdentifier
+        Extensions.getOptional
+        requestLogic
+
 let getCurrentTeacherId (requestLogic : int -> HttpHandler) : HttpHandler =
-    Request.authenticate authScheme (fun authenticateResult ctx ->
-        let foundTeacherId =
-            if authenticateResult.Succeeded && isNull authenticateResult.Principal = false then
-                authenticateResult.Principal.Claims
-                |> Seq.filter (fun c -> c.Type = GenericModels.TeacherIdClaim)
-                |> Seq.map (fun c -> c.Value)
-                |> Seq.tryHead
-            else
-                None
-        let optIntTeacherId = foundTeacherId |> Option.bind (fun teacherIdString -> Transformations.tryParseInt teacherIdString)
-        match optIntTeacherId with
-        | None ->
-            ctx.ForbidAsync()
-        | Some teacherId ->
-            requestLogic teacherId ctx
-    )
+    processRequestWithMatchingClaim
+        GenericModels.TeacherIdClaim
+        Extensions.tryParseInt
+        requestLogic

@@ -26,7 +26,7 @@ let private mapToViewUserModel (user: IdentityUser) (roleNames: seq<string>) (cl
         claims
         |> Seq.filter (fun c -> c.Type = TeacherIdClaim)
         |> Seq.tryHead
-        |> Option.bind (fun teacherClaim -> Transformations.tryParseInt teacherClaim.Value)
+        |> Option.bind (fun teacherClaim -> Extensions.tryParseInt teacherClaim.Value)
     {
         UserId = user.Id;
         Username = user.UserName;
