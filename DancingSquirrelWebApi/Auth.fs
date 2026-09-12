@@ -67,6 +67,9 @@ let getCurrentUserRoles (requestLogic : Result<seq<string>, unit> -> HttpHandler
             requestLogic (Error()) ctx
     )
 
+//TODO: Consider returning empty lists instead of errors when the user can't authenticate
+//The endpoints that are supposed to use this are just supposed to report details of what the user is allowed to do,
+//not actually do anything.
 let getCurrentClaims (requestLogic : Result<seq<System.Security.Claims.Claim>, unit> -> HttpHandler) : HttpHandler =
     Request.authenticate authScheme (fun authenticateResult ctx ->
         match authenticateResult.Succeeded with
@@ -97,4 +100,27 @@ let getCurrentUserId (requestLogic : string -> HttpHandler) : HttpHandler =
             ctx.ForbidAsync()
         | Some userId ->
             requestLogic userId ctx
+    )
+
+let getCurrentTeacherId (requestLogic : int -> HttpHandler) : HttpHandler =
+    Request.authenticate authScheme (fun authenticateResult ctx ->
+        let foundTeacherId =
+            if authenticateResult.Succeeded && isNull authenticateResult.Principal = false then
+                authenticateResult.Principal.Claims
+                |> Seq.filter (fun c -> c.Type = GenericModels.TeacherIdClaim)
+                |> Seq.map (fun c -> c.Value)
+                |> Seq.tryHead
+            else
+                None
+        let optIntTeacherId =
+            foundTeacherId 
+            |> Option.bind (fun teacherIdString ->
+                match System.Int32.TryParse teacherIdString with
+                | true, teacherId -> Some teacherId
+                | _ -> None)
+        match optIntTeacherId with
+        | None ->
+            ctx.ForbidAsync()
+        | Some teacherId ->
+            requestLogic teacherId ctx
     )

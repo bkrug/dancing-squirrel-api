@@ -99,6 +99,7 @@ let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDay
 
 let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
+    (loggedInTeacherId: int)
     (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>) =
     task {
         match form.Availabilities |> Array.toList |> List.map parseRow |> validateRow |> combineRowResults with
@@ -112,11 +113,11 @@ let createDefaultAvailabilityFromForm
     }
 
 let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
-    Auth.processAuthorizedRequest roles
-        (fun ctx ->
+    Auth.getCurrentTeacherId
+        (fun teacherId ctx -> 
             task {
                 let! json = Request.getJson<CreateEditDefaultAvailability> ctx
-                let! submissionResult = createDefaultAvailabilityFromForm json queries.UpdateDefaultAvailability
+                let! submissionResult = createDefaultAvailabilityFromForm json teacherId queries.UpdateDefaultAvailability
                 return! getFormCreateResponse submissionResult ctx
             }
         )
@@ -128,8 +129,8 @@ let editDefaultAvailabilityFromForm
     failwith "Not implemented"
 
 let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
-    Auth.processAuthorizedRequest roles
-        (fun ctx ->
+    Auth.getCurrentTeacherId
+        (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
                 let httpFormResponse = getFormEditResponse submissionResult
@@ -138,8 +139,8 @@ let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
         )
 
 let createRecurringEvent (queries: ICalendarQueries) : HttpHandler =
-    Auth.processAuthorizedRequest roles
-        (fun ctx ->
+    Auth.getCurrentTeacherId
+        (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
                 let httpFormResponse = getFormCreateResponse submissionResult
@@ -148,8 +149,8 @@ let createRecurringEvent (queries: ICalendarQueries) : HttpHandler =
         )
 
 let editRecurringEvent (queries: ICalendarQueries) : HttpHandler =
-    Auth.processAuthorizedRequest roles
-        (fun ctx ->
+    Auth.getCurrentTeacherId
+        (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
                 let httpFormResponse = getFormEditResponse submissionResult
@@ -158,8 +159,8 @@ let editRecurringEvent (queries: ICalendarQueries) : HttpHandler =
         )
 
 let createSingleEvent (queries: ICalendarQueries) : HttpHandler =
-    Auth.processAuthorizedRequest roles
-        (fun ctx ->
+    Auth.getCurrentTeacherId
+        (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
                 let httpFormResponse = getFormCreateResponse submissionResult
@@ -168,8 +169,8 @@ let createSingleEvent (queries: ICalendarQueries) : HttpHandler =
         )
 
 let editSingleEvent (queries: ICalendarQueries) : HttpHandler =
-    Auth.processAuthorizedRequest roles
-        (fun ctx ->
+    Auth.getCurrentTeacherId
+        (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
                 let httpFormResponse = getFormEditResponse submissionResult

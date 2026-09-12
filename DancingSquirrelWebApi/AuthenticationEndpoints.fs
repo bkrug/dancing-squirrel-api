@@ -79,7 +79,7 @@ let getCurrentUserRoles : HttpHandler =
         (fun claimResult ctx ->
             let isRelevantClaim (claim: Claim) = [ ClaimTypes.Role; TeacherIdClaim ] |> Seq.contains claim.Type
             let toClaimDto (claim: Claim) =
-                { Type = (if claim.Type = ClaimTypes.Role then "Role" else claim.Type)
+                { Type = if claim.Type = ClaimTypes.Role then "Role" else claim.Type
                   Value = claim.Value }
 
             claimResult
