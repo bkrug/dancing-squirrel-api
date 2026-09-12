@@ -15,8 +15,6 @@ type DefaultAvailabilityUpserter = list<DefaultAvailability> -> Task<Result<list
 
 let getUnixSeconds hour minute = hour*60*60 + minute*60
 
-//TODO: Remove "TeacherId" from the caller input. We are always creating/editing records for the currently logged in teacher.
-
 [<Fact>]
 let ``Default availability form has entries for Monday through Thursday and Saturday. Expect a success response.`` () =
     task {
@@ -24,11 +22,11 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [|
-                    { TeacherId = teacherId; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = teacherId; DayOfWeek = Some "SaturDay";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
+                    { DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DayOfWeek = Some "thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DayOfWeek = Some "SaturDay";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
                 |]
             }
         let expectedRecords =
@@ -58,55 +56,55 @@ let ``Default availability form has entries for Monday through Thursday and Satu
 let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailability * string * string> =
     [
         (
-            { TeacherId = 42L; DayOfWeek = Some "Frunsday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
+            { DayOfWeek = Some "Frunsday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
             "DayOfWeek",
             "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
         )
         (
-            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "not-a-time"; EndTime = Some "17:00:00" },
+            { DayOfWeek = Some "Tuesday"; StartTime = Some "not-a-time"; EndTime = Some "17:00:00" },
             "StartTime",
             "Must be in the format 'hh:mm'"
         )
         (
-            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "not-a-time" },
+            { DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "not-a-time" },
             "EndTime",
             "Must be in the format 'hh:mm'"
         )
         (
-            { TeacherId = 42L; DayOfWeek = Some ""; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
+            { DayOfWeek = Some ""; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
             "DayOfWeek",
             "is required"
         )
         (
-            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some ""; EndTime = Some "17:00:00" },
+            { DayOfWeek = Some "Tuesday"; StartTime = Some ""; EndTime = Some "17:00:00" },
             "StartTime",
             "is required"
         )
         (
-            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "" },
+            { DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "" },
             "EndTime",
             "is required"
         )
         (
-            { TeacherId = 42L; DayOfWeek = None; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
+            { DayOfWeek = None; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
             "DayOfWeek",
             "is required"
         )
         (
-            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = None; EndTime = Some "17:00:00" },
+            { DayOfWeek = Some "Tuesday"; StartTime = None; EndTime = Some "17:00:00" },
             "StartTime",
             "is required"
         )
         (
-            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = None },
+            { DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = None },
             "EndTime",
             "is required"
         )
         (
-            { TeacherId = 42L; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "08:00:00" },
+            { DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "08:00:00" },
             "EndTime",
             "StartTime must precede EndTime"
-        )        
+        )
     ]
 
 [<Theory>]
@@ -120,9 +118,9 @@ let ``Default availability entry is somehow invalid. Expect a validation failure
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [|
-                    { TeacherId = 42L; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     invalidEntry
-                    { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                 |]
             }
 
@@ -150,10 +148,10 @@ let ``Default availability form has a Wednesday entry that overlaps another Wedn
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [|
-                    { TeacherId = 42L; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "18:00:00" }
-                    { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "14:00:00" }
-                    { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "13:00:00"; EndTime = Some "17:00:00" }
-                    { TeacherId = 42L; DayOfWeek = Some "Wednesday"; StartTime = Some "20:00:00"; EndTime = Some "21:00:00" }
+                    { DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "18:00:00" }
+                    { DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "14:00:00" }
+                    { DayOfWeek = Some "Wednesday"; StartTime = Some "13:00:00"; EndTime = Some "17:00:00" }
+                    { DayOfWeek = Some "Wednesday"; StartTime = Some "20:00:00"; EndTime = Some "21:00:00" }
                 |]
             }
 

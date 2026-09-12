@@ -6,7 +6,6 @@ open DbLayer.Database
 
 type CreateEditDefaultDayAvailability =
     { 
-        TeacherId: int64
         DayOfWeek: Option<string>
         StartTime: Option<string>
         EndTime: Option<string>
@@ -19,7 +18,6 @@ type CreateEditDefaultAvailability =
 
 type DefaultDayAvailabilityValidation =
     { 
-        TeacherId: string
         DayOfWeek: string
         StartTime: string
         EndTime: string

@@ -24,16 +24,16 @@ let private parseTimeOfDay (timeOfDay: string) =
     | _ -> Error "Must be in the format 'hh:mm'"
 
 let private emptyRowValidation : DefaultDayAvailabilityValidation =
-    { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = "" }
+    { DayOfWeek = ""; StartTime = ""; EndTime = "" }
 
-let private parseRow (row: CreateEditDefaultDayAvailability) : Result<DefaultAvailability, DefaultDayAvailabilityValidation> =
+let private parseRow (teacherId: int) (row: CreateEditDefaultDayAvailability) : Result<DefaultAvailability, DefaultDayAvailabilityValidation> =
     let dayOfWeekR = parseRequiredString row.DayOfWeek |> Result.bind parseDayOfWeek
     let startTimeR = parseRequiredString row.StartTime |> Result.bind parseTimeOfDay
     let endTimeR = parseRequiredString row.EndTime |> Result.bind parseTimeOfDay
     match dayOfWeekR, startTimeR, endTimeR with
     | Ok dayOfWeek, Ok startTime, Ok endTime ->
         Ok {
-            TeacherId = row.TeacherId
+            TeacherId = teacherId
             DayOfWeek = dayOfWeek
             StartTimeUnix = startTime
             EndTimeUnix = endTime
@@ -41,7 +41,6 @@ let private parseRow (row: CreateEditDefaultDayAvailability) : Result<DefaultAva
         }
     | _ ->
         Error {
-            TeacherId = ""
             DayOfWeek = match dayOfWeekR with Error msg -> msg | _ -> ""
             StartTime = match startTimeR with Error msg -> msg | _ -> ""
             EndTime = match endTimeR with Error msg -> msg | _ -> ""
@@ -93,7 +92,7 @@ let createDefaultAvailabilityFromForm
     (loggedInTeacherId: int)
     (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>) =
     task {
-        match form.Availabilities |> Array.toList |> List.map parseRow |> validateRow |> combineRowResults with
+        match form.Availabilities |> Array.toList |> List.map (parseRow loggedInTeacherId) |> validateRow |> combineRowResults with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
