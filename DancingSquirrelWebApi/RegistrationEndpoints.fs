@@ -295,7 +295,7 @@ let deleteUser (queries: IUserAuthorizationWrapper) =
             }
         )
 
-let getUserInternal (queries: IUserAuthorizationWrapper) (userId: string) ctx =
+let private getUserInternal (queries: IUserAuthorizationWrapper) (userId: string) ctx =
     task {
         let! viewModelResult =
             queries.GetUserAsync userId

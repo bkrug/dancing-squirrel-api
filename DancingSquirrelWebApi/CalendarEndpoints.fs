@@ -9,7 +9,7 @@ open Calendar.Models
 open Calendar.Queries
 open ValidationStandards
 
-let getParsedDayOfWeek (dayOfWeekOption: Option<string>) =
+let private getParsedDayOfWeek (dayOfWeekOption: Option<string>) =
     match dayOfWeekOption with
     | None -> Error requiredMessage
     | Some "" -> Error requiredMessage
@@ -18,7 +18,7 @@ let getParsedDayOfWeek (dayOfWeekOption: Option<string>) =
         | true, dayValue -> Ok(int64 dayValue)
         | _ -> Error "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
 
-let getParsedTimeOfDay (timeOfDayOption: Option<string>) =
+let private getParsedTimeOfDay (timeOfDayOption: Option<string>) =
     match timeOfDayOption with
     | None -> Error requiredMessage
     | Some "" -> Error requiredMessage

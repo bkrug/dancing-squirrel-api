@@ -18,7 +18,7 @@ type LoginModel =
         Password: string
     }
 
-let authScheme = CookieAuthenticationDefaults.AuthenticationScheme
+let private authScheme = CookieAuthenticationDefaults.AuthenticationScheme
 
 let private getClaimsPrincipal (identityUser: IdentityUser, roles: IList<string>, prebuiltClaims: IList<Claim>) =
     let roleClaims = 
