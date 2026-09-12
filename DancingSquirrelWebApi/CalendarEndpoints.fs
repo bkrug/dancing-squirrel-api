@@ -9,19 +9,19 @@ open Calendar.Queries
 open ValidationStandards
 
 let private parseRequiredString inputValue =
-    match inputValue |> Extensions.emptyStringToNone with
+    match inputValue |> Extensions.getOptionFromLiar |> Extensions.emptyStringToNone with
     | Some nonEmpty -> Ok nonEmpty
     | None -> Error requiredMessage
 
-let private parseDayOfWeek dayOfWeek =
-    match Extensions.tryParseEnum<System.DayOfWeek> dayOfWeek with
-    | Some dayValue -> Ok(int64 dayValue)
-    | None -> Error "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
+let private parseDayOfWeek (dayOfWeek: string) =
+    match System.Enum.TryParse<System.DayOfWeek> (dayOfWeek, true) with
+    | true, dayValue -> Ok(int64 dayValue)
+    | _ -> Error "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
 
-let private parseTimeOfDay timeOfDay =
-    match Extensions.tryParseTimeOnly timeOfDay with
-    | Some parsedTime -> Ok (int64(parsedTime.ToTimeSpan().TotalSeconds))
-    | None -> Error "Must be in the format 'hh:mm'"
+let private parseTimeOfDay (timeOfDay: string) =
+    match System.TimeOnly.TryParse timeOfDay with
+    | true, parsedTime -> Ok (int64(parsedTime.ToTimeSpan().TotalSeconds))
+    | _ -> Error "Must be in the format 'hh:mm'"
 
 let private emptyRowValidation : DefaultDayAvailabilityValidation =
     { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = "" }
