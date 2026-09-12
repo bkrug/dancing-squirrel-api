@@ -9,9 +9,6 @@ open Calendar.Models
 open Calendar.Queries
 open ValidationStandards
 
-//Todo: Move into named constant
-let roles = [TeacherRole]
-
 let getParsedDayOfWeek (dayOfWeekOption: Option<string>) =
     match dayOfWeekOption with
     | None -> Error requiredMessage
@@ -113,7 +110,7 @@ let createDefaultAvailabilityFromForm
     }
 
 let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
-    Auth.getCurrentTeacherId
+    Auth.processWithTeacherId
         (fun teacherId ctx -> 
             task {
                 let! json = Request.getJson<CreateEditDefaultAvailability> ctx
@@ -129,7 +126,7 @@ let editDefaultAvailabilityFromForm
     failwith "Not implemented"
 
 let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
-    Auth.getCurrentTeacherId
+    Auth.processWithTeacherId
         (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
@@ -139,7 +136,7 @@ let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
         )
 
 let createRecurringEvent (queries: ICalendarQueries) : HttpHandler =
-    Auth.getCurrentTeacherId
+    Auth.processWithTeacherId
         (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
@@ -149,7 +146,7 @@ let createRecurringEvent (queries: ICalendarQueries) : HttpHandler =
         )
 
 let editRecurringEvent (queries: ICalendarQueries) : HttpHandler =
-    Auth.getCurrentTeacherId
+    Auth.processWithTeacherId
         (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
@@ -159,7 +156,7 @@ let editRecurringEvent (queries: ICalendarQueries) : HttpHandler =
         )
 
 let createSingleEvent (queries: ICalendarQueries) : HttpHandler =
-    Auth.getCurrentTeacherId
+    Auth.processWithTeacherId
         (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess
@@ -169,7 +166,7 @@ let createSingleEvent (queries: ICalendarQueries) : HttpHandler =
         )
 
 let editSingleEvent (queries: ICalendarQueries) : HttpHandler =
-    Auth.getCurrentTeacherId
+    Auth.processWithTeacherId
         (fun teacherId ctx -> 
             task {
                 let submissionResult = Ok getGenericSuccess

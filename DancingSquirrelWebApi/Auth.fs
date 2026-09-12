@@ -68,7 +68,7 @@ let getCurrentClaims (requestLogic : Result<seq<Claim>, unit> -> HttpHandler) : 
             requestLogic (Error()) ctx
     )
 
-let private processRequestWithMatchingClaim
+let private processWithMatchingClaim
     (claimType : string)
     (claimValueParser : string -> 'a option)
     (requestLogic : 'a -> HttpHandler) : HttpHandler =
@@ -89,14 +89,14 @@ let private processRequestWithMatchingClaim
             requestLogic value ctx
     )
 
-let getCurrentUserId (requestLogic : string -> HttpHandler) : HttpHandler =
-    processRequestWithMatchingClaim
+let processWithUserId (requestLogic : string -> HttpHandler) : HttpHandler =
+    processWithMatchingClaim
         ClaimTypes.NameIdentifier
         Extensions.getOptional
         requestLogic
 
-let getCurrentTeacherId (requestLogic : int -> HttpHandler) : HttpHandler =
-    processRequestWithMatchingClaim
+let processWithTeacherId (requestLogic : int -> HttpHandler) : HttpHandler =
+    processWithMatchingClaim
         GenericModels.TeacherIdClaim
         Extensions.tryParseInt
         requestLogic

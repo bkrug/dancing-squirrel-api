@@ -206,7 +206,7 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
         )
 
 let editSelfHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
-    Auth.getCurrentUserId
+    Auth.processWithUserId
         (fun userId ctx -> editUserInternal queries userId ctx)
 
 let private updateUserRolesAsync (queries: IUserAuthorizationWrapper) (requestedRoles: seq<string>) (user: IdentityUser) =
@@ -253,7 +253,7 @@ let resetUserPassword (queries: IUserAuthorizationWrapper) =
         )
 
 let resetOwnPassword (queries: IUserAuthorizationWrapper) =
-    Auth.getCurrentUserId
+    Auth.processWithUserId
         (fun userId ctx ->
             task {
                 let! passwordResetData = getModelFromRequestBody<OwnPasswordResetModel> ctx
@@ -318,7 +318,7 @@ let getUserHandler (queries: IUserAuthorizationWrapper) =
         )
 
 let getSelfHandler (queries: IUserAuthorizationWrapper) =
-    Auth.getCurrentUserId
+    Auth.processWithUserId
         (fun userId ctx -> getUserInternal queries userId ctx)
 
 let getUsers (queries: IUserAuthorizationWrapper) =

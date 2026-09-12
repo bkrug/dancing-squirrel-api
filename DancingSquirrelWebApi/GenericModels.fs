@@ -148,7 +148,6 @@ let getModelFromRequestBody<'TValue> ctx =
 
 let AdminRole = "Admin"
 let OnboarderRole = "Onboarder"
-let TeacherRole = "Teacher"
-type Roles = AdminRole | OnboarderRole | TeacherRole
+type Roles = AdminRole | OnboarderRole
 
 let TeacherIdClaim = "TeacherId"
