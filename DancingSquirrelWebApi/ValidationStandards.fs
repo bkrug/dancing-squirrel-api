@@ -11,6 +11,7 @@ let private unitedStatePhoneRegex = Regex @"^1?([^\d]*\d){10}[^\d]*$"
 let private containsLetterRegex = Regex @"[a-zA-Z]+"
 
 //TODO: One of these methods treats the message as required, the other does not, without being explicit. Address that.
+//TODO: Are these validation or parsing? They're probably parsing.
 
 let validateEmailField (value : string) =
     match value with
