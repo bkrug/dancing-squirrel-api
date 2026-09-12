@@ -8,17 +8,26 @@ open Calendar.Models
 open Calendar.Queries
 open ValidationStandards
 
+let private getRequiredResult (inputValue : Option<string>) =
+    match inputValue |> Extensions.emptyStringToNone with
+        | Some nonEmpty -> Ok nonEmpty
+        | None -> Error requiredMessage
+
 let private getParsedDayOfWeek (dayOfWeekOption: Option<string>) =
-    match dayOfWeekOption |> Extensions.emptyStringToNone |> Option.map Extensions.tryParseEnum<System.DayOfWeek> with
-    | None -> Error requiredMessage
-    | Some None -> Error "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
-    | Some (Some dayValue) -> Ok(int64 dayValue)
+    getRequiredResult dayOfWeekOption
+    |> Result.bind (fun dayOfWeek ->
+        match Extensions.tryParseEnum<System.DayOfWeek> dayOfWeek with
+        | Some dayValue -> Ok(int64 dayValue)
+        | None -> Error "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
+    )
 
 let private getParsedTimeOfDay (timeOfDayOption: Option<string>) =
-    match timeOfDayOption |> Extensions.emptyStringToNone |> Option.map Extensions.tryParseTimeOnly with
-    | None -> Error requiredMessage
-    | Some None -> Error "Must be in the format 'hh:mm'"
-    | Some (Some parsedTime) -> Ok (int64(parsedTime.ToTimeSpan().TotalSeconds))
+    getRequiredResult timeOfDayOption
+    |> Result.bind (fun timeOfDay ->
+        match Extensions.tryParseTimeOnly timeOfDay with
+        | Some parsedTime -> Ok (int64(parsedTime.ToTimeSpan().TotalSeconds))
+        | None -> Error "Must be in the format 'hh:mm'"
+    )
 
 let private emptyRowValidation : DefaultDayAvailabilityValidation =
     { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = "" }
