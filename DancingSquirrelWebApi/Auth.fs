@@ -112,12 +112,7 @@ let getCurrentTeacherId (requestLogic : int -> HttpHandler) : HttpHandler =
                 |> Seq.tryHead
             else
                 None
-        let optIntTeacherId =
-            foundTeacherId 
-            |> Option.bind (fun teacherIdString ->
-                match System.Int32.TryParse teacherIdString with
-                | true, teacherId -> Some teacherId
-                | _ -> None)
+        let optIntTeacherId = foundTeacherId |> Option.bind (fun teacherIdString -> Transformations.tryParseInt teacherIdString)
         match optIntTeacherId with
         | None ->
             ctx.ForbidAsync()

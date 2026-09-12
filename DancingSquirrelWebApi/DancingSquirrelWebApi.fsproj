@@ -7,7 +7,7 @@
       <Visible>False</Visible>
     </Compile>
     <Compile Include="Debugging.fs" />
-    <Compile Include="Global.fs" />
+    <Compile Include="Global.fs" /><Compile Include="Transformations.fs" />
     <Compile Include="TaskResult.fs" />
     <Compile Include="GlobalExceptionHandler.fs" />
     <Compile Include="SecurityDbContext.fs" />
