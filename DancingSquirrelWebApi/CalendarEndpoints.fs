@@ -3,31 +3,22 @@ module Calendar.Endpoints
 open DbLayer.Database.main
 open Falco
 open GenericModels
-open System
 open System.Threading.Tasks
 open Calendar.Models
 open Calendar.Queries
 open ValidationStandards
 
 let private getParsedDayOfWeek (dayOfWeekOption: Option<string>) =
-    match dayOfWeekOption with
+    match dayOfWeekOption |> Extensions.emptyStringToNone |> Option.map Extensions.tryParseEnum<System.DayOfWeek> with
     | None -> Error requiredMessage
-    | Some "" -> Error requiredMessage
-    | Some dayOfWeekString ->
-        match Enum.TryParse<DayOfWeek> (dayOfWeekString, true) with
-        | true, dayValue -> Ok(int64 dayValue)
-        | _ -> Error "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
+    | Some None -> Error "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
+    | Some (Some dayValue) -> Ok(int64 dayValue)
 
 let private getParsedTimeOfDay (timeOfDayOption: Option<string>) =
-    match timeOfDayOption with
+    match timeOfDayOption |> Extensions.emptyStringToNone |> Option.map Extensions.tryParseTimeOnly with
     | None -> Error requiredMessage
-    | Some "" -> Error requiredMessage
-    | Some timeString ->
-        match TimeOnly.TryParse timeString with
-        | true, parsedTime ->
-            Ok (int64(parsedTime.ToTimeSpan().TotalSeconds))
-        | _ ->
-            Error "Must be in the format 'hh:mm'"
+    | Some None -> Error "Must be in the format 'hh:mm'"
+    | Some (Some parsedTime) -> Ok (int64(parsedTime.ToTimeSpan().TotalSeconds))
 
 let private emptyRowValidation : DefaultDayAvailabilityValidation =
     { TeacherId = ""; DayOfWeek = ""; StartTime = ""; EndTime = "" }

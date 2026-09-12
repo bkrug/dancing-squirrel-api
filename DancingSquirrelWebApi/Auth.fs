@@ -92,7 +92,7 @@ let private processWithMatchingClaim
 let processWithUserId (requestLogic : string -> HttpHandler) : HttpHandler =
     processWithMatchingClaim
         ClaimTypes.NameIdentifier
-        Extensions.getOptional
+        Extensions.getOption
         requestLogic
 
 let processWithTeacherId (requestLogic : int -> HttpHandler) : HttpHandler =
