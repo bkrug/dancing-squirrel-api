@@ -128,6 +128,15 @@ let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
             }
         )
 
+let getDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
+    Auth.processWithTeacherId
+        (fun teacherId ctx ->
+            task {
+                let! availabilityRecords = queries.GetDefaultAvailabilityAsync teacherId
+                return! getHttpRecordResponse (Ok availabilityRecords) ctx
+            }
+        )
+
 let createRecurringEvent (queries: ICalendarQueries) : HttpHandler =
     Auth.processWithTeacherId
         (fun teacherId ctx -> 

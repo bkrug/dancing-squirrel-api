@@ -56,6 +56,7 @@ let getEndpoints (wApp : WebApplication) =
 
             //Calendar
             get "/api/teacher" (getTeachers dtQueries)
+            get "/api/teacher/{teacherId}/availability" (getDefaultAvailability crQueries)
             post "/api/teacher/{teacherId}/availability" (createDefaultAvailability crQueries)
             put "/api/teacher/{teacherId}/availability/{availabilityId}" (editDefaultAvailability crQueries)
 

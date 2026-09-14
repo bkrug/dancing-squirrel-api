@@ -7,6 +7,7 @@ open GenericModels
 open SqlHydra.Query
 
 type ICalendarQueries =
+    abstract member GetDefaultAvailabilityAsync: int -> Task<seq<DefaultAvailability>>
     abstract member InsertDefaultAvailability : list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>
     abstract member UpdateDefaultAvailability : list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>
     abstract member InsertRecurringEvent : RecurringEvent -> Task<Result<RecurringEvent, DbErrors>>
@@ -14,6 +15,16 @@ type ICalendarQueries =
 
 type CalendarQueries(db: Database.QueryContextFactory) =
     interface ICalendarQueries with
+        member _.GetDefaultAvailabilityAsync (teacherId: int): Task<seq<DefaultAvailability>> = 
+            task {
+                let! defaultAvailabilities =
+                    selectTask db {
+                        for a in DefaultAvailability do
+                        where (a.TeacherId = teacherId)
+                    }
+                return defaultAvailabilities
+            }
+
         member _.InsertDefaultAvailability (availabilities: list<DefaultAvailability>) : Task<Result<list<DefaultAvailability>, DbErrors>> =
             task {
                 use! shared = db.OpenContextAsync()
@@ -21,18 +32,17 @@ type CalendarQueries(db: Database.QueryContextFactory) =
                     shared.BeginTransaction()
                     let insertedAvailabilities = ResizeArray<DefaultAvailability>()
                     for availability in availabilities do
-                        let! newId =
-                            insertTask shared {
-                                for da in DefaultAvailability do
-                                entity {
-                                    DefaultAvailabilityId = 0;
-                                    TeacherId = availability.TeacherId;
-                                    DayOfWeek = availability.DayOfWeek;
-                                    StartTimeUnix = availability.StartTimeUnix;
-                                    EndTimeUnix = availability.EndTimeUnix;
-                                }
-                                getId da.DefaultAvailabilityId
+                        let! newId = insertTask shared {
+                            for da in DefaultAvailability do
+                            entity {
+                                DefaultAvailabilityId = 0;
+                                TeacherId = availability.TeacherId;
+                                DayOfWeek = availability.DayOfWeek;
+                                StartTimeUnix = availability.StartTimeUnix;
+                                EndTimeUnix = availability.EndTimeUnix;
                             }
+                            getId da.DefaultAvailabilityId
+                        }
                         insertedAvailabilities.Add { availability with DefaultAvailabilityId = newId }
                     shared.CommitTransaction()
                     return Ok (insertedAvailabilities |> List.ofSeq)
@@ -50,15 +60,14 @@ type CalendarQueries(db: Database.QueryContextFactory) =
                     shared.BeginTransaction()
                     let updatedAvailabilities = ResizeArray<DefaultAvailability>()
                     for availability in availabilities do
-                        let! rowsUpdated =
-                            updateTask shared {
-                                for da in DefaultAvailability do
-                                set da.TeacherId availability.TeacherId
-                                set da.DayOfWeek availability.DayOfWeek
-                                set da.StartTimeUnix availability.StartTimeUnix
-                                set da.EndTimeUnix availability.EndTimeUnix
-                                where (da.DefaultAvailabilityId = availability.DefaultAvailabilityId)
-                            }
+                        let! rowsUpdated = updateTask shared {
+                            for da in DefaultAvailability do
+                            set da.TeacherId availability.TeacherId
+                            set da.DayOfWeek availability.DayOfWeek
+                            set da.StartTimeUnix availability.StartTimeUnix
+                            set da.EndTimeUnix availability.EndTimeUnix
+                            where (da.DefaultAvailabilityId = availability.DefaultAvailabilityId)
+                        }
                         match rowsUpdated with
                         | 1 -> updatedAvailabilities.Add availability
                         | _ -> failwith $"Update affected {rowsUpdated} rows for DefaultAvailabilityId {availability.DefaultAvailabilityId}"
