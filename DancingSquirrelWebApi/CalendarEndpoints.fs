@@ -116,7 +116,16 @@ let editDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (loggedInTeacherId: int)
     (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>) =
-    failwith "Not implemented"
+    task {
+        match form.Availabilities |> Array.toList |> List.map (parseRow loggedInTeacherId) |> validateRow |> combineRowResults with
+        | Error validation ->
+            return Error (getGenericValidationFailure validation)
+        | Ok parsedData ->
+            let! dbResult =
+                upsertRecords parsedData
+                |> TaskResult.mapError getDbErrorsResponse
+            return dbResult
+    }
 
 let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
     Auth.processWithTeacherId

@@ -45,7 +45,7 @@ let ``Default availability form has entries for Monday through Thursday and Satu
             Task.FromResult(Ok records)
 
         //Act
-        let! submissionResult = createDefaultAvailabilityFromForm callerInput teacherId upsertRecord
+        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId upsertRecord
 
         //Assert
         submissionResult.IsOk.ShouldBeTrue()
@@ -128,7 +128,7 @@ let ``Default availability entry is somehow invalid. Expect a validation failure
             Task.FromResult(Ok records)
 
         //Act
-        let! submissionResult = createDefaultAvailabilityFromForm callerInput teacherId upsertRecord
+        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId upsertRecord
 
         //Assert
         match submissionResult with
@@ -159,7 +159,7 @@ let ``Default availability form has a Wednesday entry that overlaps another Wedn
             Task.FromResult(Ok records)
 
         //Act
-        let! submissionResult = createDefaultAvailabilityFromForm callerInput teacherId upsertRecord
+        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId upsertRecord
 
         //Assert
         match submissionResult with
