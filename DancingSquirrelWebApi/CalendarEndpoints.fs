@@ -87,42 +87,6 @@ let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDay
         |> List.choose (function Ok row -> Some row | Error _ -> None)
         |> Ok
 
-let createDefaultAvailabilityFromForm
-    (form: CreateEditDefaultAvailability)
-    (loggedInTeacherId: int)
-    (queries: ICalendarQueries) =
-    task {
-        match form.Availabilities |> Array.toList |> List.map (parseRow loggedInTeacherId) |> validateRow |> combineRowResults with
-        | Error validation ->
-            return Error (getGenericValidationFailure validation)
-        | Ok parsedData ->
-            do! queries.BeginTransactionAsync
-            let! dbResult =
-                parsedData
-                |> List.fold (fun acc avail ->
-                    task {
-                        let! accResult = acc
-                        match accResult with
-                        | Error dberror -> return Error dberror
-                        | Ok ids ->
-                            let! insResult = queries.InsertDefaultAvailability avail
-                            return insResult |> Result.map (fun id -> ids @ [ id ])
-                    }
-                ) (Task.FromResult(Ok []))
-            queries.CommitTransaction
-            return dbResult |> Result.mapError getDbErrorsResponse
-    }
-
-let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
-    Auth.processWithTeacherId
-        (fun teacherId ctx -> 
-            task {
-                let! json = Request.getJson<CreateEditDefaultAvailability> ctx
-                let! submissionResult = createDefaultAvailabilityFromForm json teacherId queries
-                return! getFormCreateResponse submissionResult ctx
-            }
-        )
-
 let editDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (loggedInTeacherId: int)
@@ -149,7 +113,7 @@ let editDefaultAvailabilityFromForm
             return dbResult |> Result.mapError getDbErrorsResponse
     }
 
-let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
+let crudDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
     Auth.processWithTeacherId
         (fun teacherId ctx -> 
             task {
