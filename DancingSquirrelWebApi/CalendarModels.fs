@@ -2,7 +2,19 @@ module Calendar.Models
 
 open System.Threading.Tasks
 open GenericModels
-open DbLayer.Database
+
+type ViewDefaultDayAvailability =
+    {
+        DefaultAvailabilityId: int64
+        DayOfWeek: string
+        StartTime: string
+        EndTime: string
+    }
+
+type ViewDefaultAvailability =
+    {
+        Availabilities: seq<ViewDefaultDayAvailability>
+    }
 
 type CreateEditDefaultDayAvailability =
     { 

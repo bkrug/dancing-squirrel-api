@@ -114,8 +114,8 @@ let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
 
 let editDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
-    (upsertRecord: DefaultAvailability -> Task<Result<DefaultAvailability, DbErrors>>):
-    CreateEditDefaultAvailability -> (DefaultAvailability -> Task<Result<DefaultAvailability, DbErrors>>) -> Result<bool, GenericModelResponse<DefaultAvailabilityValidation>> =
+    (loggedInTeacherId: int)
+    (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>) =
     failwith "Not implemented"
 
 let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
@@ -133,7 +133,20 @@ let getDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
         (fun teacherId ctx ->
             task {
                 let! availabilityRecords = queries.GetDefaultAvailabilityAsync teacherId
-                return! getHttpRecordResponse (Ok availabilityRecords) ctx
+                let transformedRecords: ViewDefaultAvailability =
+                    {
+                        Availabilities =
+                            availabilityRecords
+                            |> Seq.map (fun dbRec ->
+                                {
+                                    DefaultAvailabilityId = dbRec.DefaultAvailabilityId
+                                    DayOfWeek = dbRec.DayOfWeek.ToString()
+                                    StartTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.StartTimeUnix).ToString("hh:mm")
+                                    EndTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.EndTimeUnix).ToString("hh:mm")
+                                }
+                            )
+                    }
+                return! getHttpRecordResponse (Ok transformedRecords) ctx
             }
         )
 
