@@ -110,21 +110,20 @@ let crudDefaultAvailabilityFromForm
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
             do! queries.BeginTransactionAsync
-            let! existingRecords = queries.GetDefaultAvailabilityAsync loggedInTeacherId
+            let! existingRecords = queries.GetDefaultAvailabilityIdsAsync loggedInTeacherId
             let recordsToInsert = parsedData |> List.filter (fun a -> a.DefaultAvailabilityId = 0L)
             let recordsToUpdate = parsedData |> List.filter (fun a -> a.DefaultAvailabilityId <> 0L)
             let submittedIds = recordsToUpdate |> List.map (fun a -> a.DefaultAvailabilityId) |> Set.ofList
             let idsToDelete =
                 existingRecords
-                |> Seq.filter (fun r -> not (submittedIds.Contains r.DefaultAvailabilityId))
-                |> Seq.map (fun r -> int r.DefaultAvailabilityId)
+                |> Seq.filter (fun rId -> not (submittedIds.Contains rId))
                 |> Seq.toList
 
             let! dbResult =
                 Task.FromResult(Ok ())
-                |> TaskResult.bind (fun () -> recordsToInsert |> runSequentially queries.InsertDefaultAvailability)
-                |> TaskResult.bind (fun () -> recordsToUpdate |> runSequentially queries.UpdateDefaultAvailability)
-                |> TaskResult.bind (fun () -> idsToDelete |> runSequentially queries.DeleteDefaultAvailability)
+                |> TaskResult.bind (fun () -> recordsToInsert |> runSequentially queries.InsertDefaultAvailabilityAsync)
+                |> TaskResult.bind (fun () -> recordsToUpdate |> runSequentially queries.UpdateDefaultAvailabilityAsync)
+                |> TaskResult.bind (fun () -> idsToDelete |> runSequentially queries.DeleteDefaultAvailabilityAsync)
 
             queries.CommitTransaction
             return dbResult |> Result.mapError getDbErrorsResponse

@@ -9,10 +9,11 @@ open SqlHydra.Query
 type ICalendarQueries =
     abstract member BeginTransactionAsync : Task<unit>
     abstract member CommitTransaction : unit
-    abstract member GetDefaultAvailabilityAsync : int -> Task<seq<DefaultAvailability>>
-    abstract member InsertDefaultAvailability : DefaultAvailability -> Task<Result<int64, DbErrors>>
-    abstract member UpdateDefaultAvailability : DefaultAvailability -> Task<Result<unit, DbErrors>>
-    abstract member DeleteDefaultAvailability : int -> Task<Result<unit, DbErrors>>
+    abstract member GetDefaultAvailabilityAsync : int64 -> Task<seq<DefaultAvailability>>
+    abstract member GetDefaultAvailabilityIdsAsync : int64 -> Task<seq<int64>>
+    abstract member InsertDefaultAvailabilityAsync : DefaultAvailability -> Task<Result<int64, DbErrors>>
+    abstract member UpdateDefaultAvailabilityAsync : DefaultAvailability -> Task<Result<unit, DbErrors>>
+    abstract member DeleteDefaultAvailabilityAsync : int64 -> Task<Result<unit, DbErrors>>
 
 type CalendarQueries(db: Database.QueryContextFactory) =
     let mutable context : QueryContext = Unchecked.defaultof<QueryContext>
@@ -28,7 +29,7 @@ type CalendarQueries(db: Database.QueryContextFactory) =
             context.CommitTransaction()
             context.Dispose()
 
-        member _.GetDefaultAvailabilityAsync (teacherId: int): Task<seq<DefaultAvailability>> = 
+        member _.GetDefaultAvailabilityAsync (teacherId: int64): Task<seq<DefaultAvailability>> = 
             task {
                 let! defaultAvailabilities =
                     selectTask db {
@@ -38,7 +39,18 @@ type CalendarQueries(db: Database.QueryContextFactory) =
                 return defaultAvailabilities
             }
 
-        member _.InsertDefaultAvailability (availability: DefaultAvailability) : Task<Result<int64, DbErrors>> =
+        member _.GetDefaultAvailabilityIdsAsync (teacherId: int64): Task<seq<int64>> = 
+            task {
+                let! recordIds =
+                    selectTask db {
+                        for a in DefaultAvailability do
+                        where (a.TeacherId = teacherId)
+                        select a.DefaultAvailabilityId
+                    }
+                return recordIds
+            }            
+
+        member _.InsertDefaultAvailabilityAsync (availability: DefaultAvailability) : Task<Result<int64, DbErrors>> =
             task {
                 let! newId = insertTask context {
                     for da in DefaultAvailability do
@@ -57,7 +69,7 @@ type CalendarQueries(db: Database.QueryContextFactory) =
                     | _ -> Ok newId
             }
 
-        member _.UpdateDefaultAvailability (availability: DefaultAvailability) : Task<Result<unit, DbErrors>> =
+        member _.UpdateDefaultAvailabilityAsync (availability: DefaultAvailability) : Task<Result<unit, DbErrors>> =
             task {
                 let! rowsUpdated = updateTask context {
                     for da in DefaultAvailability do
@@ -74,7 +86,7 @@ type CalendarQueries(db: Database.QueryContextFactory) =
                     | _ -> Error DbErrors.ExpectedSingleFoundMultiple
             }
 
-        member _.DeleteDefaultAvailability (defaultAvailabilityId : int) =
+        member _.DeleteDefaultAvailabilityAsync (defaultAvailabilityId : int64) =
             task {
                 let! rowsDeleted = deleteTask context {
                     for da in DefaultAvailability do

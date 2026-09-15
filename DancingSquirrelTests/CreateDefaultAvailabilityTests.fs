@@ -2,14 +2,12 @@ module CreateDefaultAvailabilityTests
 
 open System
 open System.Threading.Tasks
-open Falco
-open GenericModels
-open DbLayer.Database
-open DbLayer.Database.main
-open Shouldly
 open Calendar.Endpoints
 open Calendar.Models
 open Calendar.Queries
+open DbLayer.Database.main
+open GenericModels
+open Shouldly
 open Xunit
 
 type DefaultAvailabilityUpserter = list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>
@@ -52,12 +50,13 @@ let ``Creating Default availabilities from form with entries for Monday through 
                     Task.FromResult()
                 member _.CommitTransaction = callCommitTransactions <- callCommitTransactions + 1
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
-                member _.InsertDefaultAvailability recordToInsert =
+                member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult([])
+                member _.InsertDefaultAvailabilityAsync recordToInsert =
                     actualReceivedRecords <- actualReceivedRecords @ [ recordToInsert ]
                     recordId <- recordId + 1
                     Task.FromResult(Ok recordId)
-                member _.UpdateDefaultAvailability _ = Task.FromResult(Ok())
-                member _.DeleteDefaultAvailability _ = Task.FromResult(Ok())
+                member _.UpdateDefaultAvailabilityAsync _ = Task.FromResult(Ok())
+                member _.DeleteDefaultAvailabilityAsync _ = Task.FromResult(Ok())
             }
 
         //Act
@@ -146,9 +145,10 @@ let ``Creating default availability that is somehow invalid. Expect a validation
                 member _.BeginTransactionAsync = Task.FromResult()
                 member _.CommitTransaction = ()
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
-                member _.InsertDefaultAvailability _ = Task.FromResult(Ok -1)
-                member _.UpdateDefaultAvailability _ = Task.FromResult(Ok())
-                member _.DeleteDefaultAvailability _ = Task.FromResult(Ok())
+                member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult([])
+                member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1)
+                member _.UpdateDefaultAvailabilityAsync _ = Task.FromResult(Ok())
+                member _.DeleteDefaultAvailabilityAsync _ = Task.FromResult(Ok())
             }
 
         //Act
@@ -184,9 +184,10 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
                 member _.BeginTransactionAsync = Task.FromResult()
                 member _.CommitTransaction = ()
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
-                member _.InsertDefaultAvailability _ = Task.FromResult(Ok -1)
-                member _.UpdateDefaultAvailability _ = Task.FromResult(Ok())
-                member _.DeleteDefaultAvailability _ = Task.FromResult(Ok())
+                member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult([])
+                member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1)
+                member _.UpdateDefaultAvailabilityAsync _ = Task.FromResult(Ok())
+                member _.DeleteDefaultAvailabilityAsync _ = Task.FromResult(Ok())
             }
 
         //Act
@@ -236,11 +237,11 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
                 { DayOfWeek = int64 DayOfWeek.Wednesday; StartTimeUnix = getUnixSeconds  9 0; EndTimeUnix = getUnixSeconds 17 0; DefaultAvailabilityId = 1002; TeacherId = teacherId; }
             |]
             |> Seq.toList
-        let expectedDeletes = [| 2003; 2004 |] |> Seq.toList
+        let expectedDeletes = [| 2003L; 2004L |] |> Seq.toList
 
         let mutable actualInsertedRecords : list<DefaultAvailability> = []
         let mutable actualUpdatedRecords : list<DefaultAvailability> = []
-        let mutable actualDeletedRecords : list<int> = []
+        let mutable actualDeletedRecords : list<int64> = []
         let mutable recordId = 3000
         let mutable callBeginTransactions = 0
         let mutable callCommitTransactions = 0
@@ -255,14 +256,17 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
                 member _.GetDefaultAvailabilityAsync givenTeacherId = 
                     givenTeacherId.ShouldBe(teacherId)
                     Task.FromResult(currentDbRecords)
-                member _.InsertDefaultAvailability recordToInsert =
+                member _.GetDefaultAvailabilityIdsAsync givenTeacherId = 
+                    givenTeacherId.ShouldBe(teacherId)
+                    Task.FromResult(currentDbRecords |> Seq.map (fun r -> r.DefaultAvailabilityId ))
+                member _.InsertDefaultAvailabilityAsync recordToInsert =
                     actualInsertedRecords <- actualInsertedRecords @ [ recordToInsert ]
                     recordId <- recordId + 1
                     Task.FromResult(Ok recordId)
-                member _.UpdateDefaultAvailability recordToUpdate =
+                member _.UpdateDefaultAvailabilityAsync recordToUpdate =
                     actualUpdatedRecords <- actualUpdatedRecords @ [ recordToUpdate ]
                     Task.FromResult(Ok())
-                member _.DeleteDefaultAvailability recordId =
+                member _.DeleteDefaultAvailabilityAsync recordId =
                     actualDeletedRecords <- actualDeletedRecords @ [ recordId ]
                     Task.FromResult(Ok())
             }
