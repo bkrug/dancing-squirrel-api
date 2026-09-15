@@ -61,7 +61,7 @@ let ``Creating Default availabilities from form with entries for Monday through 
             }
 
         //Act
-        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId fakeQueries
+        let! submissionResult = crudDefaultAvailabilityFromForm callerInput teacherId fakeQueries
 
         //Assert
         submissionResult.IsOk.ShouldBeTrue()
@@ -152,7 +152,7 @@ let ``Creating default availability that is somehow invalid. Expect a validation
             }
 
         //Act
-        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId fakeQueries
+        let! submissionResult = crudDefaultAvailabilityFromForm callerInput teacherId fakeQueries
 
         //Assert
         match submissionResult with
@@ -190,7 +190,7 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
             }
 
         //Act
-        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId fakeQueries
+        let! submissionResult = crudDefaultAvailabilityFromForm callerInput teacherId fakeQueries
 
         //Assert
         match submissionResult with
@@ -268,7 +268,7 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
             }
 
         //Act
-        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId fakeQueries
+        let! submissionResult = crudDefaultAvailabilityFromForm callerInput teacherId fakeQueries
 
         //Assert
         submissionResult.IsOk.ShouldBeTrue()

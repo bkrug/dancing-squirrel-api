@@ -87,7 +87,7 @@ let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDay
         |> List.choose (function Ok row -> Some row | Error _ -> None)
         |> Ok
 
-let editDefaultAvailabilityFromForm
+let crudDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (loggedInTeacherId: int)
     (queries: ICalendarQueries) =
@@ -117,9 +117,9 @@ let crudDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
     Auth.processWithTeacherId
         (fun teacherId ctx -> 
             task {
-                let submissionResult = Ok getGenericSuccess
-                let httpFormResponse = getFormEditResponse submissionResult
-                return! httpFormResponse ctx
+                let! json = Request.getJson<CreateEditDefaultAvailability> ctx
+                let! submissionResult = crudDefaultAvailabilityFromForm json teacherId queries
+                return! getFormCreateResponse submissionResult ctx
             }
         )
 
