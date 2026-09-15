@@ -114,10 +114,7 @@ let crudDefaultAvailabilityFromForm
             let recordsToInsert = parsedData |> List.filter (fun a -> a.DefaultAvailabilityId = 0L)
             let recordsToUpdate = parsedData |> List.filter (fun a -> a.DefaultAvailabilityId <> 0L)
             let submittedIds = recordsToUpdate |> List.map (fun a -> a.DefaultAvailabilityId) |> Set.ofList
-            let idsToDelete =
-                existingRecords
-                |> Seq.filter (fun rId -> not (submittedIds.Contains rId))
-                |> Seq.toList
+            let idsToDelete = existingRecords |> Seq.except submittedIds |> Seq.toList
 
             let! dbResult =
                 Task.FromResult(Ok ())
