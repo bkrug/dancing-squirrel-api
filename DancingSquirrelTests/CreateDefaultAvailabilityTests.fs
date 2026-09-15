@@ -236,7 +236,7 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
                 { DayOfWeek = int64 DayOfWeek.Wednesday; StartTimeUnix = getUnixSeconds  9 0; EndTimeUnix = getUnixSeconds 17 0; DefaultAvailabilityId = 1002; TeacherId = teacherId; }
             |]
             |> Seq.toList
-        let expectedDeletes = [| 2003, 2004 |] |> Seq.toList
+        let expectedDeletes = [| 2003; 2004 |] |> Seq.toList
 
         let mutable actualInsertedRecords : list<DefaultAvailability> = []
         let mutable actualUpdatedRecords : list<DefaultAvailability> = []

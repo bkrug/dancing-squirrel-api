@@ -37,7 +37,7 @@ let private parseRow (teacherId: int) (row: CreateEditDefaultDayAvailability) : 
             DayOfWeek = dayOfWeek
             StartTimeUnix = startTime
             EndTimeUnix = endTime
-            DefaultAvailabilityId = 0
+            DefaultAvailabilityId = row.DefaultAvailabilityId |> Option.defaultValue 0L
         }
     | _ ->
         Error {
@@ -87,6 +87,19 @@ let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDay
         |> List.choose (function Ok row -> Some row | Error _ -> None)
         |> Ok
 
+let private runSequentially (action: 'a -> Task<Result<'b, DbErrors>>) (items: list<'a>) : Task<Result<unit, DbErrors>> =
+    items
+    |> List.fold (fun acc item ->
+        task {
+            let! accResult = acc
+            match accResult with
+            | Error dbError -> return Error dbError
+            | Ok () ->
+                let! result = action item
+                return result |> Result.map ignore
+        }
+    ) (Task.FromResult(Ok ()))
+
 let crudDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (loggedInTeacherId: int)
@@ -97,18 +110,22 @@ let crudDefaultAvailabilityFromForm
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
             do! queries.BeginTransactionAsync
+            let! existingRecords = queries.GetDefaultAvailabilityAsync loggedInTeacherId
+            let recordsToInsert = parsedData |> List.filter (fun a -> a.DefaultAvailabilityId = 0L)
+            let recordsToUpdate = parsedData |> List.filter (fun a -> a.DefaultAvailabilityId <> 0L)
+            let submittedIds = recordsToUpdate |> List.map (fun a -> a.DefaultAvailabilityId) |> Set.ofList
+            let idsToDelete =
+                existingRecords
+                |> Seq.filter (fun r -> not (submittedIds.Contains r.DefaultAvailabilityId))
+                |> Seq.map (fun r -> int r.DefaultAvailabilityId)
+                |> Seq.toList
+
             let! dbResult =
-                parsedData
-                |> List.fold (fun acc avail ->
-                    task {
-                        let! accResult = acc
-                        match accResult with
-                        | Error dberror -> return Error dberror
-                        | Ok ids ->
-                            let! insResult = queries.InsertDefaultAvailability avail
-                            return insResult |> Result.map (fun id -> ids @ [ id ])
-                    }
-                ) (Task.FromResult(Ok []))
+                Task.FromResult(Ok ())
+                |> TaskResult.bind (fun () -> recordsToInsert |> runSequentially queries.InsertDefaultAvailability)
+                |> TaskResult.bind (fun () -> recordsToUpdate |> runSequentially queries.UpdateDefaultAvailability)
+                |> TaskResult.bind (fun () -> idsToDelete |> runSequentially queries.DeleteDefaultAvailability)
+
             queries.CommitTransaction
             return dbResult |> Result.mapError getDbErrorsResponse
     }
