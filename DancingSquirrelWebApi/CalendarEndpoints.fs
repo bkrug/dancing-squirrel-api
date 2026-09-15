@@ -90,14 +90,14 @@ let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDay
 let createDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (loggedInTeacherId: int)
-    (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>) =
+    (queries: ICalendarQueries) =
     task {
         match form.Availabilities |> Array.toList |> List.map (parseRow loggedInTeacherId) |> validateRow |> combineRowResults with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
             let! dbResult =
-                upsertRecords parsedData
+                queries.InsertDefaultAvailability (parsedData |> Seq.head)
                 |> TaskResult.mapError getDbErrorsResponse
             return dbResult
     }
@@ -107,7 +107,7 @@ let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
         (fun teacherId ctx -> 
             task {
                 let! json = Request.getJson<CreateEditDefaultAvailability> ctx
-                let! submissionResult = createDefaultAvailabilityFromForm json teacherId queries.UpdateDefaultAvailability
+                let! submissionResult = createDefaultAvailabilityFromForm json teacherId queries
                 return! getFormCreateResponse submissionResult ctx
             }
         )
@@ -115,14 +115,14 @@ let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
 let editDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (loggedInTeacherId: int)
-    (upsertRecords: list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>) =
+    (queries: ICalendarQueries) =
     task {
         match form.Availabilities |> Array.toList |> List.map (parseRow loggedInTeacherId) |> validateRow |> combineRowResults with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
             let! dbResult =
-                upsertRecords parsedData
+                queries.UpdateDefaultAvailability (parsedData |> Seq.head)
                 |> TaskResult.mapError getDbErrorsResponse
             return dbResult
     }

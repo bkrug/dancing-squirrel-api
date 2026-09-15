@@ -7,14 +7,29 @@ open GenericModels
 open SqlHydra.Query
 
 type ICalendarQueries =
-    abstract member GetDefaultAvailabilityAsync: int -> Task<seq<DefaultAvailability>>
-    abstract member InsertDefaultAvailability : list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>
-    abstract member UpdateDefaultAvailability : list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>
+    abstract member BeginTransactionAsync : Task<unit>
+    abstract member CommitTransaction : unit
+    abstract member GetDefaultAvailabilityAsync : int -> Task<seq<DefaultAvailability>>
+    abstract member InsertDefaultAvailability : DefaultAvailability -> Task<Result<int64, DbErrors>>
+    abstract member UpdateDefaultAvailability : DefaultAvailability -> Task<Result<unit, DbErrors>>
+    abstract member DeleteDefaultAvailability : int -> Task<Result<unit, DbErrors>>
     abstract member InsertRecurringEvent : RecurringEvent -> Task<Result<RecurringEvent, DbErrors>>
     abstract member UpdateRecurringEvent : RecurringEvent -> Task<Result<RecurringEvent, DbErrors>>
 
 type CalendarQueries(db: Database.QueryContextFactory) =
+    let mutable context : QueryContext = Unchecked.defaultof<QueryContext>
+
     interface ICalendarQueries with
+        member _.BeginTransactionAsync =
+            task {
+                let! context = db.OpenContextAsync()
+                context.BeginTransaction()
+            }
+
+        member _.CommitTransaction =
+            context.CommitTransaction()
+            context.Dispose()
+
         member _.GetDefaultAvailabilityAsync (teacherId: int): Task<seq<DefaultAvailability>> = 
             task {
                 let! defaultAvailabilities =
@@ -25,59 +40,53 @@ type CalendarQueries(db: Database.QueryContextFactory) =
                 return defaultAvailabilities
             }
 
-        member _.InsertDefaultAvailability (availabilities: list<DefaultAvailability>) : Task<Result<list<DefaultAvailability>, DbErrors>> =
+        member _.InsertDefaultAvailability (availability: DefaultAvailability) : Task<Result<int64, DbErrors>> =
             task {
-                use! shared = db.OpenContextAsync()
-                try
-                    shared.BeginTransaction()
-                    let insertedAvailabilities = ResizeArray<DefaultAvailability>()
-                    for availability in availabilities do
-                        let! newId = insertTask shared {
-                            for da in DefaultAvailability do
-                            entity {
-                                DefaultAvailabilityId = 0;
-                                TeacherId = availability.TeacherId;
-                                DayOfWeek = availability.DayOfWeek;
-                                StartTimeUnix = availability.StartTimeUnix;
-                                EndTimeUnix = availability.EndTimeUnix;
-                            }
-                            getId da.DefaultAvailabilityId
-                        }
-                        insertedAvailabilities.Add { availability with DefaultAvailabilityId = newId }
-                    shared.CommitTransaction()
-                    return Ok (insertedAvailabilities |> List.ofSeq)
-                with
-                | ex ->
-                    shared.RollbackTransaction()
-                    printfn "SQL: %O" ex
-                    return Error DbErrors.AccessError
+                let! newId = insertTask context {
+                    for da in DefaultAvailability do
+                    entity {
+                        DefaultAvailabilityId = 0;
+                        TeacherId = availability.TeacherId;
+                        DayOfWeek = availability.DayOfWeek;
+                        StartTimeUnix = availability.StartTimeUnix;
+                        EndTimeUnix = availability.EndTimeUnix;
+                    }
+                    getId da.DefaultAvailabilityId
+                }
+                return
+                    match newId with
+                    | 0L -> Error DbErrors.AccessError
+                    | _ -> Ok newId
             }
 
-        member _.UpdateDefaultAvailability (availabilities: list<DefaultAvailability>) : Task<Result<list<DefaultAvailability>, DbErrors>> =
+        member _.UpdateDefaultAvailability (availability: DefaultAvailability) : Task<Result<unit, DbErrors>> =
             task {
-                use! shared = db.OpenContextAsync()
-                try
-                    shared.BeginTransaction()
-                    let updatedAvailabilities = ResizeArray<DefaultAvailability>()
-                    for availability in availabilities do
-                        let! rowsUpdated = updateTask shared {
-                            for da in DefaultAvailability do
-                            set da.TeacherId availability.TeacherId
-                            set da.DayOfWeek availability.DayOfWeek
-                            set da.StartTimeUnix availability.StartTimeUnix
-                            set da.EndTimeUnix availability.EndTimeUnix
-                            where (da.DefaultAvailabilityId = availability.DefaultAvailabilityId)
-                        }
-                        match rowsUpdated with
-                        | 1 -> updatedAvailabilities.Add availability
-                        | _ -> failwith $"Update affected {rowsUpdated} rows for DefaultAvailabilityId {availability.DefaultAvailabilityId}"
-                    shared.CommitTransaction()
-                    return Ok (updatedAvailabilities |> List.ofSeq)
-                with
-                | ex ->
-                    shared.RollbackTransaction()
-                    printfn "SQL: %O" ex
-                    return Error DbErrors.AccessError
+                let! rowsUpdated = updateTask context {
+                    for da in DefaultAvailability do
+                    set da.TeacherId availability.TeacherId
+                    set da.DayOfWeek availability.DayOfWeek
+                    set da.StartTimeUnix availability.StartTimeUnix
+                    set da.EndTimeUnix availability.EndTimeUnix
+                    where (da.DefaultAvailabilityId = availability.DefaultAvailabilityId)
+                }
+                return
+                    match rowsUpdated with
+                    | 0 -> Error DbErrors.NotFound
+                    | 1 -> Ok()
+                    | _ -> Error DbErrors.ExpectedSingleFoundMultiple
+            }
+
+        member _.DeleteDefaultAvailability (defaultAvailabilityId : int) =
+            task {
+                let! rowsDeleted = deleteTask context {
+                    for da in DefaultAvailability do
+                    where (da.DefaultAvailabilityId = defaultAvailabilityId)
+                }
+                return
+                    match rowsDeleted with
+                    | 0 -> Error DbErrors.NotFound
+                    | 1 -> Ok()
+                    | _ -> Error DbErrors.ExpectedSingleFoundMultiple
             }
 
         member _.InsertRecurringEvent (recurringEvent: RecurringEvent) : Task<Result<RecurringEvent, DbErrors>> =
