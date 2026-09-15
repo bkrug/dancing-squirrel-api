@@ -96,10 +96,21 @@ let createDefaultAvailabilityFromForm
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
+            do! queries.BeginTransactionAsync
             let! dbResult =
-                queries.InsertDefaultAvailability (parsedData |> Seq.head)
-                |> TaskResult.mapError getDbErrorsResponse
-            return dbResult
+                parsedData
+                |> List.fold (fun acc avail ->
+                    task {
+                        let! accResult = acc
+                        match accResult with
+                        | Error dberror -> return Error dberror
+                        | Ok ids ->
+                            let! insResult = queries.InsertDefaultAvailability avail
+                            return insResult |> Result.map (fun id -> ids @ [ id ])
+                    }
+                ) (Task.FromResult(Ok []))
+            queries.CommitTransaction
+            return dbResult |> Result.mapError getDbErrorsResponse
     }
 
 let createDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
@@ -121,10 +132,21 @@ let editDefaultAvailabilityFromForm
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
+            do! queries.BeginTransactionAsync
             let! dbResult =
-                queries.UpdateDefaultAvailability (parsedData |> Seq.head)
-                |> TaskResult.mapError getDbErrorsResponse
-            return dbResult
+                parsedData
+                |> List.fold (fun acc avail ->
+                    task {
+                        let! accResult = acc
+                        match accResult with
+                        | Error dberror -> return Error dberror
+                        | Ok ids ->
+                            let! insResult = queries.InsertDefaultAvailability avail
+                            return insResult |> Result.map (fun id -> ids @ [ id ])
+                    }
+                ) (Task.FromResult(Ok []))
+            queries.CommitTransaction
+            return dbResult |> Result.mapError getDbErrorsResponse
     }
 
 let editDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
