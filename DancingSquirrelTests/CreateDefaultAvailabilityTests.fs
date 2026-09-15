@@ -16,7 +16,7 @@ type DefaultAvailabilityUpserter = list<DefaultAvailability> -> Task<Result<list
 let getUnixSeconds hour minute = hour*60*60 + minute*60
 
 [<Fact>]
-let ``Default availability form has entries for Monday through Thursday and Saturday. Expect a success response.`` () =
+let ``Creating Default availabilities from form with entries for Monday through Thursday and Saturday. Expect a success response.`` () =
     task {
         let teacherId = 42
         let callerInput : CreateEditDefaultAvailability =
@@ -109,7 +109,7 @@ let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailabi
 
 [<Theory>]
 [<MemberData(nameof(defaultAvailabilityValidationFailureData))>]
-let ``Default availability entry is somehow invalid. Expect a validation failure.``
+let ``Creating default availability that is somehow invalid. Expect a validation failure.``
     (invalidEntry: CreateEditDefaultDayAvailability)
     (validationField: string)
     (validationMsg: string) =
@@ -142,7 +142,7 @@ let ``Default availability entry is somehow invalid. Expect a validation failure
     }
 
 [<Fact>]
-let ``Default availability form has a Wednesday entry that overlaps another Wednesday entry. Expect a validation failure on the overlapping row's StartTime.`` () =
+let ``Creating default availability that has a Wednesday entry that overlaps another Wednesday entry. Expect a validation failure on the overlapping row's StartTime.`` () =
     task {
         let teacherId = 42;
         let callerInput : CreateEditDefaultAvailability =
