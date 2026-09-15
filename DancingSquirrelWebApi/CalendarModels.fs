@@ -18,6 +18,7 @@ type ViewDefaultAvailability =
 
 type CreateEditDefaultDayAvailability =
     { 
+        DefaultAvailabilityId: Option<int64>
         DayOfWeek: Option<string>
         StartTime: Option<string>
         EndTime: Option<string>

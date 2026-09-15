@@ -22,11 +22,11 @@ let ``Default availability form has entries for Monday through Thursday and Satu
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [|
-                    { DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { DayOfWeek = Some "thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                    { DayOfWeek = Some "SaturDay";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "SaturDay";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
                 |]
             }
         let expectedRecords =
@@ -56,52 +56,52 @@ let ``Default availability form has entries for Monday through Thursday and Satu
 let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailability * string * string> =
     [
         (
-            { DayOfWeek = Some "Frunsday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
+            { DefaultAvailabilityId = None; DayOfWeek = Some "Frunsday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
             "DayOfWeek",
             "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
         )
         (
-            { DayOfWeek = Some "Tuesday"; StartTime = Some "not-a-time"; EndTime = Some "17:00:00" },
+            { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "not-a-time"; EndTime = Some "17:00:00" },
             "StartTime",
             "Must be in the format 'hh:mm'"
         )
         (
-            { DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "not-a-time" },
+            { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "not-a-time" },
             "EndTime",
             "Must be in the format 'hh:mm'"
         )
         (
-            { DayOfWeek = Some ""; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
+            { DefaultAvailabilityId = None; DayOfWeek = Some ""; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
             "DayOfWeek",
             "is required"
         )
         (
-            { DayOfWeek = Some "Tuesday"; StartTime = Some ""; EndTime = Some "17:00:00" },
+            { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some ""; EndTime = Some "17:00:00" },
             "StartTime",
             "is required"
         )
         (
-            { DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "" },
+            { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "" },
             "EndTime",
             "is required"
         )
         (
-            { DayOfWeek = None; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
+            { DefaultAvailabilityId = None; DayOfWeek = None; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
             "DayOfWeek",
             "is required"
         )
         (
-            { DayOfWeek = Some "Tuesday"; StartTime = None; EndTime = Some "17:00:00" },
+            { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = None; EndTime = Some "17:00:00" },
             "StartTime",
             "is required"
         )
         (
-            { DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = None },
+            { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = None },
             "EndTime",
             "is required"
         )
         (
-            { DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "08:00:00" },
+            { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "08:00:00" },
             "EndTime",
             "StartTime must precede EndTime"
         )
@@ -118,9 +118,9 @@ let ``Default availability entry is somehow invalid. Expect a validation failure
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [|
-                    { DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     invalidEntry
-                    { DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                 |]
             }
 
@@ -148,10 +148,10 @@ let ``Default availability form has a Wednesday entry that overlaps another Wedn
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [|
-                    { DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "18:00:00" }
-                    { DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "14:00:00" }
-                    { DayOfWeek = Some "Wednesday"; StartTime = Some "13:00:00"; EndTime = Some "17:00:00" }
-                    { DayOfWeek = Some "Wednesday"; StartTime = Some "20:00:00"; EndTime = Some "21:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "18:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "14:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "13:00:00"; EndTime = Some "17:00:00" }
+                    { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "20:00:00"; EndTime = Some "21:00:00" }
                 |]
             }
 
