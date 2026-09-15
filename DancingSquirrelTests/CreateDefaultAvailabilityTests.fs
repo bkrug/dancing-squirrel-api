@@ -53,7 +53,7 @@ let ``Creating Default availabilities from form with entries for Monday through 
                 member _.CommitTransaction = callCommitTransactions <- callCommitTransactions + 1
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
                 member _.InsertDefaultAvailability recordToInsert =
-                    actualReceivedRecords <- actualReceivedRecords |> List.append [ recordToInsert ]
+                    actualReceivedRecords <- actualReceivedRecords @ [ recordToInsert ]
                     recordId <- recordId + 1
                     Task.FromResult(Ok recordId)
                 member _.UpdateDefaultAvailability _ = Task.FromResult(Ok())
