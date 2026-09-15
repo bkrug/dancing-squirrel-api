@@ -217,10 +217,10 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
             }
         let currentDbRecords =
             [|
-                { DayOfWeek = int64 DayOfWeek.Tuesday;   StartTimeUnix = getUnixSeconds  9 30; EndTimeUnix = getUnixSeconds 17  0; DefaultAvailabilityId = 1001; TeacherId = teacherId; }
-                { DayOfWeek = int64 DayOfWeek.Wednesday; StartTimeUnix = getUnixSeconds  9 30; EndTimeUnix = getUnixSeconds 17  0; DefaultAvailabilityId = 1002; TeacherId = teacherId; }
-                { DayOfWeek = int64 DayOfWeek.Wednesday; StartTimeUnix = getUnixSeconds  8 45; EndTimeUnix = getUnixSeconds 16 45; DefaultAvailabilityId = 2003; TeacherId = teacherId; }
-                { DayOfWeek = int64 DayOfWeek.Wednesday; StartTimeUnix = getUnixSeconds  9 15; EndTimeUnix = getUnixSeconds 17 15; DefaultAvailabilityId = 2004; TeacherId = teacherId; }
+                { DayOfWeek = int64 DayOfWeek.Tuesday;   StartTimeUnix = getUnixSeconds  9 30; EndTimeUnix = getUnixSeconds 17  1; DefaultAvailabilityId = 1001; TeacherId = teacherId; }
+                { DayOfWeek = int64 DayOfWeek.Wednesday; StartTimeUnix = getUnixSeconds  9 30; EndTimeUnix = getUnixSeconds 17  2; DefaultAvailabilityId = 1002; TeacherId = teacherId; }
+                { DayOfWeek = int64 DayOfWeek.Friday;    StartTimeUnix = getUnixSeconds  8 45; EndTimeUnix = getUnixSeconds 16 45; DefaultAvailabilityId = 2003; TeacherId = teacherId; }
+                { DayOfWeek = int64 DayOfWeek.Sunday;    StartTimeUnix = getUnixSeconds  9 15; EndTimeUnix = getUnixSeconds 17 15; DefaultAvailabilityId = 2004; TeacherId = teacherId; }
             |]
             |> Seq.toList
         let expectedInserts =
