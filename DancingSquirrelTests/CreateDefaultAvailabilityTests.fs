@@ -9,6 +9,7 @@ open DbLayer.Database.main
 open Shouldly
 open Calendar.Endpoints
 open Calendar.Models
+open Calendar.Queries
 open Xunit
 
 type DefaultAvailabilityUpserter = list<DefaultAvailability> -> Task<Result<list<DefaultAvailability>, DbErrors>>
@@ -39,18 +40,32 @@ let ``Creating Default availabilities from form with entries for Monday through 
             |]
             |> Seq.toList
 
-        let mutable actualReceivedRecords : list<DefaultAvailability> option = None
-        let (upsertRecord: DefaultAvailabilityUpserter) = fun records ->
-            actualReceivedRecords <- Some records
-            Task.FromResult(Ok records)
+        let mutable actualReceivedRecords : list<DefaultAvailability> = []
+        let mutable recordId = 100
+        let mutable callBeginTransactions = 0
+        let mutable callCommitTransactions = 0
+
+        let fakeQueries =
+            { new ICalendarQueries with
+                member _.BeginTransactionAsync =
+                    callBeginTransactions <- callBeginTransactions + 1
+                    Task.FromResult()
+                member _.CommitTransaction = callCommitTransactions <- callCommitTransactions + 1
+                member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
+                member _.InsertDefaultAvailability recordToInsert =
+                    actualReceivedRecords <- actualReceivedRecords |> List.append [ recordToInsert ]
+                    recordId <- recordId + 1
+                    Task.FromResult(Ok recordId)
+                member _.UpdateDefaultAvailability _ = Task.FromResult(Ok())
+                member _.DeleteDefaultAvailability _ = Task.FromResult(Ok())
+            }
 
         //Act
-        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId upsertRecord
+        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId fakeQueries
 
         //Assert
         submissionResult.IsOk.ShouldBeTrue()
-        actualReceivedRecords.IsSome.ShouldBeTrue()
-        actualReceivedRecords.Value.ShouldBeEquivalentTo(expectedRecords)
+        actualReceivedRecords.ShouldBeEquivalentTo(expectedRecords)
     }
 
 let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailability * string * string> =
@@ -124,11 +139,18 @@ let ``Creating default availability that is somehow invalid. Expect a validation
                 |]
             }
 
-        let (upsertRecord: DefaultAvailabilityUpserter) = fun records ->
-            Task.FromResult(Ok records)
+        let fakeQueries =
+            { new ICalendarQueries with
+                member _.BeginTransactionAsync = Task.FromResult()
+                member _.CommitTransaction = ()
+                member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
+                member _.InsertDefaultAvailability _ = Task.FromResult(Ok -1)
+                member _.UpdateDefaultAvailability _ = Task.FromResult(Ok())
+                member _.DeleteDefaultAvailability _ = Task.FromResult(Ok())
+            }
 
         //Act
-        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId upsertRecord
+        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId fakeQueries
 
         //Assert
         match submissionResult with
@@ -155,11 +177,18 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
                 |]
             }
 
-        let (upsertRecord: DefaultAvailabilityUpserter) = fun records ->
-            Task.FromResult(Ok records)
+        let fakeQueries =
+            { new ICalendarQueries with
+                member _.BeginTransactionAsync = Task.FromResult()
+                member _.CommitTransaction = ()
+                member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
+                member _.InsertDefaultAvailability _ = Task.FromResult(Ok -1)
+                member _.UpdateDefaultAvailability _ = Task.FromResult(Ok())
+                member _.DeleteDefaultAvailability _ = Task.FromResult(Ok())
+            }
 
         //Act
-        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId upsertRecord
+        let! submissionResult = editDefaultAvailabilityFromForm callerInput teacherId fakeQueries
 
         //Assert
         match submissionResult with

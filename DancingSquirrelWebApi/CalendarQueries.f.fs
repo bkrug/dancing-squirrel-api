@@ -13,8 +13,6 @@ type ICalendarQueries =
     abstract member InsertDefaultAvailability : DefaultAvailability -> Task<Result<int64, DbErrors>>
     abstract member UpdateDefaultAvailability : DefaultAvailability -> Task<Result<unit, DbErrors>>
     abstract member DeleteDefaultAvailability : int -> Task<Result<unit, DbErrors>>
-    abstract member InsertRecurringEvent : RecurringEvent -> Task<Result<RecurringEvent, DbErrors>>
-    abstract member UpdateRecurringEvent : RecurringEvent -> Task<Result<RecurringEvent, DbErrors>>
 
 type CalendarQueries(db: Database.QueryContextFactory) =
     let mutable context : QueryContext = Unchecked.defaultof<QueryContext>
@@ -88,9 +86,3 @@ type CalendarQueries(db: Database.QueryContextFactory) =
                     | 1 -> Ok()
                     | _ -> Error DbErrors.ExpectedSingleFoundMultiple
             }
-
-        member _.InsertRecurringEvent (recurringEvent: RecurringEvent) : Task<Result<RecurringEvent, DbErrors>> =
-            failwith "Not implemented"
-
-        member _.UpdateRecurringEvent (recurringEvent: RecurringEvent) : Task<Result<RecurringEvent, DbErrors>> =
-            failwith "Not implemented"
