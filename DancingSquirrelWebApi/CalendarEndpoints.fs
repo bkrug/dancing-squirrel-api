@@ -1,11 +1,11 @@
 module Calendar.Endpoints
 
-open DbLayer.Database.main
-open Falco
-open GenericModels
 open System.Threading.Tasks
 open Calendar.Models
 open Calendar.Queries
+open DbLayer.Database.main
+open Falco
+open GenericModels
 open ValidationStandards
 
 let private parseRequiredString inputValue =

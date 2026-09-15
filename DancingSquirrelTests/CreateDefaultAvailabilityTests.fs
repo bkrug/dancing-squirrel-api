@@ -202,6 +202,73 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
     }
 
 
+let dbErrorFailureCases = TheoryData<DbErrors>(DbErrors.NotFound, DbErrors.ExpectedSingleFoundMultiple)
+
+[<Theory>]
+[<MemberData(nameof(dbErrorFailureCases))>]
+let ``Editing a default availability when UpdateDefaultAvailabilityAsync fails. Expect the db error to be returned.`` (dbError: DbErrors) =
+    task {
+        let teacherId = 61
+        let callerInput : CreateEditDefaultAvailability =
+            {
+                Availabilities = [|
+                    { DefaultAvailabilityId = Some 500L; DayOfWeek = Some "Monday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                |]
+            }
+
+        let fakeQueries =
+            { new ICalendarQueries with
+                member _.BeginTransactionAsync = Task.FromResult()
+                member _.CommitTransaction = ()
+                member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
+                member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult([ 500L ])
+                member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1L)
+                member _.UpdateDefaultAvailabilityAsync _ = Task.FromResult(Error dbError)
+                member _.DeleteDefaultAvailabilityAsync _ = Task.FromResult(Ok())
+            }
+
+        //Act
+        let! submissionResult = crudDefaultAvailabilityFromForm callerInput teacherId fakeQueries
+
+        //Assert
+        match submissionResult with
+        | Ok _ -> Assert.Fail "Expected an error response"
+        | Error errResp ->
+            let expectedErrResp : GenericModelResponse<DefaultAvailabilityValidation> = getDbErrorsResponse dbError
+            errResp.ShouldBeEquivalentTo(expectedErrResp)
+    }
+
+[<Theory>]
+[<MemberData(nameof(dbErrorFailureCases))>]
+let ``Deleting a default availability when DeleteDefaultAvailabilityAsync fails. Expect the db error to be returned.`` (dbError: DbErrors) =
+    task {
+        let teacherId = 62
+        let callerInput : CreateEditDefaultAvailability =
+            { Availabilities = [||] }
+        let currentDbRecords = [ 700L ]
+
+        let fakeQueries =
+            { new ICalendarQueries with
+                member _.BeginTransactionAsync = Task.FromResult()
+                member _.CommitTransaction = ()
+                member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
+                member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult(currentDbRecords)
+                member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1L)
+                member _.UpdateDefaultAvailabilityAsync _ = Task.FromResult(Ok())
+                member _.DeleteDefaultAvailabilityAsync _ = Task.FromResult(Error dbError)
+            }
+
+        //Act
+        let! submissionResult = crudDefaultAvailabilityFromForm callerInput teacherId fakeQueries
+
+        //Assert
+        match submissionResult with
+        | Ok _ -> Assert.Fail "Expected an error response"
+        | Error errResp ->
+            let expectedErrResp : GenericModelResponse<DefaultAvailabilityValidation> = getDbErrorsResponse dbError
+            errResp.ShouldBeEquivalentTo(expectedErrResp)
+    }
+
 [<Fact>]
 let ``Editing group of Default availabilities. Expect some records to be inserted, some to be updated, and some to be deleted.`` () =
     task {

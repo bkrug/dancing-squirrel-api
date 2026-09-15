@@ -1,10 +1,10 @@
 module Calendar.Queries
 
-open System.Threading.Tasks
 open DbLayer
 open DbLayer.Database.main
 open GenericModels
 open SqlHydra.Query
+open System.Threading.Tasks
 
 type ICalendarQueries =
     abstract member BeginTransactionAsync : Task<unit>
