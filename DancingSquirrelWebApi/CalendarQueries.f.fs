@@ -21,7 +21,8 @@ type CalendarQueries(db: Database.QueryContextFactory) =
     interface ICalendarQueries with
         member _.BeginTransactionAsync =
             task {
-                let! context = db.OpenContextAsync()
+                let! c = db.OpenContextAsync()
+                context <- c
                 context.BeginTransaction()
             }
 
