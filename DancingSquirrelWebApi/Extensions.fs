@@ -17,4 +17,4 @@ let getNoneFromNull inputValue =
 let getNoneFromEmpty stringOption =
     match stringOption with
     | Some "" -> None
-    | otherOption -> otherOption    
+    | otherOption -> otherOption
