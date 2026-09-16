@@ -353,7 +353,7 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
 
         //Assert
         match submissionResult with
-        | Ok successResp -> successResp.ShouldBeEquivalentTo(Ok expectedOutput)
+        | Ok successResp -> successResp.ShouldBeEquivalentTo(expectedOutput)
         | Error errResp -> Assert.Fail "Expected a success response"
 
         actualInsertedRecords.ShouldBeEquivalentTo(expectedInserts)
