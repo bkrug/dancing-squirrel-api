@@ -283,6 +283,16 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
                     { DefaultAvailabilityId = None;      DayOfWeek = Some "SaturDay";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
                 |]
             }
+        let expectedOutput : ViewDefaultAvailability =
+            {
+                Availabilities = [|
+                    { DefaultAvailabilityId = 3001; DayOfWeek = "Monday";    StartTime = "09:00:00"; EndTime = "17:00:00" }
+                    { DefaultAvailabilityId = 1001; DayOfWeek = "Tuesday";   StartTime = "09:00:00"; EndTime = "17:00:00" }
+                    { DefaultAvailabilityId = 1002; DayOfWeek = "Wednesday"; StartTime = "09:00:00"; EndTime = "17:00:00" }
+                    { DefaultAvailabilityId = 3002; DayOfWeek = "Thursday";  StartTime = "09:00:00"; EndTime = "17:00:00" }
+                    { DefaultAvailabilityId = 3003; DayOfWeek = "SaturDay";  StartTime = "10:00:00"; EndTime = "14:00:00" }
+                |]
+            }            
         let currentDbRecords =
             [|
                 { DayOfWeek = int64 DayOfWeek.Tuesday;   StartTimeUnix = getUnixSeconds  9 30; EndTimeUnix = getUnixSeconds 17  1; DefaultAvailabilityId = 1001; TeacherId = teacherId; }
@@ -342,7 +352,10 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
         let! submissionResult = crudDefaultAvailabilityFromForm callerInput teacherId fakeQueries
 
         //Assert
-        submissionResult.IsOk.ShouldBeTrue()
+        match submissionResult with
+        | Ok successResp -> successResp.ShouldBeEquivalentTo(getFormCreateResponse (Ok expectedOutput))
+        | Error errResp -> Assert.Fail "Expected a success response"
+
         actualInsertedRecords.ShouldBeEquivalentTo(expectedInserts)
         actualUpdatedRecords.ShouldBeEquivalentTo(expectedUpdates)
         actualDeletedRecords.ShouldBeEquivalentTo(expectedDeletes)

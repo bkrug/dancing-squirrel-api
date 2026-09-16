@@ -36,6 +36,8 @@ type CalendarQueries(db: Database.QueryContextFactory) =
                     selectTask db {
                         for a in DefaultAvailability do
                         where (a.TeacherId = teacherId)
+                        orderBy a.DayOfWeek 
+                        thenBy a.StartTimeUnix
                     }
                 return defaultAvailabilities
             }
