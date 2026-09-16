@@ -9,7 +9,7 @@ open GenericModels
 open ValidationStandards
 
 let private parseRequiredString inputValue =
-    match inputValue |> Extensions.getOptionFromLiar |> Extensions.emptyStringToNone with
+    match inputValue |> Extensions.getNoneFromNull |> Extensions.getNoneFromEmpty with
     | Some nonEmpty -> Ok nonEmpty
     | None -> Error requiredMessage
 
