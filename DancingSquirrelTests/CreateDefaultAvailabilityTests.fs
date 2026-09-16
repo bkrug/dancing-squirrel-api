@@ -140,10 +140,12 @@ let ``Creating default availability that is somehow invalid. Expect a validation
                 ]
             }
 
+        let mutable callCommitTransactions = 0
+
         let fakeQueries =
             { new ICalendarQueries with
                 member _.BeginTransactionAsync = Task.FromResult()
-                member _.CommitTransaction = ()
+                member _.CommitTransaction = callCommitTransactions <- callCommitTransactions + 1
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
                 member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult([])
                 member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1)
@@ -163,6 +165,7 @@ let ``Creating default availability that is somehow invalid. Expect a validation
                 .GetProperty(validationField)
                 .GetValue(dayValidation)
                 .ShouldBeEquivalentTo(validationMsg)
+        callCommitTransactions.ShouldBe(0)
     }
 
 [<Fact>]
@@ -179,10 +182,12 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
                 ]
             }
 
+        let mutable callCommitTransactions = 0
+
         let fakeQueries =
             { new ICalendarQueries with
                 member _.BeginTransactionAsync = Task.FromResult()
-                member _.CommitTransaction = ()
+                member _.CommitTransaction = callCommitTransactions <- callCommitTransactions + 1
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
                 member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult([])
                 member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1)
@@ -199,6 +204,7 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
         | Error errResp ->
             let dayValidation = errResp.ValidationFailures.Value.Availabilities.[2]
             dayValidation.StartTime.ShouldBeEquivalentTo("overlaps another availability period")
+        callCommitTransactions.ShouldBe(0)
     }
 
 
@@ -216,10 +222,12 @@ let ``Editing a default availability when UpdateDefaultAvailabilityAsync fails. 
                 ]
             }
 
+        let mutable callCommitTransactions = 0
+
         let fakeQueries =
             { new ICalendarQueries with
                 member _.BeginTransactionAsync = Task.FromResult()
-                member _.CommitTransaction = ()
+                member _.CommitTransaction = callCommitTransactions <- callCommitTransactions + 1
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
                 member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult([ 500L ])
                 member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1L)
@@ -236,6 +244,7 @@ let ``Editing a default availability when UpdateDefaultAvailabilityAsync fails. 
         | Error errResp ->
             let expectedErrResp : GenericModelResponse<DefaultAvailabilityValidation> = getDbErrorsResponse dbError
             errResp.ShouldBeEquivalentTo(expectedErrResp)
+        callCommitTransactions.ShouldBe(0)
     }
 
 [<Theory>]
@@ -247,10 +256,12 @@ let ``Deleting a default availability when DeleteDefaultAvailabilityAsync fails.
             { Availabilities = [] }
         let currentDbRecords = [ 700L ]
 
+        let mutable callCommitTransactions = 0
+
         let fakeQueries =
             { new ICalendarQueries with
                 member _.BeginTransactionAsync = Task.FromResult()
-                member _.CommitTransaction = ()
+                member _.CommitTransaction = callCommitTransactions <- callCommitTransactions + 1
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
                 member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult(currentDbRecords)
                 member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1L)
@@ -267,6 +278,7 @@ let ``Deleting a default availability when DeleteDefaultAvailabilityAsync fails.
         | Error errResp ->
             let expectedErrResp : GenericModelResponse<DefaultAvailabilityValidation> = getDbErrorsResponse dbError
             errResp.ShouldBeEquivalentTo(expectedErrResp)
+        callCommitTransactions.ShouldBe(0)
     }
 
 [<Fact>]
