@@ -117,6 +117,20 @@ let upsertDefaultAvailabilityAsync (queries: ICalendarQueries) inputAvailability
         return upsertResult
     }
 
+let mapDbRecToViewObj (availabilities) : ViewDefaultAvailability =
+    {
+        Availabilities =
+            availabilities
+            |> List.map (fun dbRec ->
+                {
+                    DefaultAvailabilityId = dbRec.DefaultAvailabilityId
+                    DayOfWeek = System.Enum.GetName(typeof<System.DayOfWeek>, dbRec.DayOfWeek)
+                    StartTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.StartTimeUnix).ToString("HH:mm:ss")
+                    EndTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.EndTimeUnix).ToString("HH:mm:ss")
+                }
+            )
+    }    
+
 let crudDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
     (loggedInTeacherId: int)
@@ -136,21 +150,7 @@ let crudDefaultAvailabilityFromForm
                 |> TaskResult.bind (fun () -> idsToDelete |> runSequentially queries.DeleteDefaultAvailabilityAsync)
                 |> TaskResult.bind (fun () -> validatedInput |> traverseSequentially (upsertDefaultAvailabilityAsync queries))
                 |> TaskResult.iter (fun _ -> queries.CommitTransaction)
-                |> TaskResult.map (fun availabilities ->
-                    let viewData : ViewDefaultAvailability =
-                        {
-                            Availabilities =
-                                availabilities
-                                |> List.map (fun dbRec ->
-                                    {
-                                        DefaultAvailabilityId = dbRec.DefaultAvailabilityId
-                                        DayOfWeek = System.Enum.GetName(typeof<System.DayOfWeek>, dbRec.DayOfWeek)
-                                        StartTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.StartTimeUnix).ToString("HH:mm:ss")
-                                        EndTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.EndTimeUnix).ToString("HH:mm:ss")
-                                    }
-                                )
-                        }
-                    viewData)
+                |> TaskResult.map (fun availabilities -> mapDbRecToViewObj availabilities)
                 |> TaskResult.mapError getDbErrorsResponse
 
             return outputRecordsResult
@@ -171,19 +171,7 @@ let getDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
         (fun teacherId ctx ->
             task {
                 let! availabilityRecords = queries.GetDefaultAvailabilityAsync teacherId
-                let transformedRecords: ViewDefaultAvailability =
-                    {
-                        Availabilities =
-                            availabilityRecords
-                            |> Seq.map (fun dbRec ->
-                                {
-                                    DefaultAvailabilityId = dbRec.DefaultAvailabilityId
-                                    DayOfWeek = dbRec.DayOfWeek.ToString()
-                                    StartTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.StartTimeUnix).ToString("hh:mm")
-                                    EndTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.EndTimeUnix).ToString("hh:mm")
-                                }
-                            )
-                    }
+                let transformedRecords = mapDbRecToViewObj (availabilityRecords |> Seq.toList)
                 return! getHttpRecordResponse (Ok transformedRecords) ctx
             }
         )
