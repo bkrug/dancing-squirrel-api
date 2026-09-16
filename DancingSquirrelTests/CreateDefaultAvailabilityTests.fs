@@ -20,7 +20,7 @@ let ``Creating Default availabilities from form with entries for Monday through 
         let teacherId = 42
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [
+                Availabilities = Some [
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
@@ -133,7 +133,7 @@ let ``Creating default availability that is somehow invalid. Expect a validation
         let teacherId = 42;
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [
+                Availabilities = Some [
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     invalidEntry
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
@@ -174,7 +174,7 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
         let teacherId = 42;
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [
+                Availabilities = Some [
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "18:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "14:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "13:00:00"; EndTime = Some "17:00:00" }
@@ -217,7 +217,7 @@ let ``Editing a default availability when UpdateDefaultAvailabilityAsync fails. 
         let teacherId = 61
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [
+                Availabilities = Some [
                     { DefaultAvailabilityId = None;      DayOfWeek = Some "Sunday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = Some 500L; DayOfWeek = Some "Monday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                 ]
@@ -254,7 +254,7 @@ let ``Deleting a default availability when DeleteDefaultAvailabilityAsync fails.
     task {
         let teacherId = 62
         let callerInput : CreateEditDefaultAvailability =
-            { Availabilities = [
+            { Availabilities = Some [
                 { DefaultAvailabilityId = None;      DayOfWeek = Some "Sunday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                 { DefaultAvailabilityId = Some 500L; DayOfWeek = Some "Monday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
             ] }
@@ -291,7 +291,7 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
         let teacherId = 53
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [
+                Availabilities = Some [
                     { DefaultAvailabilityId = None;      DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = Some 1001; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = Some 1002; DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }

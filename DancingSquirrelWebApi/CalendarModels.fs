@@ -26,7 +26,7 @@ type CreateEditDefaultDayAvailability =
 
 type CreateEditDefaultAvailability =
     {
-        Availabilities: list<CreateEditDefaultDayAvailability>
+        Availabilities: option<list<CreateEditDefaultDayAvailability>>
     }
 
 type DefaultDayAvailabilityValidation =

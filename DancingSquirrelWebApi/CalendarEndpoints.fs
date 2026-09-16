@@ -136,7 +136,13 @@ let crudDefaultAvailabilityFromForm
     (loggedInTeacherId: int)
     (queries: ICalendarQueries) =
     task {
-        match form.Availabilities |> List.map (parseRow loggedInTeacherId) |> validateRow |> combineRowResults with
+        match 
+            form.Availabilities
+            |> Option.defaultValue []
+            |> List.map (parseRow loggedInTeacherId)
+            |> validateRow
+            |> combineRowResults
+        with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
         | Ok validatedInput ->
