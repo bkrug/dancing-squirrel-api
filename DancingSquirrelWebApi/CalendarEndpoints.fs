@@ -125,18 +125,32 @@ let crudDefaultAvailabilityFromForm
         match form.Availabilities |> Array.toList |> List.map (parseRow loggedInTeacherId) |> validateRow |> combineRowResults with
         | Error validation ->
             return Error (getGenericValidationFailure validation)
-        | Ok parsedData ->
-            do! queries.BeginTransactionAsync
-
+        | Ok validatedInput ->
             let! existingRecordIds = queries.GetDefaultAvailabilityIdsAsync loggedInTeacherId
-            let recordIdsToUpdate = parsedData |> List.map (fun a -> a.DefaultAvailabilityId) |> List.filter (fun id -> id <> 0L)  |> Set.ofList
+            let recordIdsToUpdate = validatedInput |> List.map (fun a -> a.DefaultAvailabilityId) |> List.filter (fun id -> id <> 0L)  |> Set.ofList
             let idsToDelete = existingRecordIds |> Seq.except recordIdsToUpdate |> Seq.toList
 
+            do! queries.BeginTransactionAsync
             let! outputRecordsResult =
                 Task.FromResult(Ok ())
                 |> TaskResult.bind (fun () -> idsToDelete |> runSequentially queries.DeleteDefaultAvailabilityAsync)
-                |> TaskResult.bind (fun () -> parsedData |> traverseSequentially (upsertDefaultAvailabilityAsync queries))
+                |> TaskResult.bind (fun () -> validatedInput |> traverseSequentially (upsertDefaultAvailabilityAsync queries))
                 |> TaskResult.iter (fun _ -> queries.CommitTransaction)
+                |> TaskResult.map (fun availabilities ->
+                    let viewData : ViewDefaultAvailability =
+                        {
+                            Availabilities =
+                                availabilities
+                                |> List.map (fun dbRec ->
+                                    {
+                                        DefaultAvailabilityId = dbRec.DefaultAvailabilityId
+                                        DayOfWeek = System.Enum.GetName(typeof<System.DayOfWeek>, dbRec.DayOfWeek)
+                                        StartTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.StartTimeUnix).ToString("HH:mm:ss")
+                                        EndTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.EndTimeUnix).ToString("HH:mm:ss")
+                                    }
+                                )
+                        }
+                    viewData)
                 |> TaskResult.mapError getDbErrorsResponse
 
             return outputRecordsResult

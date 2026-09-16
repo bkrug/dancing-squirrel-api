@@ -285,13 +285,13 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
             }
         let expectedOutput : ViewDefaultAvailability =
             {
-                Availabilities = [|
+                Availabilities = [
                     { DefaultAvailabilityId = 3001; DayOfWeek = "Monday";    StartTime = "09:00:00"; EndTime = "17:00:00" }
                     { DefaultAvailabilityId = 1001; DayOfWeek = "Tuesday";   StartTime = "09:00:00"; EndTime = "17:00:00" }
                     { DefaultAvailabilityId = 1002; DayOfWeek = "Wednesday"; StartTime = "09:00:00"; EndTime = "17:00:00" }
                     { DefaultAvailabilityId = 3002; DayOfWeek = "Thursday";  StartTime = "09:00:00"; EndTime = "17:00:00" }
                     { DefaultAvailabilityId = 3003; DayOfWeek = "Saturday";  StartTime = "10:00:00"; EndTime = "14:00:00" }
-                |]
+                ]
             }            
         let currentDbRecords =
             [|
