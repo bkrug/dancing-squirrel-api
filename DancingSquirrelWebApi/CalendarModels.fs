@@ -13,7 +13,7 @@ type ViewDefaultDayAvailability =
 
 type ViewDefaultAvailability =
     {
-        Availabilities: seq<ViewDefaultDayAvailability>
+        Availabilities: list<ViewDefaultDayAvailability>
     }
 
 type CreateEditDefaultDayAvailability =
@@ -26,7 +26,7 @@ type CreateEditDefaultDayAvailability =
 
 type CreateEditDefaultAvailability =
     {
-        Availabilities: CreateEditDefaultDayAvailability[]
+        Availabilities: list<CreateEditDefaultDayAvailability>
     }
 
 type DefaultDayAvailabilityValidation =

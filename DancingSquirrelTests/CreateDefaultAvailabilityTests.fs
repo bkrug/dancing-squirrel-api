@@ -20,13 +20,13 @@ let ``Creating Default availabilities from form with entries for Monday through 
         let teacherId = 42
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [|
+                Availabilities = [
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "SaturDay";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
-                |]
+                ]
             }
         let expectedRecords =
             [|
@@ -133,11 +133,11 @@ let ``Creating default availability that is somehow invalid. Expect a validation
         let teacherId = 42;
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [|
+                Availabilities = [
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     invalidEntry
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                |]
+                ]
             }
 
         let fakeQueries =
@@ -171,12 +171,12 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
         let teacherId = 42;
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [|
+                Availabilities = [
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "18:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "09:00:00"; EndTime = Some "14:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "13:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None; DayOfWeek = Some "Wednesday"; StartTime = Some "20:00:00"; EndTime = Some "21:00:00" }
-                |]
+                ]
             }
 
         let fakeQueries =
@@ -211,9 +211,9 @@ let ``Editing a default availability when UpdateDefaultAvailabilityAsync fails. 
         let teacherId = 61
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [|
+                Availabilities = [
                     { DefaultAvailabilityId = Some 500L; DayOfWeek = Some "Monday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
-                |]
+                ]
             }
 
         let fakeQueries =
@@ -244,7 +244,7 @@ let ``Deleting a default availability when DeleteDefaultAvailabilityAsync fails.
     task {
         let teacherId = 62
         let callerInput : CreateEditDefaultAvailability =
-            { Availabilities = [||] }
+            { Availabilities = [] }
         let currentDbRecords = [ 700L ]
 
         let fakeQueries =
@@ -275,13 +275,13 @@ let ``Editing group of Default availabilities. Expect some records to be inserte
         let teacherId = 53
         let callerInput : CreateEditDefaultAvailability =
             {
-                Availabilities = [|
+                Availabilities = [
                     { DefaultAvailabilityId = None;      DayOfWeek = Some "Monday";    StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = Some 1001; DayOfWeek = Some "Tuesday";   StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = Some 1002; DayOfWeek = Some "WEDNESDAY"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None;      DayOfWeek = Some "thursday";  StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = None;      DayOfWeek = Some "SaturDay";  StartTime = Some "10:00:00"; EndTime = Some "14:00:00" }
-                |]
+                ]
             }
         let expectedOutput : ViewDefaultAvailability =
             {
