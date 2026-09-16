@@ -30,3 +30,10 @@ let map mapper result = task {
     let! vR = result
     return vR |> Result.map mapper
 }
+
+//Perform a side effect on the success value of a Task<Result<>>, leaving the result unchanged
+let iter action result = task {
+    let! vR = result
+    vR |> Result.iter action
+    return vR
+}

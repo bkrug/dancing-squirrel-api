@@ -87,18 +87,35 @@ let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDay
         |> List.choose (function Ok row -> Some row | Error _ -> None)
         |> Ok
 
-let private runSequentially (action: 'a -> Task<Result<'b, DbErrors>>) (items: list<'a>) : Task<Result<unit, DbErrors>> =
+let private traverseSequentially (action: 'a -> Task<Result<'b, DbErrors>>) (items: list<'a>) : Task<Result<list<'b>, DbErrors>> =
     items
     |> List.fold (fun acc item ->
         task {
             let! accResult = acc
             match accResult with
             | Error dbError -> return Error dbError
-            | Ok () ->
+            | Ok successesSoFar ->
                 let! result = action item
-                return result |> Result.map ignore
+                return result |> Result.map (fun success -> success :: successesSoFar)
         }
-    ) (Task.FromResult(Ok ()))
+    ) (Task.FromResult(Ok []))
+    |> TaskResult.map List.rev
+
+let private runSequentially (action: 'a -> Task<Result<'b, DbErrors>>) (items: list<'a>) : Task<Result<unit, DbErrors>> =
+    items |> traverseSequentially action |> TaskResult.map ignore
+
+let upsertDefaultAvailabilityAsync (queries: ICalendarQueries) inputAvailability =
+    task {
+        let! upsertResult =
+            match inputAvailability.DefaultAvailabilityId with
+            | 0L -> 
+                queries.InsertDefaultAvailabilityAsync inputAvailability
+                |> TaskResult.map (fun newId -> { inputAvailability with DefaultAvailabilityId = newId })
+            | _ ->
+                queries.UpdateDefaultAvailabilityAsync inputAvailability
+                |> TaskResult.map (fun () -> inputAvailability)
+        return upsertResult
+    }
 
 let crudDefaultAvailabilityFromForm
     (form: CreateEditDefaultAvailability)
@@ -110,20 +127,19 @@ let crudDefaultAvailabilityFromForm
             return Error (getGenericValidationFailure validation)
         | Ok parsedData ->
             do! queries.BeginTransactionAsync
-            let! existingRecords = queries.GetDefaultAvailabilityIdsAsync loggedInTeacherId
-            let recordsToInsert = parsedData |> List.filter (fun a -> a.DefaultAvailabilityId = 0L)
-            let recordsToUpdate = parsedData |> List.filter (fun a -> a.DefaultAvailabilityId <> 0L)
-            let submittedIds = recordsToUpdate |> List.map (fun a -> a.DefaultAvailabilityId) |> Set.ofList
-            let idsToDelete = existingRecords |> Seq.except submittedIds |> Seq.toList
 
-            let! dbResult =
+            let! existingRecordIds = queries.GetDefaultAvailabilityIdsAsync loggedInTeacherId
+            let recordIdsToUpdate = parsedData |> List.map (fun a -> a.DefaultAvailabilityId) |> List.filter (fun id -> id <> 0L)  |> Set.ofList
+            let idsToDelete = existingRecordIds |> Seq.except recordIdsToUpdate |> Seq.toList
+
+            let! outputRecordsResult =
                 Task.FromResult(Ok ())
-                |> TaskResult.bind (fun () -> recordsToInsert |> runSequentially queries.InsertDefaultAvailabilityAsync)
-                |> TaskResult.bind (fun () -> recordsToUpdate |> runSequentially queries.UpdateDefaultAvailabilityAsync)
                 |> TaskResult.bind (fun () -> idsToDelete |> runSequentially queries.DeleteDefaultAvailabilityAsync)
+                |> TaskResult.bind (fun () -> parsedData |> traverseSequentially (upsertDefaultAvailabilityAsync queries))
+                |> TaskResult.iter (fun _ -> queries.CommitTransaction)
+                |> TaskResult.mapError getDbErrorsResponse
 
-            queries.CommitTransaction
-            return dbResult |> Result.mapError getDbErrorsResponse
+            return outputRecordsResult
     }
 
 let crudDefaultAvailability (queries: ICalendarQueries) : HttpHandler =
