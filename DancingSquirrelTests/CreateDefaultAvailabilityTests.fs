@@ -218,6 +218,7 @@ let ``Editing a default availability when UpdateDefaultAvailabilityAsync fails. 
         let callerInput : CreateEditDefaultAvailability =
             {
                 Availabilities = [
+                    { DefaultAvailabilityId = None;      DayOfWeek = Some "Sunday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                     { DefaultAvailabilityId = Some 500L; DayOfWeek = Some "Monday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
                 ]
             }
@@ -253,8 +254,11 @@ let ``Deleting a default availability when DeleteDefaultAvailabilityAsync fails.
     task {
         let teacherId = 62
         let callerInput : CreateEditDefaultAvailability =
-            { Availabilities = [] }
-        let currentDbRecords = [ 700L ]
+            { Availabilities = [
+                { DefaultAvailabilityId = None;      DayOfWeek = Some "Sunday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+                { DefaultAvailabilityId = Some 500L; DayOfWeek = Some "Monday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" }
+            ] }
+        let currentDbRecords = [ 500L; 700L ]
 
         let mutable callCommitTransactions = 0
 
@@ -264,7 +268,7 @@ let ``Deleting a default availability when DeleteDefaultAvailabilityAsync fails.
                 member _.CommitTransaction = callCommitTransactions <- callCommitTransactions + 1
                 member _.GetDefaultAvailabilityAsync _ = Task.FromResult([])
                 member _.GetDefaultAvailabilityIdsAsync _ = Task.FromResult(currentDbRecords)
-                member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok -1L)
+                member _.InsertDefaultAvailabilityAsync _ = Task.FromResult(Ok 1001L)
                 member _.UpdateDefaultAvailabilityAsync _ = Task.FromResult(Ok())
                 member _.DeleteDefaultAvailabilityAsync _ = Task.FromResult(Error dbError)
             }
