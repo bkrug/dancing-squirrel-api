@@ -30,7 +30,8 @@ type CreateEditDefaultAvailability =
     }
 
 type DefaultDayAvailabilityValidation =
-    { 
+    {
+        ModelFailure: string
         DayOfWeek: string
         StartTime: string
         EndTime: string
@@ -38,8 +39,9 @@ type DefaultDayAvailabilityValidation =
 
 type DefaultAvailabilityValidation =
     {
+        ModelFailure: string
         Availabilities: DefaultDayAvailabilityValidation[]
-    }    
+    }
 
 type CreateEditRecurringEvent =
     {
@@ -57,7 +59,3 @@ type CreateEditSingleEvent =
         StartDateTime: string
         EndDateTeim: string
     }
-
-type DefaultActivityUpserter<'a> = CreateEditDefaultAvailability -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<DefaultAvailabilityValidation>>>
-type RecurringEventUpserter<'a> = CreateEditRecurringEvent -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<CreateEditRecurringEvent>>>
-type SingleEventUpserter<'a> = CreateEditSingleEvent -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<CreateEditSingleEvent>>>

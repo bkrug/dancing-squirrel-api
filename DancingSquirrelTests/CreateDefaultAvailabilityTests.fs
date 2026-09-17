@@ -118,7 +118,7 @@ let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailabi
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "08:00:00" },
-            "EndTime",
+            "ModelFailure",
             "StartTime must precede EndTime"
         )
     ]
@@ -203,7 +203,7 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
         | Ok _ -> Assert.Fail "Expected a validation failure"
         | Error errResp ->
             let dayValidation = errResp.ValidationFailures.Value.Availabilities.[2]
-            dayValidation.StartTime.ShouldBeEquivalentTo("overlaps another availability period")
+            dayValidation.ModelFailure.ShouldBeEquivalentTo("overlaps another availability period")
         callCommitTransactions.ShouldBe(0)
     }
 

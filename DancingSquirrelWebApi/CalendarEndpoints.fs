@@ -23,8 +23,7 @@ let private parseTimeOfDay (timeOfDay: string) =
     | true, parsedTime -> Ok (int64(parsedTime.ToTimeSpan().TotalSeconds))
     | _ -> Error "Must be in the format 'hh:mm'"
 
-let private emptyRowValidation : DefaultDayAvailabilityValidation =
-    { DayOfWeek = ""; StartTime = ""; EndTime = "" }
+let private emptyRowValidation : DefaultDayAvailabilityValidation = { DayOfWeek = ""; StartTime = ""; EndTime = ""; ModelFailure = "" }
 
 let private parseRow (teacherId: int) (row: CreateEditDefaultDayAvailability) : Result<DefaultAvailability, DefaultDayAvailabilityValidation> =
     let dayOfWeekR = parseRequiredString row.DayOfWeek |> Result.bind parseDayOfWeek
@@ -44,6 +43,7 @@ let private parseRow (teacherId: int) (row: CreateEditDefaultDayAvailability) : 
             DayOfWeek = match dayOfWeekR with Error msg -> msg | _ -> ""
             StartTime = match startTimeR with Error msg -> msg | _ -> ""
             EndTime = match endTimeR with Error msg -> msg | _ -> ""
+            ModelFailure = ""
         }
 
 let private rowsOverlap (a: DefaultAvailability) (b: DefaultAvailability) : bool =
@@ -60,10 +60,10 @@ let private validateRow (rows: list<Result<DefaultAvailability, DefaultDayAvaila
         match row with
         | Error _ -> (validRows, row :: results)
         | Ok parsedRow when parsedRow.StartTimeUnix >= parsedRow.EndTimeUnix ->
-            let orderError = Error { emptyRowValidation with EndTime = "StartTime must precede EndTime" }
+            let orderError = Error { emptyRowValidation with ModelFailure = "StartTime must precede EndTime" }
             (validRows, orderError :: results)
         | Ok parsedRow when validRows |> List.exists (rowsOverlap parsedRow) ->
-            let overlapError = Error { emptyRowValidation with StartTime = "overlaps another availability period" }
+            let overlapError = Error { emptyRowValidation with ModelFailure = "overlaps another availability period" }
             (validRows, overlapError :: results)
         | Ok parsedRow ->
             (parsedRow :: validRows, row :: results)
@@ -81,7 +81,7 @@ let private combineRowResults (rows: list<Result<DefaultAvailability, DefaultDay
         rows
         |> List.map (function Error validation -> validation | Ok _ -> emptyRowValidation)
         |> List.toArray
-        |> fun validations -> Error { Availabilities = validations }
+        |> fun validations -> Error { Availabilities = validations; ModelFailure = "" }
     else
         rows
         |> List.choose (function Ok row -> Some row | Error _ -> None)
@@ -138,7 +138,7 @@ let crudDefaultAvailabilityFromForm
     task {
         match form.Availabilities with
         | None ->
-            let validation : DefaultAvailabilityValidation = { Availabilities = [| { DayOfWeek = "array of Availabilities required"; StartTime = ""; EndTime = "" } |] }
+            let validation : DefaultAvailabilityValidation = { ModelFailure = "array of Availabilities required"; Availabilities = [||];  }
             return Error (getGenericValidationFailure validation)
         | Some rows ->
 
