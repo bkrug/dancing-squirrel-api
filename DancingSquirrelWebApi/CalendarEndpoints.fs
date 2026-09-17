@@ -77,12 +77,12 @@ let private validateRow (rows: list<Result<DefaultAvailability, ValidationDictio
 // Every row is validated independently, so a single invalid row must not hide the others: on
 // failure we return one validation entry per input row (index-aligned), padding the valid rows
 // with an empty placeholder rather than collapsing the list down to just the failures.
-let private combineRowResults (rows: list<Result<DefaultAvailability, ValidationDictionary>>) : Result<list<DefaultAvailability>, ValidationDictionary> =
+let private combineRowResults (gridFailureKey: string) (rows: list<Result<DefaultAvailability, ValidationDictionary>>) : Result<list<DefaultAvailability>, ValidationDictionary> =
     let hasErrors = rows |> List.exists (function Error _ -> true | Ok _ -> false)
     if hasErrors then
         rows
         |> List.map (function Error validation -> validation | Ok _ -> emptyValidationDictionary)
-        |> fun validations -> Error { emptyValidationDictionary with GridFailures = Map.ofList [ ( "Availabilities", validations ) ]  }
+        |> fun validations -> Error { emptyValidationDictionary with GridFailures = Map.ofList [ ( gridFailureKey, validations ) ]  }
     else
         rows
         |> List.choose (function Ok row -> Some row | Error _ -> None)
@@ -147,7 +147,7 @@ let crudDefaultAvailabilityFromForm
             rows
             |> List.map (parseRow loggedInTeacherId)
             |> validateRow
-            |> combineRowResults
+            |> combineRowResults (nameof form.Availabilities)
         with
         | Error validation ->
             return Error (getGenericValidationFailure validation)

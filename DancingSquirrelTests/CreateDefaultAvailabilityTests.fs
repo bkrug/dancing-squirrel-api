@@ -160,9 +160,9 @@ let ``Creating default availability that is somehow invalid. Expect a validation
         match submissionResult with
         | Ok _ -> Assert.Fail "Expected a validation failure"
         | Error errResp ->
-            let dayValidation = errResp.ValidationFailures.Value.GridFailures["Availabilities"][1]
+            let dayValidation = errResp.ValidationFailures.Value.GridFailures[nameof callerInput.Availabilities][1]
             match validationField with
-            | "ModelFailure" -> dayValidation.ModelFailure.ShouldBeEquivalentTo(Some validationMsg)
+            | nameof dayValidation.ModelFailure -> dayValidation.ModelFailure.ShouldBeEquivalentTo(Some validationMsg)
             | _ -> dayValidation.FieldFailures[validationField].ShouldBeEquivalentTo(validationMsg)
         callCommitTransactions.ShouldBe(0)
     }
@@ -201,7 +201,7 @@ let ``Creating default availability that has a Wednesday entry that overlaps ano
         match submissionResult with
         | Ok _ -> Assert.Fail "Expected a validation failure"
         | Error errResp ->
-            let dayValidation = errResp.ValidationFailures.Value.GridFailures["Availabilities"][2]
+            let dayValidation = errResp.ValidationFailures.Value.GridFailures[nameof callerInput.Availabilities][2]
             dayValidation.ModelFailure.ShouldBeEquivalentTo(Some "overlaps another availability period")
         callCommitTransactions.ShouldBe(0)
     }
