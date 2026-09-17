@@ -14,6 +14,8 @@ type DefaultAvailabilityUpserter = list<DefaultAvailability> -> Task<Result<list
 
 let getUnixSeconds hour minute = hour*60*60 + minute*60
 
+let private validationModel : DefaultDayAvailabilityValidation = Unchecked.defaultof<_>
+
 [<Fact>]
 let ``Creating Default availabilities from form with entries for Monday through Thursday and Saturday. Expect a success response.`` () =
     task {
@@ -73,52 +75,52 @@ let defaultAvailabilityValidationFailureData : list<CreateEditDefaultDayAvailabi
     [
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Frunsday"; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
-            "DayOfWeek",
+            nameof validationModel.DayOfWeek,
             "Must be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "not-a-time"; EndTime = Some "17:00:00" },
-            "StartTime",
+            nameof validationModel.StartTime,
             "Must be in the format 'hh:mm'"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "not-a-time" },
-            "EndTime",
+            nameof validationModel.EndTime,
             "Must be in the format 'hh:mm'"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some ""; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
-            "DayOfWeek",
+            nameof validationModel.DayOfWeek,
             "is required"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some ""; EndTime = Some "17:00:00" },
-            "StartTime",
+            nameof validationModel.StartTime,
             "is required"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "" },
-            "EndTime",
+            nameof validationModel.EndTime,
             "is required"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = None; StartTime = Some "09:00:00"; EndTime = Some "17:00:00" },
-            "DayOfWeek",
+            nameof validationModel.DayOfWeek,
             "is required"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = None; EndTime = Some "17:00:00" },
-            "StartTime",
+            nameof validationModel.StartTime,
             "is required"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = None },
-            "EndTime",
+            nameof validationModel.EndTime,
             "is required"
         )
         (
             { DefaultAvailabilityId = None; DayOfWeek = Some "Tuesday"; StartTime = Some "09:00:00"; EndTime = Some "08:00:00" },
-            "ModelFailure",
+            nameof validationModel.ModelFailure,
             "StartTime must precede EndTime"
         )
     ]
