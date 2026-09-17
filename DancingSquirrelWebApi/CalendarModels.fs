@@ -58,6 +58,9 @@ type CreateEditSingleEvent =
         EndDateTeim: string
     }
 
-type DefaultActivityUpserter<'a> = CreateEditDefaultAvailability -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<DefaultAvailabilityValidation>>>
-type RecurringEventUpserter<'a> = CreateEditRecurringEvent -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<CreateEditRecurringEvent>>>
-type SingleEventUpserter<'a> = CreateEditSingleEvent -> Task<Result<GenericModelResponse<'a>, GenericModelResponse<CreateEditSingleEvent>>>
+type ValidationDictionary =
+    {
+        FieldFailures: Map<string, string>
+        GridFailures: Map<string, list<ValidationDictionary>>
+        ModelFailure: Option<string>
+    }
