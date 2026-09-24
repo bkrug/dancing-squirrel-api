@@ -104,6 +104,11 @@ Each time the debugger is started up, VS Code auto-runs the above script.
 `sudo docker run -it --entrypoint /bin/sh dancing-squirrel-api`
 Example the contents of a container through a shell
 
+## Coverage
+
+To generate a test coverage report run the coverage script in the root of this repo:
+`./coverage.sh`
+
 # Troubleshooting
 
 See this source for data on path variables used in launch.json
