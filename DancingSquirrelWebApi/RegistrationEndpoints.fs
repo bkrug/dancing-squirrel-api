@@ -165,6 +165,17 @@ let private getExistingUserRecord (queries: IUserAuthorizationWrapper) (userId:s
                 })            
     }
 
+let private assignTeacherIdClaimAsync (queries: IUserAuthorizationWrapper) (teacherIdOption: Option<int>) (user: IdentityUser) =
+    task {
+        if teacherIdOption.IsSome
+        then
+            let newClaim = new Claim(TeacherIdClaim, teacherIdOption.Value.ToString())
+            do! queries.EditUserClaimAsync newClaim user
+        else
+            let oldClaim = new Claim(TeacherIdClaim, System.String.Empty)
+            do! queries.DeleteUserClaimAsync oldClaim user
+    }
+
 let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditUserModel) (user: IdentityUser) =
     task {
         user.Email <- editData.Email
@@ -172,9 +183,7 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
         let! editResult = queries.EditUserAsync user
         match editResult with
         | Ok _ ->
-            if editData.TeacherId.IsSome then
-                let newClaim = new Claim(TeacherIdClaim, editData.TeacherId.Value.ToString())
-                do! queries.EditUserClaimAsync newClaim user
+            do! assignTeacherIdClaimAsync queries editData.TeacherId user
             return Ok getGenericSuccess
         | Error identityError ->
             return Error (getGenericValidationFailure {
@@ -194,8 +203,6 @@ let private editUserInternal (queries: IUserAuthorizationWrapper) (userId: strin
         return! getFormEditResponse editResult ctx
     }
 
-//TODO: This needs a more complicated authorization check.
-//In order to call this, the user must either be an Admin, or the user must be editing their own data
 let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
     Auth.processAuthorizedRequest roles
         (fun ctx ->

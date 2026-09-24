@@ -13,6 +13,7 @@ type IUserAuthorizationWrapper =
     abstract member CreateUserAsync: IdentityUser -> string -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
     abstract member EditUserAsync: IdentityUser -> Task<Result<unit, GenericModelResponse<seq<IdentityError>>>>
     abstract member EditUserClaimAsync: Claim -> IdentityUser -> Task<unit>
+    abstract member DeleteUserClaimAsync: Claim -> IdentityUser -> Task<unit>
     abstract member GetUserAsync: string -> Task<Result<IdentityUser, GenericModelResponse<string>>>
     abstract member GetUserClaimsAsync: IdentityUser -> Task<IList<Claim>>
     abstract member SelectMultiUsers: int -> int -> Task<Result<seq<IdentityUser>, GenericModelResponse<string>>>
@@ -51,6 +52,7 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                 return! userManager.UpdateAsync(user) |> mapToResult
             }
 
+        //TODO: Inspect the output of these claims endpoints to see if there is an error
         member _.EditUserClaimAsync (claim: Claim) user =
             task {
                 let! claims = userManager.GetClaimsAsync(user)
@@ -61,6 +63,16 @@ type UserAuthorizationWrapper(createScope: unit -> IServiceScope) =
                     | None -> userManager.AddClaimAsync(user, claim)
                 return ()
             }
+
+        member _.DeleteUserClaimAsync (claim: Claim) user =
+            task {
+                let! claims = userManager.GetClaimsAsync(user)
+                let claimSearch = claims |> Seq.filter (fun c -> c.Type = claim.Type) |> Seq.tryHead
+                if claimSearch.IsSome then
+                    let! _ = userManager.RemoveClaimAsync(user, claimSearch.Value)
+                    ()
+                return ()
+            }            
 
         member _.GetUserAsync (userId: string) =
             task {
