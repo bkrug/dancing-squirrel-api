@@ -125,8 +125,8 @@ let mapDbRecToViewObj (availabilities) : ViewDefaultAvailability =
                 {
                     DefaultAvailabilityId = dbRec.DefaultAvailabilityId
                     DayOfWeek = System.Enum.GetName(typeof<System.DayOfWeek>, dbRec.DayOfWeek)
-                    StartTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.StartTimeUnix).ToString("HH:mm:ss")
-                    EndTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.EndTimeUnix).ToString("HH:mm:ss")
+                    StartTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.StartTimeUnix).ToString("HH:mm")
+                    EndTime = System.DateTimeOffset.FromUnixTimeSeconds(dbRec.EndTimeUnix).ToString("HH:mm")
                 }
             )
     }    
