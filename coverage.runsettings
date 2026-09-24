@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <CodeCoverage>
+    <ModulePaths>
+      <Include>
+        <ModulePath>.*DancingSquirrelWebApi\.dll$</ModulePath>
+      </Include>
+    </ModulePaths>
+    <Sources>
+      <Exclude>
+        <!-- SqlHydra generated models -->
+        <Source>.*[\\/]DatabaseModels\.fs$</Source>
+        <Source>.*[\\/]Program\.fs$</Source>
+        <Source>.*[\\/]Endpoints\.fs$</Source>
+        <Source>.*[\\/]AspNetIdentityCoreExtensions\.fs$</Source>
+        <!-- Suffix matches (also covers CalendarQueries.f.fs) -->
+        <Source>.*Queries(\.f)?\.fs$</Source>
+        <Source>.*Models\.fs$</Source>
+      </Exclude>
+    </Sources>
+  </CodeCoverage>
+</Configuration>

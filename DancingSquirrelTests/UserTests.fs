@@ -105,7 +105,6 @@ let ``EditUserModel is valid. Expect a success response.`` () =
     {
       Email = "user@example.com"
       PhoneNumber = ""
-      TeacherId = None
     }
 
   //Act
@@ -117,22 +116,22 @@ let ``EditUserModel is valid. Expect a success response.`` () =
 let editUserValidationFailureData : list<Registration.Models.EditUserModel * string * string> =
   [
     (
-      { Email = ""; PhoneNumber = ""; TeacherId = None },
+      { Email = ""; PhoneNumber = "" },
       "Email",
       "is required"
     )
     (
-      { Email = "not-an-email"; PhoneNumber = ""; TeacherId = None },
+      { Email = "not-an-email"; PhoneNumber = "" },
       "Email",
       "must be an email address"
     )
     (
-      { Email = "user@example.com"; PhoneNumber = "9-414-555-2983"; TeacherId = None },
+      { Email = "user@example.com"; PhoneNumber = "9-414-555-2983" },
       "PhoneNumber",
       "must either have exactly 10 digits or a '1' followed by 10 digits"
     )
     (
-      { Email = "user@example.com"; PhoneNumber = "1i414i555i2983"; TeacherId = None },
+      { Email = "user@example.com"; PhoneNumber = "1i414i555i2983" },
       "PhoneNumber",
       "must not contain letters"
     )
@@ -161,7 +160,7 @@ let ``EditUserModel is somehow invalid. Expect a validation failure.`` testNumbe
 
 [<Fact>]
 let ``All fields on EditUserModel are invalid. Expect validation failures on all fields.`` () =
-  let model : Registration.Models.EditUserModel = { Email = "notAnEmail!"; PhoneNumber = "414"; TeacherId = None }
+  let model : Registration.Models.EditUserModel = { Email = "notAnEmail!"; PhoneNumber = "414" }
   let expectedValidationFailures : Registration.Models.EditUserValidation = {
     Email = "must be an email address"
     PhoneNumber = "must either have exactly 10 digits or a '1' followed by 10 digits"
