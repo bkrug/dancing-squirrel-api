@@ -140,6 +140,7 @@ let defaultJsonOptions =
     options.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase
     options
 
+//SUSPECT: Can't we just use Request.getJson
 let getModelFromRequestBody<'TValue> ctx =
     task {
         let! jsonString = Request.getBodyString ctx

@@ -5,23 +5,14 @@ open DanceCategories.Endpoints
 open DanceCategories.Queries
 open Falco.Routing
 open Falco.OpenApi
-open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Hosting
-open Microsoft.AspNetCore.HttpsPolicy
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Hosting
-open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Configuration.Json
-open Microsoft.AspNetCore.Identity
-open Microsoft.EntityFrameworkCore
 open Registration.Models
 open Registration.Queries
 open Registration.Endpoints
 open Onboarding.Endpoints
 open Onboarding.Queries
-open Calendar.Models
 open Calendar.Queries
 open Calendar.Endpoints
 
@@ -83,6 +74,11 @@ let getEndpoints (wApp : WebApplication) =
                     { Name = "userId"; Type = typeof<string>; Required = true }
                 ]
                 |> OpenApi.acceptsType typeof<EditUserModel>
+            put "/api/user/{userId}/claims" (editUserClaimsHandler identityWrap)
+                |> OpenApi.route [
+                    { Name = "userId"; Type = typeof<string>; Required = true }
+                ]
+                |> OpenApi.acceptsType typeof<EditUserClaimsModel>
             put "/api/user/{userId}/role" (editUserRolesHandler identityWrap)
                 |> OpenApi.route [
                     { Name = "userId"; Type = typeof<string>; Required = true }

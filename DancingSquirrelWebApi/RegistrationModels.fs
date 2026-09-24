@@ -35,7 +35,6 @@ type EditUserModel =
     {
         Email: string
         PhoneNumber: string
-        TeacherId: Option<int>
     }
 
 type EditUserValidation =
@@ -44,6 +43,11 @@ type EditUserValidation =
         PhoneNumber: string
         TeacherId: string
     }
+
+type EditUserClaimsModel =
+    {
+        TeacherId: Option<int>
+    }    
 
 type RoleEditingModel =
     {

@@ -183,7 +183,6 @@ let private editUserFields (queries: IUserAuthorizationWrapper) (editData: EditU
         let! editResult = queries.EditUserAsync user
         match editResult with
         | Ok _ ->
-            do! assignTeacherIdClaimAsync queries editData.TeacherId user
             return Ok getGenericSuccess
         | Error identityError ->
             return Error (getGenericValidationFailure {
@@ -215,6 +214,19 @@ let editUserHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
 let editSelfHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
     Auth.processWithUserId
         (fun userId ctx -> editUserInternal queries userId ctx)
+
+let editUserClaimsHandler (queries: IUserAuthorizationWrapper) : HttpHandler =
+    Auth.processAuthorizedRequest roles
+        (fun ctx ->
+            task {
+                let userId = (Request.getRoute ctx).GetString "userId"
+                let! userClaims = Request.getJson<EditUserClaimsModel> ctx
+                let! editResult =
+                    getExistingUserRecord queries userId
+                    |> TaskResult.iterTask (assignTeacherIdClaimAsync queries userClaims.TeacherId)
+                return! getFormEditResponse (editResult |> replaceSuccessObject) ctx                
+            }
+        )    
 
 let private updateUserRolesAsync (queries: IUserAuthorizationWrapper) (requestedRoles: seq<string>) (user: IdentityUser) =
     task {
