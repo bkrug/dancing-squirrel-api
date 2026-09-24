@@ -45,7 +45,6 @@ builder.Services
         options.SlidingExpiration <- true
     ) |> ignore
 builder.Services.AddAuthorization() |> ignore
-//builder.Services.ConfigureIdentity() |> ignore
 
 let securityConnectionString = builder.Configuration.GetConnectionString("SecurityDb");
 builder.Services.AddAspNetIdentityAuthentication(securityConnectionString) |> ignore
@@ -58,9 +57,11 @@ wApp.UseAuthentication() |> ignore
 wApp.UseAuthorization() |> ignore
 wApp.UseCookiePolicy(new CookiePolicyOptions( MinimumSameSitePolicy = SameSiteMode.Strict; ) ) |> ignore
 wApp.UseRouting() |> ignore
-//wApp.UseHttpsRedirection()
 wApp.UseSwagger()
-    .UseSwaggerUI() |> ignore
+    .UseSwaggerUI(fun options ->
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1")
+        options.RoutePrefix <- ""
+    ) |> ignore
 wApp.UseCors(allowedOriginsPolicy) |> ignore
 wApp.UseMiddleware<ExHandler>() |> ignore
 wApp.UseFalco(getEndpoints wApp)
