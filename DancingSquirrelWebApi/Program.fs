@@ -34,7 +34,9 @@ builder.Services.AddCors(fun options ->
 builder.Services.AddEndpointsApiExplorer() |> ignore
 builder.Services
     .AddFalcoOpenApi()
-    .AddSwaggerGen() |> ignore
+    .AddSwaggerGen(fun c ->
+        c.TagActionsBy(fun api -> [| api.RelativePath.Split('/').[1] |])
+        c.OrderActionsBy(fun api -> $"{api.RelativePath}_{api.HttpMethod}")) |> ignore
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
